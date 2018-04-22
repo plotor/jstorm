@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 /**
  * BoltDeclarer includes grouping APIs for storm topology.
- * 
+ *
  * @see <a href="https://storm.apache.org/documentation/Concepts.html">Concepts -Stream groupings-</a>
  */
 public interface BoltDeclarer extends InputDeclarer<BoltDeclarer>, ComponentConfigurationDeclarer<BoltDeclarer> {

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>backtype.storm.topology.ResourceDeclarer</OriginalElement>
+  <nodes>
+    <node x="544.5625" y="166.0">backtype.storm.topology.BaseConfigurationDeclarer</node>
+    <node x="376.5625" y="83.0">storm.trident.Stream</node>
+    <node x="795.5625" y="166.0">backtype.storm.drpc.LinearDRPCInputDeclarer</node>
+    <node x="123.51923076923077" y="83.0">storm.trident.operation.DefaultResourceDeclarer</node>
+    <node x="643.5625" y="83.0">backtype.storm.topology.ComponentConfigurationDeclarer</node>
+    <node x="407.31249999999994" y="0.0">backtype.storm.topology.ResourceDeclarer</node>
+    <node x="337.0" y="249.0">storm.trident.planner.SpoutNode</node>
+    <node x="173.0" y="249.0">storm.trident.planner.PartitionNode</node>
+    <node x="189.51923076923077" y="166.0">storm.trident.planner.Node</node>
+    <node x="492.5625" y="83.0">storm.trident.TridentState</node>
+    <node x="0.0" y="249.0">storm.trident.planner.ProcessorNode</node>
+    <node x="309.6875" y="166.0">backtype.storm.topology.BoltDeclarer</node>
+    <node x="1036.5625" y="166.0">backtype.storm.topology.SpoutDeclarer</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="backtype.storm.drpc.LinearDRPCInputDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
+      <point x="0.0" y="-16.5" />
+      <point x="906.0625" y="146.0" />
+      <point x="817.9375" y="146.0" />
+      <point x="34.875" y="16.5" />
+    </edge>
+    <edge source="storm.trident.operation.DefaultResourceDeclarer" target="backtype.storm.topology.ResourceDeclarer">
+      <point x="0.0" y="-16.5" />
+      <point x="232.01923076923077" y="53.0" />
+      <point x="428.31249999999994" y="53.0" />
+      <point x="-63.0" y="16.5" />
+    </edge>
+    <edge source="storm.trident.TridentState" target="backtype.storm.topology.ResourceDeclarer">
+      <point x="0.0" y="-16.5" />
+      <point x="558.0625" y="63.0" />
+      <point x="512.3125" y="63.0" />
+      <point x="21.0" y="16.5" />
+    </edge>
+    <edge source="storm.trident.planner.PartitionNode" target="storm.trident.planner.Node">
+      <point x="0.0" y="-16.5" />
+      <point x="245.0" y="224.0" />
+      <point x="232.01923076923077" y="224.0" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.ComponentConfigurationDeclarer" target="backtype.storm.topology.ResourceDeclarer">
+      <point x="0.0" y="-16.5" />
+      <point x="783.0625" y="53.0" />
+      <point x="554.3125" y="53.0" />
+      <point x="63.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.BoltDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
+      <point x="0.0" y="-16.5" />
+      <point x="375.6875" y="136.0" />
+      <point x="678.4375" y="136.0" />
+      <point x="-104.625" y="16.5" />
+    </edge>
+    <edge source="storm.trident.Stream" target="backtype.storm.topology.ResourceDeclarer">
+      <point x="-1.1368683772161603E-13" y="-16.5" />
+      <point x="424.5624999999999" y="63.0" />
+      <point x="470.31249999999994" y="63.0" />
+      <point x="-21.0" y="16.5" />
+    </edge>
+    <edge source="storm.trident.planner.ProcessorNode" target="storm.trident.planner.Node">
+      <point x="0.0" y="-16.5" />
+      <point x="76.5" y="224.0" />
+      <point x="203.6858974358974" y="224.0" />
+      <point x="-28.333333333333343" y="16.5" />
+    </edge>
+    <edge source="storm.trident.planner.SpoutNode" target="storm.trident.planner.Node">
+      <point x="0.0" y="-16.5" />
+      <point x="399.5" y="224.0" />
+      <point x="260.3525641025641" y="224.0" />
+      <point x="28.333333333333314" y="16.5" />
+    </edge>
+    <edge source="storm.trident.planner.Node" target="storm.trident.operation.DefaultResourceDeclarer">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.BaseConfigurationDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
+      <point x="-1.1368683772161603E-13" y="-16.5" />
+      <point x="660.0625" y="146.0" />
+      <point x="748.1875" y="146.0" />
+      <point x="-34.875" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.SpoutDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
+      <point x="0.0" y="-16.5" />
+      <point x="1109.0625" y="136.0" />
+      <point x="887.6875" y="136.0" />
+      <point x="104.625" y="16.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="576.0" y="157.0" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>public</VISIBILITY>
+</Diagram>
+

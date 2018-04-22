@@ -14,9 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.utils;
 
 import backtype.storm.utils.Utils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -35,13 +43,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
-
 public class LoadConf {
     private static final Logger LOG = LoggerFactory.getLogger(LoadConf.class);
 
@@ -59,8 +60,8 @@ public class LoadConf {
     }
 
     /**
-     * @param name        conf file name
-     * @param mustExist   if true, the file must exist, otherwise throw an exception
+     * @param name conf file name
+     * @param mustExist if true, the file must exist, otherwise throw an exception
      * @param canMultiple if false and there is multiple conf, it will throw an exception
      * @return conf map
      */
@@ -80,10 +81,11 @@ public class LoadConf {
             }
 
             if (mustExist) {
-                if (confFileEmpty)
+                if (confFileEmpty) {
                     throw new RuntimeException("Config file " + name + " doesn't have any valid storm configs");
-                else
+                } else {
                     throw new RuntimeException("Could not find config file on classpath " + name);
+                }
             } else {
                 return new HashMap();
             }

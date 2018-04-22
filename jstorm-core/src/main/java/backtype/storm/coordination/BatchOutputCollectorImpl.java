@@ -15,13 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.coordination;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.tuple.Tuple;
+
 import java.util.List;
 
 public class BatchOutputCollectorImpl extends BatchOutputCollector {
+
     OutputCollector _collector;
 
     public BatchOutputCollectorImpl(OutputCollector collector) {

@@ -15,11 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import java.util.Map;
 
-public interface ComponentConfigurationDeclarer<T extends ComponentConfigurationDeclarer> extends ResourceDeclarer<T>{
+/**
+ * 定义了一些和组件相关的配置项
+ *
+ * @param <T>
+ */
+public interface ComponentConfigurationDeclarer<T extends ComponentConfigurationDeclarer> extends ResourceDeclarer<T> {
+
     T addConfigurations(Map conf);
 
     T addConfiguration(String config, Object value);
@@ -31,4 +38,5 @@ public interface ComponentConfigurationDeclarer<T extends ComponentConfiguration
     T setMaxSpoutPending(Number val);
 
     T setNumTasks(Number val);
+
 }

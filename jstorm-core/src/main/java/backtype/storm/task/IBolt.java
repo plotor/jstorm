@@ -15,11 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.task;
 
 import backtype.storm.tuple.Tuple;
-import java.util.Map;
+
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * An IBolt represents a component that takes tuples as input and produces tuples as output. An IBolt can do everything from filtering to joining to functions
@@ -53,11 +55,11 @@ public interface IBolt extends Serializable {
      * </p>
      *
      * @param stormConf The Storm configuration for this bolt. This is the configuration provided to the topology merged in with cluster configuration on this
-     *                  machine.
-     * @param context   This object can be used to get information about this task's place within the topology, including the task id and component id of this
-     *                  task, input and output information, etc.
+     * machine.
+     * @param context This object can be used to get information about this task's place within the topology, including the task id and component id of this
+     * task, input and output information, etc.
      * @param collector The collector is used to emit tuples from this bolt. Tuples can be emitted at any time, including the prepare and cleanup methods. The
-     *                  collector is thread-safe and should be saved as an instance variable of this bolt object.
+     * collector is thread-safe and should be saved as an instance variable of this bolt object.
      */
     void prepare(Map stormConf, TopologyContext context, OutputCollector collector);
 
@@ -80,6 +82,8 @@ public interface IBolt extends Serializable {
     void execute(Tuple input);
 
     /**
+     * 当 bolt 对象被销毁时调用，但是不保证一定会被调用
+     *
      * Called when an IBolt is going to be shutdown. There is no guarentee that cleanup will be called, because the supervisor kill -9's worker processes on the
      * cluster.
      *

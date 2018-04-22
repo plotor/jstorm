@@ -15,11 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import java.util.List;
 
 public interface IBasicOutputCollector {
+
     List<Integer> emit(String streamId, List<Object> tuple);
 
     void emitDirect(int taskId, String streamId, List<Object> tuple);

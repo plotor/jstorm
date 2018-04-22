@@ -15,51 +15,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.utils.JStormUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.alibaba.jstorm.utils.JStormUtils;
-
 public abstract class BaseConfigurationDeclarer<T extends ComponentConfigurationDeclarer>
         implements ComponentConfigurationDeclarer<T> {
+
     private Map conf = Utils.readStormConfig();
 
     @Override
     public T addConfiguration(String config, Object value) {
-        Map configMap = new HashMap();
+        Map<String, Object> configMap = new HashMap<>();
         configMap.put(config, value);
-        return addConfigurations(configMap);
+        return this.addConfigurations(configMap);
     }
 
     @Override
     public T setDebug(boolean debug) {
-        return addConfiguration(Config.TOPOLOGY_DEBUG, debug);
+        return this.addConfiguration(Config.TOPOLOGY_DEBUG, debug);
     }
 
     @Override
     public T setMaxTaskParallelism(Number val) {
-        if (val != null)
+        if (val != null) {
             val = val.intValue();
-        return addConfiguration(Config.TOPOLOGY_MAX_TASK_PARALLELISM, val);
+        }
+        return this.addConfiguration(Config.TOPOLOGY_MAX_TASK_PARALLELISM, val);
     }
 
     @Override
     public T setMaxSpoutPending(Number val) {
-        if (val != null)
+        if (val != null) {
             val = val.intValue();
-        return addConfiguration(Config.TOPOLOGY_MAX_SPOUT_PENDING, val);
+        }
+        return this.addConfiguration(Config.TOPOLOGY_MAX_SPOUT_PENDING, val);
     }
 
     @Override
     public T setNumTasks(Number val) {
-        if (val != null)
+        if (val != null) {
             val = val.intValue();
-        return addConfiguration(Config.TOPOLOGY_TASKS, val);
+        }
+        return this.addConfiguration(Config.TOPOLOGY_TASKS, val);
     }
 
     @Override
@@ -78,7 +82,7 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
             offHeap = offHeap.doubleValue();
             configMap.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, offHeap);
         }
-        return addConfigurations(configMap);
+        return this.addConfigurations(configMap);
     }
 
     @Override
@@ -87,6 +91,6 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
         if (amount != null) {
             configMap.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, amount);
         }
-        return addConfigurations(configMap);
+        return this.addConfigurations(configMap);
     }
 }

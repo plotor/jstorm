@@ -15,24 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
-
-import com.alibaba.jstorm.cluster.Common;
-import com.alibaba.jstorm.window.BaseWindowedBolt;
-import com.alibaba.jstorm.window.WindowAssigner;
-import com.alibaba.jstorm.window.WindowedBoltExecutor;
-import java.io.NotSerializableException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.json.simple.JSONValue;
-
-import com.alibaba.jstorm.utils.JStormUtils;
 
 import backtype.storm.Config;
 import backtype.storm.generated.Bolt;
@@ -55,6 +39,21 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
 import backtype.storm.windowing.TupleWindow;
+import com.alibaba.jstorm.cluster.Common;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.window.BaseWindowedBolt;
+import com.alibaba.jstorm.window.WindowAssigner;
+import com.alibaba.jstorm.window.WindowedBoltExecutor;
+import org.json.simple.JSONValue;
+
+import java.io.NotSerializableException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * TopologyBuilder exposes the Java API for specifying a topology for Storm to execute. Topologies are Thrift structures in the end, but since the Thrift API is
@@ -101,6 +100,7 @@ import backtype.storm.windowing.TupleWindow;
  * </p>
  */
 public class TopologyBuilder {
+
     protected Map<String, IRichBolt> _bolts = new HashMap<>();
     protected Map<String, IRichSpout> _spouts = new HashMap<>();
     protected Map<String, ComponentCommon> _commons = new HashMap<>();
@@ -251,14 +251,13 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, BaseWindowedBolt<Tuple> bolt, Number parallelism_hint) throws
-            IllegalArgumentException {
+                                                                                                  IllegalArgumentException {
         boolean isEventTime = WindowAssigner.isEventTime(bolt.getWindowAssigner());
         if (isEventTime && bolt.getTimestampExtractor() == null) {
             throw new IllegalArgumentException("timestamp extractor must be defined in event time!");
         }
         return setBolt(id, new WindowedBoltExecutor(bolt), parallelism_hint);
     }
-
 
     /**
      * Define a new bolt in this topology. This defines a stateful bolt, that requires its
@@ -269,6 +268,7 @@ public class TopologyBuilder {
      * The framework provides at-least once guarantee for the state updates. Bolts (both stateful and non-stateful) in a stateful topology
      * are expected to anchor the tuples while emitting and ack the input tuples once its processed.
      * </p>
+     *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the stateful bolt
      * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somwehere around the cluster.
@@ -279,6 +279,7 @@ public class TopologyBuilder {
         hasStatefulBolt = true;
         return setBolt(id, new StatefulBoltExecutor<T>(bolt), parallelism_hint);
     }
+
     /**
      * Define a new bolt in this topology. This defines a stateful windowed bolt, intended for stateful
      * windowing operations. The {@link IStatefulWindowedBolt#execute(TupleWindow)} method is triggered
@@ -335,25 +336,28 @@ public class TopologyBuilder {
     public SpoutDeclarer setSpout(String id, IControlSpout spout) {
         return setSpout(id, spout, null);
     }
+
     public SpoutDeclarer setSpout(String id, IControlSpout spout, Number parallelism_hint) {
         return setSpout(id, new ControlSpoutExecutor(spout), parallelism_hint);
     }
+
     /**
      * Define a new bolt in this topology. This defines a control bolt, which is a simpler to use but more restricted kind of bolt. Control bolts are intended for
      * making sending control message more simply
+     *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the control bolt
      * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somwehere around
-     *            the cluster.
+     * the cluster.
      * @return use the returned object to declare the inputs to this component
      */
     public BoltDeclarer setBolt(String id, IControlBolt bolt, Number parallelism_hint) {
         return setBolt(id, new ControlBoltExecutor(bolt), parallelism_hint);
     }
+
     public BoltDeclarer setBolt(String id, IControlBolt bolt) {
         return setBolt(id, bolt, null);
     }
-
 
     public void setStateSpout(String id, IRichStateSpout stateSpout) throws IllegalArgumentException {
         setStateSpout(id, stateSpout, null);
@@ -370,13 +374,12 @@ public class TopologyBuilder {
      * @param workerHook the lifecycle hook to add
      */
     public void addWorkerHook(IWorkerHook workerHook) {
-        if(null == workerHook) {
+        if (null == workerHook) {
             throw new IllegalArgumentException("WorkerHook must not be null.");
         }
 
         _workerHooks.add(ByteBuffer.wrap(Utils.javaSerialize(workerHook)));
     }
-
 
     protected void validateUnusedId(String id) {
         if (_bolts.containsKey(id)) {
@@ -455,6 +458,7 @@ public class TopologyBuilder {
             component.put_to_inputs(streamId, Grouping.all(new NullStruct()));
         }
     }
+
     private ComponentCommon getComponentCommon(String id, IComponent component) {
         ComponentCommon ret = new ComponentCommon(_commons.get(id));
 
@@ -471,7 +475,7 @@ public class TopologyBuilder {
         common.set_inputs(new HashMap<GlobalStreamId, Grouping>());
         if (parallelism != null) {
             int dop = parallelism.intValue();
-            if(dop < 1) {
+            if (dop < 1) {
                 throw new IllegalArgumentException("Parallelism must be positive.");
             }
             common.set_parallelism_hint(dop);
@@ -479,7 +483,7 @@ public class TopologyBuilder {
             common.set_parallelism_hint(1);
         }
         Map conf = component.getComponentConfiguration();
-        if(conf!=null) common.set_json_conf(JSONValue.toJSONString(conf));
+        if (conf != null) common.set_json_conf(JSONValue.toJSONString(conf));
         _commons.put(id, common);
     }
 
@@ -496,6 +500,7 @@ public class TopologyBuilder {
     }
 
     protected class ConfigGetter<T extends ComponentConfigurationDeclarer> extends BaseConfigurationDeclarer<T> {
+
         String _id;
 
         public ConfigGetter(String id) {

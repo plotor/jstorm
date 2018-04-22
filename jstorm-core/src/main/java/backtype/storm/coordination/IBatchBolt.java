@@ -15,18 +15,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.coordination;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IComponent;
 import backtype.storm.tuple.Tuple;
+
 import java.io.Serializable;
 import java.util.Map;
 
+/**
+ * IBatchBolt 主要用于 Storm 中的批处理，目前 Storm 主要基于该接口来实现可靠的消息传输，
+ * 在这种情况下，批处理会比单一消息处理更为高效。
+ *
+ * Storm 的事务 Topology 和 Trident 主要基于 IBatchBolt 实现
+ *
+ * 使用 IBatchBolt，Storm 会自动帮用户进行 ack、fail 和 anchor 操作，用户不需要关心这一点
+ *
+ * @param <T>
+ */
 public interface IBatchBolt<T> extends Serializable, IComponent {
+
+    /* 使用 BatchOutputCollector 作为输出收集器 */
+
     void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, T id);
 
     void execute(Tuple tuple);
 
+    /**
+     * 在批处理结束时被调用
+     */
     void finishBatch();
+
 }

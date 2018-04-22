@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.generated.GlobalStreamId;
@@ -22,6 +23,11 @@ import backtype.storm.generated.Grouping;
 import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.tuple.Fields;
 
+/**
+ * 定义了多种分组方式
+ *
+ * @param <T>
+ */
 public interface InputDeclarer<T extends InputDeclarer> {
     /**
      * The stream is partitioned by the fields specified in the grouping.

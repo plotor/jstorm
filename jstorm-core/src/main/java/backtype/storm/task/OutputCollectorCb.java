@@ -25,6 +25,7 @@ import java.util.List;
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public abstract class OutputCollectorCb implements IOutputCollector {
+
     protected IOutputCollector delegate;
 
     public OutputCollectorCb() {

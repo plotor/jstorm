@@ -15,11 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.coordination;
 
 import backtype.storm.utils.Utils;
+
 import java.util.List;
 
+/**
+ * 数据批处理数据收集器
+ */
 public abstract class BatchOutputCollector {
 
     /**

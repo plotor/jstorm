@@ -15,10 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.tuple.Fields;
 
+/**
+ * 定义了 topology 中每个组件的输出字段声明，
+ * 每个 topology 都需要基于此接口来指定输出到哪些流、声明输出的字段列表以及指明输出流是否是直接流（Direct Stream）
+ */
 public interface OutputFieldsDeclarer {
     /**
      * Uses default stream id.

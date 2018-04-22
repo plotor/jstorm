@@ -15,28 +15,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.spout;
 
 import backtype.storm.task.TopologyContext;
-import java.util.Map;
+
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * ISpout is the core interface for implementing spouts. A Spout is responsible for feeding messages into the topology for processing. For every tuple emitted
  * by a spout, Storm will track the (potentially very large) DAG of tuples generated based on a tuple emitted by the spout. When Storm detects that every tuple
  * in that DAG has been successfully processed, it will send an ack message to the Spout.
- * 
+ *
  * <p>
  * If a tuple fails to be fully processed within the configured timeout for the topology (see {@link backtype.storm.Config}), Storm will send a fail message to
  * the spout for the message.
  * </p>
- * 
+ *
  * <p>
  * When a Spout emits a tuple, it can tag the tuple with a message id. The message id can be any type. When Storm acks or fails a message, it will pass back to
  * the spout the same message id to identify which tuple it's referring to. If the spout leaves out the message id, or sets it to null, then Storm will not
  * track the message and the spout will not receive any ack or fail callbacks for the message.
  * </p>
- * 
+ *
  * <p>
  * Storm executes ack, fail, and nextTuple all on the same thread. This means that an implementor of an ISpout does not need to worry about concurrency issues
  * between those methods. However, it also means that an implementor must ensure that nextTuple is non-blocking: otherwise the method could block acks and fails
@@ -44,27 +46,33 @@ import java.io.Serializable;
  * </p>
  */
 public interface ISpout extends Serializable {
+
+    /*
+     * nextTuple、ack，以及 fail 方法均在同一个线程中被调用，
+     * 如果 nextTuple 被阻塞，其他方法也会被阻塞
+     */
+
     /**
      * Called when a task for this component is initialized within a worker on the cluster. It provides the spout with the environment in which the spout
      * executes.
-     * 
+     *
      * <p>
      * This includes the:
      * </p>
-     * 
+     *
      * @param conf The Storm configuration for this spout. This is the configuration provided to the topology merged in with cluster configuration on this
-     *            machine.
+     * machine.
      * @param context This object can be used to get information about this task's place within the topology, including the task id and component id of this
-     *            task, input and output information, etc.
+     * task, input and output information, etc.
      * @param collector The collector is used to emit tuples from this spout. Tuples can be emitted at any time, including the open and close methods. The
-     *            collector is thread-safe and should be saved as an instance variable of this spout object.
+     * collector is thread-safe and should be saved as an instance variable of this spout object.
      */
     void open(Map conf, TopologyContext context, SpoutOutputCollector collector);
 
     /**
      * Called when an ISpout is going to be shutdown. There is no guarentee that close will be called, because the supervisor kill -9's worker processes on the
      * cluster.
-     * 
+     *
      * <p>
      * The one context where close is guaranteed to be called is a topology is killed when running Storm in local mode.
      * </p>

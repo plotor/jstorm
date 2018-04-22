@@ -18,7 +18,38 @@
 
 package backtype.storm.utils;
 
+import backtype.storm.Config;
+import backtype.storm.generated.ComponentCommon;
+import backtype.storm.generated.ComponentObject;
+import backtype.storm.generated.StormTopology;
+import backtype.storm.serialization.DefaultSerializationDelegate;
+import backtype.storm.serialization.SerializationDelegate;
+import clojure.lang.IFn;
+import clojure.lang.RT;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.LoadConf;
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.io.input.ClassLoaderObjectInputStream;
+import org.apache.commons.lang.StringUtils;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.thrift.TBase;
+import org.apache.thrift.TDeserializer;
+import org.apache.thrift.TException;
+import org.apache.thrift.TSerializer;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Id;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -65,40 +96,6 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.io.input.ClassLoaderObjectInputStream;
-import org.apache.commons.lang.StringUtils;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TDeserializer;
-import org.apache.thrift.TException;
-import org.apache.thrift.TSerializer;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Id;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.LoadConf;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import backtype.storm.Config;
-import backtype.storm.generated.ComponentCommon;
-import backtype.storm.generated.ComponentObject;
-import backtype.storm.generated.StormTopology;
-import backtype.storm.serialization.DefaultSerializationDelegate;
-import backtype.storm.serialization.SerializationDelegate;
-import clojure.lang.IFn;
-import clojure.lang.RT;
 
 @SuppressWarnings("unused,unchecked")
 public class Utils {
@@ -172,7 +169,6 @@ public class Utils {
         // return serializationDelegate.deserialize(serialized, clazz);
         return (T) javaDeserialize(serialized);
     }
-
 
     public static <T> T thriftDeserialize(Class c, byte[] b, int offset, int length) {
         try {
@@ -353,6 +349,11 @@ public class Utils {
 
     private static Map DEFAULT_CONF = null;
 
+    /**
+     * 加载 defaults.yaml 文件
+     *
+     * @return
+     */
     public static Map readDefaultConfig() {
         synchronized (Utils.class) {
             if (DEFAULT_CONF == null) {
@@ -390,13 +391,13 @@ public class Utils {
          * Trident and old transaction implementation do not work on batch mode. So, for the relative topology builder
          */
         String batchOptions = System.getProperty(ConfigExtension.TASK_BATCH_TUPLE);
-        if (!StringUtils.isBlank(batchOptions)) {
+        if (StringUtils.isNotBlank(batchOptions)) {
             boolean isBatched = JStormUtils.parseBoolean(batchOptions, true);
             ConfigExtension.setTaskBatchTuple(ret, isBatched);
             System.out.println(ConfigExtension.TASK_BATCH_TUPLE + " is " + batchOptions);
         }
         String ackerOptions = System.getProperty(Config.TOPOLOGY_ACKER_EXECUTORS);
-        if (!StringUtils.isBlank(ackerOptions)) {
+        if (StringUtils.isNotBlank(ackerOptions)) {
             Integer ackerNum = JStormUtils.parseInt(ackerOptions, 0);
             ret.put(Config.TOPOLOGY_ACKER_EXECUTORS, ackerNum);
             System.out.println(Config.TOPOLOGY_ACKER_EXECUTORS + " is " + ackerNum);
@@ -404,6 +405,11 @@ public class Utils {
         return ret;
     }
 
+    /**
+     * 解析 JSTORM_HOME
+     *
+     * @param conf
+     */
     public static void replaceLocalDir(Map<Object, Object> conf) {
         String stormHome = System.getProperty("jstorm.home");
         boolean isEmpty = StringUtils.isBlank(stormHome);
@@ -447,24 +453,30 @@ public class Utils {
         } catch (FileNotFoundException e) {
             ret = null;
         }
-        if (ret == null)
+        if (ret == null) {
             ret = new HashMap();
+        }
 
         return new HashMap(ret);
     }
 
     public static Map readStormConfig() {
+        // 加载 defaults.yaml 文件
         Map ret = readDefaultConfig();
         String confFile = System.getProperty("storm.conf.file");
         Map storm;
         if (StringUtils.isBlank(confFile)) {
+            // 没有配置的话就会默认加载 storm.yaml
             storm = LoadConf.findAndReadYaml("storm.yaml", false, false);
         } else {
+            // 加载自定义的配置文件
             storm = loadDefinedConf(confFile);
         }
         ret.putAll(storm);
+        // 解析命令行参数
         ret.putAll(readCommandLineOpts());
 
+        // 替换 JSTORM_HOME 占位符
         replaceLocalDir(ret);
         return ret;
     }
@@ -480,8 +492,9 @@ public class Utils {
     }
 
     private static Object normalizeConf(Object conf) {
-        if (conf == null)
+        if (conf == null) {
             return new HashMap();
+        }
         if (conf instanceof Map) {
             Map confMap = new HashMap((Map) conf);
             for (Object key : confMap.keySet()) {
@@ -551,10 +564,12 @@ public class Utils {
                 }
             }
         } finally {
-            if (out != null)
+            if (out != null) {
                 out.close();
-            if (client != null)
+            }
+            if (client != null) {
                 client.close();
+            }
         }
     }
 
@@ -728,7 +743,7 @@ public class Utils {
 
     public static long generateId(Random rand) {
         long ret = rand.nextLong();
-        while(ret == 0) {
+        while (ret == 0) {
             ret = rand.nextLong();
         }
         return ret;
@@ -772,8 +787,8 @@ public class Utils {
     /**
      * Copies from one stream to another.
      *
-     * @param in       InputStream to read from
-     * @param out      OutputStream to write to
+     * @param in InputStream to read from
+     * @param out OutputStream to write to
      * @param buffSize the size of the buffer
      */
     public static void copyBytes(InputStream in, OutputStream out, int buffSize)
@@ -808,7 +823,7 @@ public class Utils {
      * <p/>
      * This utility will untar ".tar" files and ".tar.gz","tgz" files.
      *
-     * @param inFile    The tar file as input.
+     * @param inFile The tar file as input.
      * @param targetDir The untar directory where to untar the tar file.
      * @throws IOException
      */
@@ -956,7 +971,6 @@ public class Utils {
             src.delete();
         }
     }
-
 
     public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root) {
         return newCurator(conf, servers, port, root, null);

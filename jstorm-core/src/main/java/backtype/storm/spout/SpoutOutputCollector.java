@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.spout;
 
 import backtype.storm.task.ICollectorCallback;
@@ -29,6 +30,7 @@ import java.util.List;
  * failed later on. This is the Spout portion of Storm's API to guarantee that each message is fully processed at least once.
  */
 public class SpoutOutputCollector extends SpoutOutputCollectorCb {
+
     SpoutOutputCollectorCb _delegate;
 
     public SpoutOutputCollector(ISpoutOutputCollector delegate) {
@@ -87,13 +89,11 @@ public class SpoutOutputCollector extends SpoutOutputCollectorCb {
      *
      * @return the list of task ids that this tuple was sent to
      */
-    public List<Integer> emit(String streamId, List<Object> tuple,
-                              Object messageId) {
+    public List<Integer> emit(String streamId, List<Object> tuple, Object messageId) {
         return _delegate.emit(streamId, tuple, messageId);
     }
 
-    public List<Integer> emit(String streamId, List<Object> tuple,
-                              Object messageId, ICollectorCallback callback) {
+    public List<Integer> emit(String streamId, List<Object> tuple, Object messageId, ICollectorCallback callback) {
         return _delegate.emit(streamId, tuple, messageId, callback);
     }
 
@@ -108,6 +108,7 @@ public class SpoutOutputCollector extends SpoutOutputCollectorCb {
      * @return the list of task ids that this tuple was sent to
      */
     public List<Integer> emit(List<Object> tuple, Object messageId) {
+        // 使用默认的 stream id
         return emit(Utils.DEFAULT_STREAM_ID, tuple, messageId);
     }
 
@@ -147,13 +148,11 @@ public class SpoutOutputCollector extends SpoutOutputCollectorCb {
      * specified task must use a direct grouping on this stream to receive the
      * message. The emitted values must be immutable.
      */
-    public void emitDirect(int taskId, String streamId, List<Object> tuple,
-                           Object messageId) {
+    public void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId) {
         _delegate.emitDirect(taskId, streamId, tuple, messageId);
     }
 
-    public void emitDirect(int taskId, String streamId, List<Object> tuple,
-                           Object messageId, ICollectorCallback callback) {
+    public void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId, ICollectorCallback callback) {
         _delegate.emitDirect(taskId, streamId, tuple, messageId, callback);
     }
 
@@ -215,7 +214,7 @@ public class SpoutOutputCollector extends SpoutOutputCollectorCb {
     }
 
     @Override
-    public void flush(){
+    public void flush() {
         _delegate.flush();
     }
 

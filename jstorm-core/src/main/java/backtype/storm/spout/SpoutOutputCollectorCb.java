@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.spout;
 
 import backtype.storm.task.ICollectorCallback;
@@ -25,6 +26,7 @@ import java.util.List;
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public abstract class SpoutOutputCollectorCb implements ISpoutOutputCollector {
+
     protected ISpoutOutputCollector delegate;
 
     public SpoutOutputCollectorCb() {
@@ -43,15 +45,11 @@ public abstract class SpoutOutputCollectorCb implements ISpoutOutputCollector {
     public abstract List<Integer> emitCtrl(String streamId, List<Object> tuple, Object messageId);
 
     public void emitBarrier() {
-        
     }
 
-
     public void flush() {
-        
     }
 
     public void setBatchId(long batchId) {
-        
     }
 }

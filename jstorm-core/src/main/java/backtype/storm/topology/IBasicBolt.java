@@ -15,18 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
+
 import java.util.Map;
 
+/**
+ * 与 IBolt 基本一致，区别在于：
+ *
+ * 1. 输出收集器使用 BasicOutputCollector，并且该参数放置在 execute 方法中，而不是 prepare 中
+ * 2. 实现了 IComponent 接口
+ *
+ * 使用 IBasicBolt，Storm 会自动帮用户进行 ack、fail 和 anchor 操作，用户不需要关心这一点，这是由执行器 BasicBoltExecutor 实现的
+ */
 public interface IBasicBolt extends IComponent {
+
+    /* 使用 BasicOutputCollector 作为输出收集器 */
+
     void prepare(Map stormConf, TopologyContext context);
 
     /**
      * Process the input tuple and optionally emit new tuples based on the input tuple.
-     * 
+     *
      * All acking is managed for you. Throw a FailedException if you want to fail the tuple.
      */
     void execute(Tuple input, BasicOutputCollector collector);

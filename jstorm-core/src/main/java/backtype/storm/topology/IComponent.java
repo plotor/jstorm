@@ -15,26 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import java.io.Serializable;
 import java.util.Map;
 
 /**
- * Common methods for all possible components in a topology. This interface is used when defining topologies using the Java API.
+ * 组件接口
+ *
+ * Common methods for all possible components in a topology.
+ * This interface is used when defining topologies using the Java API.
  */
 public interface IComponent extends Serializable {
 
     /**
-     * Declare the output schema for all the streams of this topology.
+     * 定义组件输出的 Schema
      *
      * @param declarer this is used to declare output stream ids, output fields, and whether or not each output stream is a direct stream
      */
     void declareOutputFields(OutputFieldsDeclarer declarer);
 
     /**
-     * Declare configuration specific to this component. Only a subset of the "topology.*" configs can be overridden. The component configuration can be further
-     * overridden when constructing the topology using {@link TopologyBuilder}
+     * 描述一些与组件相关的配置
+     *
+     * Declare configuration specific to this component.
+     * Only a subset of the "topology.*" configs can be overridden.
+     * The component configuration can be further overridden when constructing the topology using {@link TopologyBuilder}
      */
     Map<String, Object> getComponentConfiguration();
 
