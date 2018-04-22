@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.spout;
 
 import backtype.storm.Config;
@@ -28,6 +29,9 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.ShellProcess;
 import clojure.lang.RT;
 import com.google.common.util.concurrent.MoreExecutors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -36,10 +40,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ShellSpout implements ISpout {
+
+    private static final long serialVersionUID = -6236877632615254121L;
+
     public static Logger LOG = LoggerFactory.getLogger(ShellSpout.class);
 
     private SpoutOutputCollector _collector;

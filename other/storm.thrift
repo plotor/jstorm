@@ -62,8 +62,13 @@ union Grouping {
 }
 
 struct StreamInfo {
+
+  // 输出字段列表
   1: required list<string> output_fields;
+
+  // 是否为 direct 流
   2: required bool direct;
+
 }
 
 struct ShellComponent {
@@ -78,19 +83,29 @@ union ComponentObject {
   3: JavaObject java_object;
 }
 
+/**
+ * 用来表示 Topology 的基础对象
+ **/
 struct ComponentCommon {
-  1: required map<GlobalStreamId, Grouping> inputs;
-  2: required map<string, StreamInfo> streams; //key is stream id
-  3: optional i32 parallelism_hint; //how many threads across the cluster should be dedicated to this component
 
-  // component specific configuration respects:
-  // topology.debug: false
-  // topology.max.task.parallelism: null // can replace isDistributed with this
-  // topology.max.spout.pending: null
-  // topology.kryo.register // this is the only additive one
-  
-  // component specific configuration
+  // 表示该组件将从哪些 GlobalStreamId 以何种分组方式接收数据
+  1: required map<GlobalStreamId, Grouping> inputs;
+
+  // 表示该组件要输出的所有流
+  2: required map<string, StreamInfo> streams; // key is stream id
+
+  // 组件并行度，即多少个线程，这些线程可能分布在不同的机器以及进程空间中
+  3: optional i32 parallelism_hint;
+
+  /**
+   * 组件相关的配置:
+   * topology.debug: false  // 如果为 true 则会打印所有发送出去的消息
+   * topology.max.task.parallelism: null // 任务的最大并行度，通常用于测试
+   * topology.max.spout.pending: null // 表示最多允许多少没有被 ack/fail 的消息在系统中运行
+   * topology.kryo.register // kryo 序列化注册列表
+   **/
   4: optional string json_conf;
+
 }
 
 struct SpoutSpec {

@@ -30,6 +30,9 @@ import backtype.storm.state.ISubscribedState;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
 import com.alibaba.jstorm.cluster.StormClusterState;
+import org.apache.commons.lang.NotImplementedException;
+import org.json.simple.JSONValue;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,8 +42,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.lang.NotImplementedException;
-import org.json.simple.JSONValue;
 
 /**
  * A TopologyContext is given to bolts and spouts in their "prepare" and "open" methods, respectively.
@@ -103,7 +104,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * </pre>
      *
      * @param componentId the id of the StateSpout component to subscribe to
-     * @param obj         Provided ISubscribedState implementation
+     * @param obj Provided ISubscribedState implementation
      * @return Returns the ISubscribedState object provided
      */
     public <T extends ISubscribedState> T setSubscribedState(String componentId, T obj) {
@@ -119,8 +120,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * </pre>
      *
      * @param componentId the id of the StateSpout component to subscribe to
-     * @param streamId    the stream to subscribe to
-     * @param obj         Provided ISubscribedState implementation
+     * @param streamId the stream to subscribe to
+     * @param obj Provided ISubscribedState implementation
      * @return Returns the ISubscribedState object provided
      */
     public <T extends ISubscribedState> T setSubscribedState(String componentId, String streamId, T obj) {

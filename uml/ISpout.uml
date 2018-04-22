@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>backtype.storm.spout.ISpout</OriginalElement>
+  <nodes>
+    <node x="1191.0" y="299.0">com.alibaba.jstorm.transactional.spout.AckTransactionSpout</node>
+    <node x="892.0" y="299.0">backtype.storm.testing.FeederSpout</node>
+    <node x="1547.75" y="206.0">com.alibaba.jstorm.batch.impl.BatchSpoutTrigger</node>
+    <node x="1825.0" y="299.0">com.alibaba.jstorm.transactional.spout.BasicTransactionSpout</node>
+    <node x="591.0000000000001" y="206.0">backtype.storm.topology.base.BaseRichSpout</node>
+    <node x="1046.0" y="299.0">backtype.storm.drpc.DRPCSpout</node>
+    <node x="1294.75" y="206.0">com.alibaba.jstorm.transactional.spout.ITransactionSpoutExecutor</node>
+    <node x="1960.75" y="206.0">com.alibaba.jstorm.transactional.spout.TransactionSpout</node>
+    <node x="0.0" y="206.0">backtype.storm.testing.PythonShellMetricsSpout</node>
+    <node x="498.0" y="299.0">backtype.storm.testing.SpoutTracker</node>
+    <node x="215.0" y="299.0">backtype.storm.transactional.TransactionalSpoutCoordinator</node>
+    <node x="1404.5" y="382.0">com.alibaba.jstorm.transactional.spout.BasicTransactionSpoutExecutor</node>
+    <node x="2148.75" y="206.0">storm.trident.spout.RichSpoutBatchTriggerer</node>
+    <node x="1741.75" y="206.0">backtype.storm.topology.ControlSpoutExecutor</node>
+    <node x="1402.0" y="299.0">com.alibaba.jstorm.transactional.spout.IBasicTransactionSpoutExecutor</node>
+    <node x="31.0" y="299.0">backtype.storm.spout.CheckpointSpout</node>
+    <node x="1049.0833333333335" y="83.0">backtype.storm.topology.IRichSpout</node>
+    <node x="239.0000000000001" y="206.0">backtype.storm.clojure.RichShellSpout</node>
+    <node x="656.0" y="299.0">storm.trident.topology.MasterBatchCoordinator</node>
+    <node x="2048.0" y="299.0">com.alibaba.jstorm.transactional.spout.ScheduleTransactionSpout</node>
+    <node x="688.7833333333334" y="0.0">backtype.storm.spout.ISpout</node>
+    <node x="105.12500000000011" y="83.0">backtype.storm.spout.ShellSpout</node>
+    <node x="875.1548611111111" y="206.0">backtype.storm.clojure.ClojureSpout</node>
+    <node x="409.0000000000001" y="206.0">backtype.storm.testing.FixedTupleSpout</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="com.alibaba.jstorm.transactional.spout.ITransactionSpoutExecutor" target="backtype.storm.topology.IRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="1411.25" y="186.0" />
+      <point x="1116.1833333333334" y="186.0" />
+      <point x="6.099999999999909" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.base.BaseRichSpout" target="backtype.storm.topology.IRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="665.5000000000001" y="176.0" />
+      <point x="1091.7833333333333" y="176.0" />
+      <point x="-18.299999999999955" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.batch.impl.BatchSpoutTrigger" target="backtype.storm.topology.IRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="1634.75" y="176.0" />
+      <point x="1128.3833333333332" y="176.0" />
+      <point x="18.299999999999955" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.PythonShellMetricsSpout" target="backtype.storm.spout.ShellSpout">
+      <point x="-54.75" y="-16.5" />
+      <point x="54.75" y="186.0" />
+      <point x="135.3750000000001" y="186.0" />
+      <point x="-30.25" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.FixedTupleSpout" target="backtype.storm.topology.IRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="490.0000000000001" y="166.0" />
+      <point x="1079.5833333333335" y="166.0" />
+      <point x="-30.5" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.FeederSpout" target="backtype.storm.topology.base.BaseRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="959.0" y="269.0" />
+      <point x="702.7500000000001" y="269.0" />
+      <point x="37.25" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.transactional.TransactionalSpoutCoordinator" target="backtype.storm.topology.base.BaseRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="346.5" y="269.0" />
+      <point x="628.2500000000001" y="269.0" />
+      <point x="-37.25" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.spout.IBasicTransactionSpoutExecutor" target="com.alibaba.jstorm.transactional.spout.ITransactionSpoutExecutor">
+      <point x="0.0" y="-16.5" />
+      <point x="1536.0" y="279.0" />
+      <point x="1469.5" y="279.0" />
+      <point x="58.25" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.clojure.ClojureSpout" target="backtype.storm.topology.IRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="943.6548611111111" y="186.0" />
+      <point x="1103.9833333333336" y="186.0" />
+      <point x="-6.099999999999909" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.PythonShellMetricsSpout" target="backtype.storm.topology.IRichSpout">
+      <point x="54.75" y="-16.5" />
+      <point x="164.25" y="146.0" />
+      <point x="1055.1833333333334" y="146.0" />
+      <point x="-54.90000000000009" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.spout.CheckpointSpout" target="backtype.storm.topology.base.BaseRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="113.0" y="259.0" />
+      <point x="603.4166666666667" y="259.0" />
+      <point x="-62.08333333333337" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.spout.ShellSpout" target="backtype.storm.spout.ISpout">
+      <point x="0.0" y="-16.5" />
+      <point x="165.6250000000001" y="58.0" />
+      <point x="712.0333333333334" y="58.0" />
+      <point x="-23.25" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.ControlSpoutExecutor" target="backtype.storm.topology.IRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="1841.25" y="166.0" />
+      <point x="1140.5833333333335" y="166.0" />
+      <point x="30.5" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.spout.BasicTransactionSpoutExecutor" target="com.alibaba.jstorm.transactional.spout.IBasicTransactionSpoutExecutor">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.clojure.RichShellSpout" target="backtype.storm.spout.ShellSpout">
+      <point x="-37.5" y="-16.5" />
+      <point x="276.5000000000001" y="136.0" />
+      <point x="195.8750000000001" y="136.0" />
+      <point x="30.25" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.SpoutTracker" target="backtype.storm.topology.base.BaseRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="567.0" y="279.0" />
+      <point x="653.0833333333335" y="279.0" />
+      <point x="-12.416666666666629" y="16.5" />
+    </edge>
+    <edge source="storm.trident.topology.MasterBatchCoordinator" target="backtype.storm.topology.base.BaseRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="764.0" y="279.0" />
+      <point x="677.9166666666667" y="279.0" />
+      <point x="12.416666666666629" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.spout.AckTransactionSpout" target="com.alibaba.jstorm.transactional.spout.ITransactionSpoutExecutor">
+      <point x="0.0" y="-16.5" />
+      <point x="1286.5" y="279.0" />
+      <point x="1353.0" y="279.0" />
+      <point x="-58.25" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IRichSpout" target="backtype.storm.spout.ISpout">
+      <point x="0.0" y="-16.5" />
+      <point x="1110.0833333333335" y="58.0" />
+      <point x="758.5333333333334" y="58.0" />
+      <point x="23.25" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.spout.TransactionSpout" target="backtype.storm.topology.IRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="2044.75" y="156.0" />
+      <point x="1152.7833333333333" y="156.0" />
+      <point x="42.700000000000045" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.drpc.DRPCSpout" target="backtype.storm.topology.base.BaseRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="1108.5" y="259.0" />
+      <point x="727.5833333333334" y="259.0" />
+      <point x="62.08333333333326" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.spout.ScheduleTransactionSpout" target="com.alibaba.jstorm.transactional.spout.TransactionSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="2163.0" y="279.0" />
+      <point x="2086.75" y="279.0" />
+      <point x="42.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.clojure.RichShellSpout" target="backtype.storm.topology.IRichSpout">
+      <point x="37.5" y="-16.5" />
+      <point x="351.5000000000001" y="156.0" />
+      <point x="1067.3833333333332" y="156.0" />
+      <point x="-42.700000000000045" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.spout.BasicTransactionSpout" target="com.alibaba.jstorm.transactional.spout.TransactionSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="1926.5" y="279.0" />
+      <point x="2002.75" y="279.0" />
+      <point x="-42.0" y="16.5" />
+    </edge>
+    <edge source="storm.trident.spout.RichSpoutBatchTriggerer" target="backtype.storm.topology.IRichSpout">
+      <point x="0.0" y="-16.5" />
+      <point x="2257.25" y="146.0" />
+      <point x="1164.9833333333336" y="146.0" />
+      <point x="54.90000000000009" y="16.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="681.5" y="58.0" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>public</VISIBILITY>
+</Diagram>
+

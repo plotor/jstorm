@@ -15,15 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.generated.StreamInfo;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public class OutputFieldsGetter implements OutputFieldsDeclarer {
+
     private Map<String, StreamInfo> _fields = new HashMap<>();
 
     public void declare(Fields fields) {

@@ -15,7 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.utils;
+
+import backtype.storm.Config;
+import backtype.storm.multilang.BoltMsg;
+import backtype.storm.multilang.ISerializer;
+import backtype.storm.multilang.NoOutputException;
+import backtype.storm.multilang.ShellMsg;
+import backtype.storm.multilang.SpoutMsg;
+import backtype.storm.task.TopologyContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,25 +36,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
-import backtype.storm.multilang.BoltMsg;
-import backtype.storm.multilang.ISerializer;
-import backtype.storm.multilang.NoOutputException;
-import backtype.storm.multilang.ShellMsg;
-import backtype.storm.multilang.SpoutMsg;
-import backtype.storm.task.TopologyContext;
-
 public class ShellProcess implements Serializable {
     public static final Logger LOG = LoggerFactory.getLogger(ShellProcess.class);
     public static Logger ShellLogger;
-    private Process      _subprocess;
-    private InputStream  processErrorStream;
-    private String[]     command;
+    private Process _subprocess;
+    private InputStream processErrorStream;
+    private String[] command;
     private Map<String, String> env = new HashMap<>();
-    public ISerializer   serializer;
+    public ISerializer serializer;
     public Number pid;
     public String componentName;
 
@@ -64,7 +64,6 @@ public class ShellProcess implements Serializable {
             }
         }
     }
-
 
     public Number launch(Map conf, TopologyContext context) {
         ProcessBuilder builder = new ProcessBuilder(command);
@@ -96,7 +95,7 @@ public class ShellProcess implements Serializable {
 
     private ISerializer getSerializer(Map conf) {
         //get factory class name
-        String serializer_className = (String)conf.get(Config.TOPOLOGY_MULTILANG_SERIALIZER);
+        String serializer_className = (String) conf.get(Config.TOPOLOGY_MULTILANG_SERIALIZER);
         LOG.info("Storm multilang serializer: " + serializer_className);
 
         ISerializer serializer;
@@ -174,7 +173,6 @@ public class ShellProcess implements Serializable {
     }
 
     /**
-     * 
      * @return pid, if the process has been launched, null otherwise.
      */
     public Number getPid() {
@@ -182,7 +180,6 @@ public class ShellProcess implements Serializable {
     }
 
     /**
-     * 
      * @return the name of component.
      */
     public String getComponentName() {
@@ -190,7 +187,6 @@ public class ShellProcess implements Serializable {
     }
 
     /**
-     * 
      * @return exit code of the process if process is terminated, -1 if process is not started or terminated.
      */
     public int getExitCode() {

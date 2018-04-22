@@ -56,8 +56,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * TopologyBuilder exposes the Java API for specifying a topology for Storm to execute. Topologies are Thrift structures in the end, but since the Thrift API is
- * so verbose, TopologyBuilder greatly eases the process of creating topologies. The template for creating and submitting a topology looks something like:
+ * TopologyBuilder exposes the Java API for specifying a topology for Storm to execute.
+ * Topologies are Thrift structures in the end, but since the Thrift API is
+ * so verbose, TopologyBuilder greatly eases the process of creating topologies.
+ * The template for creating and submitting a topology looks something like:
  *
  * <pre>
  * TopologyBuilder builder = new TopologyBuilder();
@@ -73,8 +75,8 @@ import java.util.Set;
  * StormSubmitter.submitTopology(&quot;mytopology&quot;, conf, builder.createTopology());
  * </pre>
  *
- * Running the exact same topology in local mode (in process), and configuring it to log all tuples emitted, looks like the following. Note that it lets the
- * topology run for 10 seconds before shutting down the local cluster.
+ * Running the exact same topology in local mode (in process), and configuring it to log all tuples emitted, looks like the following.
+ * Note that it lets the topology run for 10 seconds before shutting down the local cluster.
  *
  * <pre>
  * TopologyBuilder builder = new TopologyBuilder();
@@ -95,8 +97,8 @@ import java.util.Set;
  * </pre>
  *
  * <p>
- * The pattern for TopologyBuilder is to map component ids to components using the setSpout and setBolt methods. Those methods return objects that are then used
- * to declare the inputs for that component.
+ * The pattern for TopologyBuilder is to map component ids to components using the setSpout and setBolt methods.
+ * Those methods return objects that are then used to declare the inputs for that component.
  * </p>
  */
 public class TopologyBuilder {
@@ -114,14 +116,20 @@ public class TopologyBuilder {
     // configuration generated during topology building
     private static Map<String, Object> conf = new HashMap<>();
 
+    /**
+     * 构建 topology
+     *
+     * @return
+     */
     public StormTopology createTopology() {
         Map<String, Bolt> boltSpecs = new HashMap<>();
         Map<String, SpoutSpec> spoutSpecs = new HashMap<>();
-        maybeAddCheckpointSpout();
+        this.maybeAddCheckpointSpout();
+        // 遍历处理 bolt
         for (String boltId : _bolts.keySet()) {
             IRichBolt bolt = _bolts.get(boltId);
-            bolt = maybeAddCheckpointTupleForwarder(bolt);
-            ComponentCommon common = getComponentCommon(boltId, bolt);
+            bolt = this.maybeAddCheckpointTupleForwarder(bolt);
+            ComponentCommon common = this.getComponentCommon(boltId, bolt);
             try {
                 maybeAddCheckpointInputs(common);
                 maybeAddWatermarkInputs(common, bolt);
@@ -399,7 +407,7 @@ public class TopologyBuilder {
      */
     private void maybeAddCheckpointSpout() {
         if (hasStatefulBolt) {
-            setSpout(CheckpointSpout.CHECKPOINT_COMPONENT_ID, new CheckpointSpout(), 1);
+            this.setSpout(CheckpointSpout.CHECKPOINT_COMPONENT_ID, new CheckpointSpout(), 1);
         }
     }
 

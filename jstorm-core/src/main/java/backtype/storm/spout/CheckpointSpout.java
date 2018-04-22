@@ -15,12 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.spout;
-
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.spout.CheckPointState.Action;
@@ -33,6 +29,10 @@ import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 /**
  * Emits checkpoint tuples which is used to save the state of the {@link org.apache.storm.topology.IStatefulComponent}
@@ -43,6 +43,9 @@ import backtype.storm.utils.Utils;
  * @see CheckPointState
  */
 public class CheckpointSpout extends BaseRichSpout {
+
+    private static final long serialVersionUID = -1464157336939037061L;
+
     private static final Logger LOG = LoggerFactory.getLogger(CheckpointSpout.class);
 
     public static final String CHECKPOINT_STREAM_ID = "$checkpoint";
@@ -50,6 +53,7 @@ public class CheckpointSpout extends BaseRichSpout {
     public static final String CHECKPOINT_FIELD_TXID = "txid";
     public static final String CHECKPOINT_FIELD_ACTION = "action";
     private static final String TX_STATE_KEY = "__state";
+
     private TopologyContext context;
     private SpoutOutputCollector collector;
     private long lastCheckpointTs;

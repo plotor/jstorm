@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>backtype.storm.task.IBolt</OriginalElement>
+  <nodes>
+    <node x="2818.5489341085276" y="266.0">backtype.storm.coordination.BatchBoltExecutor</node>
+    <node x="98.01870155038841" y="266.0">backtype.storm.clojure.RichShellBolt</node>
+    <node x="1241.5187015503884" y="349.0">backtype.storm.topology.StatefulBoltExecutor</node>
+    <node x="1039.0187015503884" y="266.0">com.alibaba.jstorm.batch.impl.CoordinatedBolt</node>
+    <node x="2674.5489341085276" y="266.0">backtype.storm.clojure.ClojureBolt</node>
+    <node x="1320.8029069767447" y="432.0">com.alibaba.jstorm.transactional.bolt.AckTransactionBolt</node>
+    <node x="3581.2989341085276" y="349.0">backtype.storm.topology.StatefulWindowedBoltExecutor</node>
+    <node x="842.0187015503884" y="515.0">com.alibaba.jstorm.transactional.bolt.TransactionStatefulBolt</node>
+    <node x="1717.5187015503884" y="349.0">com.alibaba.jstorm.transactional.bolt.ITransactionStatefulBoltExecutor</node>
+    <node x="3542.5489341085276" y="266.0">backtype.storm.topology.WindowedBoltExecutor</node>
+    <node x="2509.0187015503884" y="349.0">backtype.storm.drpc.JoinResult</node>
+    <node x="2111.2687015503884" y="432.0">com.alibaba.jstorm.window.TransactionalWindowedBoltExecutor</node>
+    <node x="143.0" y="93.0">backtype.storm.task.ShellBolt</node>
+    <node x="255.0187015503884" y="266.0">backtype.storm.testing.PythonShellMetricsBolt</node>
+    <node x="3011.5489341085276" y="266.0">backtype.storm.topology.BasicBoltExecutor</node>
+    <node x="2518.5489341085276" y="266.0">backtype.storm.topology.base.BaseRichBolt</node>
+    <node x="4293.048934108528" y="93.0">backtype.storm.testing.NonRichBoltTracker</node>
+    <node x="3840.7989341085276" y="266.0">backtype.storm.topology.IStatefulBolt</node>
+    <node x="4601.048934108528" y="93.0">com.alibaba.jstorm.task.master.TopologyMaster</node>
+    <node x="3992.7989341085276" y="266.0">backtype.storm.transactional.TransactionalSpoutBatchExecutor</node>
+    <node x="3201.5489341085276" y="266.0">backtype.storm.coordination.CoordinatedBolt</node>
+    <node x="4496.048934108528" y="93.0">com.alibaba.jstorm.task.acker.Acker</node>
+    <node x="481.0187015503884" y="266.0">storm.trident.topology.TridentBoltExecutor</node>
+    <node x="3311.631201550388" y="0.0">backtype.storm.task.IBolt</node>
+    <node x="2346.0187015503884" y="349.0">backtype.storm.drpc.ReturnResults</node>
+    <node x="685.0187015503884" y="266.0">backtype.storm.testing.TupleCaptureBolt</node>
+    <node x="1580.875" y="266.0">com.alibaba.jstorm.transactional.bolt.ITransactionBoltExecutor</node>
+    <node x="1219.0187015503884" y="266.0">backtype.storm.topology.CheckpointTupleForwarder</node>
+    <node x="3381.5489341085276" y="266.0">backtype.storm.drpc.KeyedFairBolt</node>
+    <node x="3860.2989341085276" y="349.0">backtype.storm.topology.base.BaseStatefulBolt</node>
+    <node x="2232.0187015503884" y="266.0">com.alibaba.jstorm.window.WindowedBoltExecutor</node>
+    <node x="1632.2687015503884" y="432.0">com.alibaba.jstorm.transactional.bolt.KvStatefulBoltExecutor</node>
+    <node x="2839.424127906977" y="349.0">com.alibaba.jstorm.topology.SingleJoinBolt</node>
+    <node x="0.0" y="93.0">backtype.storm.metric.SystemBolt</node>
+    <node x="1855.2687015503884" y="432.0">com.alibaba.jstorm.transactional.bolt.DefaultStatefulBoltExecutor</node>
+    <node x="868.0187015503884" y="432.0">com.alibaba.jstorm.transactional.bolt.TransactionBolt</node>
+    <node x="2396.7687015503884" y="93.0">backtype.storm.topology.IRichBolt</node>
+    <node x="4290.798934108528" y="266.0">backtype.storm.testing.BoltTracker</node>
+    <node x="1448.5187015503884" y="349.0">com.alibaba.jstorm.transactional.bolt.IRichTransactionBoltExecutor</node>
+    <node x="872.0187015503884" y="266.0">backtype.storm.topology.IRichBatchBolt</node>
+    <node x="867.5187015503884" y="349.0">backtype.storm.topology.IProtoBatchBolt</node>
+    <node x="1826.75" y="266.0">backtype.storm.topology.ControlBoltExecutor</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="backtype.storm.topology.IProtoBatchBolt" target="backtype.storm.topology.IRichBatchBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.task.ShellBolt" target="backtype.storm.task.IBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="197.0" y="63.0" />
+      <point x="3331.631201550388" y="63.0" />
+      <point x="-20.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.task.acker.Acker" target="backtype.storm.task.IBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="4538.548934108528" y="63.0" />
+      <point x="3371.631201550388" y="63.0" />
+      <point x="20.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.bolt.ITransactionBoltExecutor" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="1690.875" y="226.0" />
+      <point x="2437.6437015503884" y="226.0" />
+      <point x="-13.625" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.PythonShellMetricsBolt" target="backtype.storm.task.ShellBolt">
+      <point x="-51.5" y="-16.5" />
+      <point x="306.5187015503884" y="146.0" />
+      <point x="224.0" y="146.0" />
+      <point x="27.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.StatefulWindowedBoltExecutor" target="backtype.storm.topology.WindowedBoltExecutor">
+      <point x="-64.75" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.clojure.ClojureBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="2736.5489341085276" y="236.0" />
+      <point x="2459.4437015503886" y="236.0" />
+      <point x="8.175000000000182" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.bolt.TransactionStatefulBolt" target="com.alibaba.jstorm.transactional.bolt.TransactionBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.BoltTracker" target="backtype.storm.topology.IRichBolt">
+      <point x="-31.25" y="-16.5" />
+      <point x="4322.048934108528" y="156.0" />
+      <point x="2503.0437015503885" y="156.0" />
+      <point x="51.77500000000009" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.NonRichBoltTracker" target="backtype.storm.task.IBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="4384.548934108528" y="73.0" />
+      <point x="3358.297868217055" y="73.0" />
+      <point x="6.666666666666515" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.base.BaseRichBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="2586.5489341085276" y="246.0" />
+      <point x="2453.9937015503883" y="246.0" />
+      <point x="2.724999999999909" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IRichBatchBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="945.5187015503884" y="196.0" />
+      <point x="2421.2937015503885" y="196.0" />
+      <point x="-29.97499999999991" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.bolt.DefaultStatefulBoltExecutor" target="com.alibaba.jstorm.transactional.bolt.ITransactionStatefulBoltExecutor">
+      <point x="0.0" y="-16.5" />
+      <point x="1973.2687015503884" y="412.0" />
+      <point x="1887.5187015503884" y="412.0" />
+      <point x="34.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.TransactionalWindowedBoltExecutor" target="com.alibaba.jstorm.transactional.bolt.ITransactionStatefulBoltExecutor">
+      <point x="-74.75" y="-16.5" />
+      <point x="2186.0187015503884" y="402.0" />
+      <point x="1955.5187015503884" y="402.0" />
+      <point x="102.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.CheckpointTupleForwarder" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="1335.0187015503884" y="216.0" />
+      <point x="2432.1937015503886" y="216.0" />
+      <point x="-19.074999999999818" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.WindowedBoltExecutor" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="2335.5187015503884" y="246.0" />
+      <point x="2448.5437015503885" y="246.0" />
+      <point x="-2.724999999999909" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.ControlBoltExecutor" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="1919.75" y="236.0" />
+      <point x="2443.0937015503882" y="236.0" />
+      <point x="-8.175000000000182" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.drpc.JoinResult" target="backtype.storm.topology.base.BaseRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="2567.0187015503884" y="324.0" />
+      <point x="2586.5489341085276" y="324.0" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.clojure.RichShellBolt" target="backtype.storm.task.ShellBolt">
+      <point x="-34.25" y="-16.5" />
+      <point x="132.2687015503884" y="246.0" />
+      <point x="170.0" y="246.0" />
+      <point x="-27.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.drpc.KeyedFairBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="3452.0489341085276" y="196.0" />
+      <point x="2481.2437015503883" y="196.0" />
+      <point x="29.97499999999991" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.TransactionalWindowedBoltExecutor" target="com.alibaba.jstorm.window.WindowedBoltExecutor">
+      <point x="74.75" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.coordination.CoordinatedBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="3281.5489341085276" y="206.0" />
+      <point x="2475.7937015503885" y="206.0" />
+      <point x="24.52500000000009" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.base.BaseStatefulBolt" target="backtype.storm.topology.IStatefulBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="33.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.bolt.KvStatefulBoltExecutor" target="com.alibaba.jstorm.transactional.bolt.ITransactionStatefulBoltExecutor">
+      <point x="0.0" y="-16.5" />
+      <point x="1733.7687015503884" y="412.0" />
+      <point x="1819.5187015503884" y="412.0" />
+      <point x="-34.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IRichBolt" target="backtype.storm.task.IBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="2451.2687015503884" y="73.0" />
+      <point x="3344.964534883722" y="73.0" />
+      <point x="-6.666666666666515" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.bolt.TransactionBolt" target="backtype.storm.topology.IProtoBatchBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.topology.SingleJoinBolt" target="backtype.storm.topology.base.BaseRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="2910.424127906977" y="324.0" />
+      <point x="2631.882267441861" y="324.0" />
+      <point x="45.333333333333485" y="16.5" />
+    </edge>
+    <edge source="storm.trident.topology.TridentBoltExecutor" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="573.0187015503884" y="176.0" />
+      <point x="2410.3937015503884" y="176.0" />
+      <point x="-40.875" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.coordination.BatchBoltExecutor" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="2905.0489341085276" y="226.0" />
+      <point x="2464.8937015503884" y="226.0" />
+      <point x="13.625" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.BoltTracker" target="backtype.storm.testing.NonRichBoltTracker">
+      <point x="31.25" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.bolt.IRichTransactionBoltExecutor" target="com.alibaba.jstorm.transactional.bolt.ITransactionBoltExecutor">
+      <point x="0.0" y="-16.5" />
+      <point x="1573.0187015503884" y="324.0" />
+      <point x="1635.875" y="324.0" />
+      <point x="-55.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.PythonShellMetricsBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="51.5" y="-16.5" />
+      <point x="409.5187015503884" y="166.0" />
+      <point x="2404.9437015503886" y="166.0" />
+      <point x="-46.32499999999982" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.batch.impl.CoordinatedBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="1119.0187015503884" y="206.0" />
+      <point x="2426.7437015503883" y="206.0" />
+      <point x="-24.52500000000009" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.BasicBoltExecutor" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="3096.5489341085276" y="216.0" />
+      <point x="2470.3437015503882" y="216.0" />
+      <point x="19.074999999999818" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.transactional.TransactionalSpoutBatchExecutor" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="4131.798934108528" y="166.0" />
+      <point x="2497.5937015503882" y="166.0" />
+      <point x="46.32499999999982" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.StatefulWindowedBoltExecutor" target="backtype.storm.topology.IStatefulBolt">
+      <point x="64.75" y="-16.5" />
+      <point x="3775.5489341085276" y="324.0" />
+      <point x="3873.7989341085276" y="324.0" />
+      <point x="-33.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.clojure.RichShellBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="34.25" y="-16.5" />
+      <point x="200.7687015503884" y="156.0" />
+      <point x="2399.4937015503883" y="156.0" />
+      <point x="-51.77500000000009" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.testing.TupleCaptureBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="768.5187015503884" y="186.0" />
+      <point x="2415.8437015503882" y="186.0" />
+      <point x="-35.42500000000018" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.StatefulBoltExecutor" target="backtype.storm.topology.CheckpointTupleForwarder">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.drpc.ReturnResults" target="backtype.storm.topology.base.BaseRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="2417.5187015503884" y="324.0" />
+      <point x="2541.215600775194" y="324.0" />
+      <point x="-45.333333333333485" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.bolt.AckTransactionBolt" target="com.alibaba.jstorm.transactional.bolt.ITransactionStatefulBoltExecutor">
+      <point x="0.0" y="-16.5" />
+      <point x="1409.8029069767447" y="402.0" />
+      <point x="1751.5187015503884" y="402.0" />
+      <point x="-102.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.WindowedBoltExecutor" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="3646.0489341085276" y="186.0" />
+      <point x="2486.6937015503886" y="186.0" />
+      <point x="35.42500000000018" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.bolt.ITransactionStatefulBoltExecutor" target="com.alibaba.jstorm.transactional.bolt.ITransactionBoltExecutor">
+      <point x="0.0" y="-16.5" />
+      <point x="1853.5187015503884" y="324.0" />
+      <point x="1745.875" y="324.0" />
+      <point x="55.0" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.metric.SystemBolt" target="backtype.storm.task.IBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="61.5" y="53.0" />
+      <point x="3318.297868217055" y="53.0" />
+      <point x="-33.333333333333485" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.task.master.TopologyMaster" target="backtype.storm.task.IBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="4680.048934108528" y="53.0" />
+      <point x="3384.964534883722" y="53.0" />
+      <point x="33.333333333333485" y="16.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IStatefulBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="3906.7989341085276" y="176.0" />
+      <point x="2492.1437015503884" y="176.0" />
+      <point x="40.875" y="16.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="0.29351464435146446" x="2380.0" y="274.0" />
+  <SelectedNodes>
+    <node>com.alibaba.jstorm.window.TransactionalWindowedBoltExecutor</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>public</VISIBILITY>
+</Diagram>
+
