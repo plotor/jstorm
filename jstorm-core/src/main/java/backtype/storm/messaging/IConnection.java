@@ -15,13 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.messaging;
 
-import java.util.List;
-
+import backtype.storm.utils.DisruptorQueue;
 import org.jboss.netty.channel.Channel;
 
-import backtype.storm.utils.DisruptorQueue;
+import java.util.List;
 
 public interface IConnection {
 

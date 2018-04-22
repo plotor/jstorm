@@ -17,21 +17,6 @@
  */
 package backtype.storm.coordination;
 
-import static backtype.storm.utils.Utils.get;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.Constants;
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.generated.Grouping;
@@ -47,6 +32,19 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.TimeCacheMap;
 import backtype.storm.utils.Utils;
+import static backtype.storm.utils.Utils.get;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Coordination requires the request ids to be globally unique for a while
@@ -380,7 +378,7 @@ public class CoordinatedBolt implements IRichBolt {
     }
 
     private TupleType getTupleType(Tuple tuple) {
-        if (_idStreamSpec != null && tuple.getSourceGlobalStreamid().equals(_idStreamSpec._id)) {
+        if (_idStreamSpec != null && tuple.getSourceGlobalStreamId().equals(_idStreamSpec._id)) {
             return TupleType.ID;
         } else if (!_sourceArgs.isEmpty() && tuple.getSourceStreamId().equals(Constants.COORDINATED_STREAM_ID)) {
             return TupleType.COORD;

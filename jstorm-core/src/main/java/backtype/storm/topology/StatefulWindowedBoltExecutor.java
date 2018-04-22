@@ -367,7 +367,7 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
         }
 
         static TaskStream fromTuple(Tuple input) {
-            return new TaskStream(input.getSourceTask(), input.getSourceGlobalStreamid());
+            return new TaskStream(input.getSourceTask(), input.getSourceGlobalStreamId());
         }
     }
 }

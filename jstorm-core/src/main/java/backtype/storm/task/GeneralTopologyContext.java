@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.task;
 
 import backtype.storm.Config;
@@ -26,14 +27,17 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.ThriftTopologyUtils;
 import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.cluster.StormConfig;
-
 import org.json.simple.JSONAware;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class GeneralTopologyContext implements JSONAware {
+
     private StormTopology _topology;
     private Map<Integer, String> _taskToComponent;
     private Map<String, List<Integer>> _componentToTasks;
@@ -110,10 +114,11 @@ public class GeneralTopologyContext implements JSONAware {
      */
     public List<Integer> getComponentTasks(String componentId) {
         List<Integer> ret = _componentToTasks.get(componentId);
-        if (ret == null)
+        if (ret == null) {
             return new ArrayList<>();
-        else
+        } else {
             return new ArrayList<>(ret);
+        }
     }
 
     public List<Integer> getComponentsTasks(Set<String> componentIds) {
@@ -178,8 +183,9 @@ public class GeneralTopologyContext implements JSONAware {
             for (GlobalStreamId id : inputs.keySet()) {
                 if (id.get_componentId().equals(componentId)) {
                     Map<String, Grouping> curr = ret.get(id.get_streamId());
-                    if (curr == null)
+                    if (curr == null) {
                         curr = new HashMap<>();
+                    }
                     curr.put(otherComponentId, inputs.get(id));
                     ret.put(id.get_streamId(), curr);
                 }

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.tuple;
 
 /**
@@ -25,7 +26,9 @@ public class AddressedTuple {
      * Destination used when broadcasting a tuple.
      */
     public static final int BROADCAST_DEST = -2;
+
     public final Tuple tuple;
+
     public final int dest;
 
     public AddressedTuple(int dest, Tuple tuple) {
@@ -43,6 +46,6 @@ public class AddressedTuple {
 
     @Override
     public String toString() {
-        return "[dest: "+dest+" tuple: "+tuple+"]";
+        return "[dest: " + dest + " tuple: " + tuple + "]";
     }
 }

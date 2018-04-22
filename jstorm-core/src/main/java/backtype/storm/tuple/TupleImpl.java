@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.tuple;
 
 import backtype.storm.generated.GlobalStreamId;
@@ -32,9 +33,11 @@ import clojure.lang.Obj;
 import clojure.lang.PersistentArrayMap;
 import clojure.lang.Seqable;
 import clojure.lang.Symbol;
+
 import java.util.List;
 
 public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed, IMeta, Tuple {
+
     private List<Object> values;
     private int taskId;
     private String streamId;
@@ -196,7 +199,7 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
         return getFields().select(selector, values);
     }
 
-    public GlobalStreamId getSourceGlobalStreamid() {
+    public GlobalStreamId getSourceGlobalStreamId() {
         return new GlobalStreamId(getSourceComponent(), streamId);
     }
 
@@ -310,8 +313,9 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
 
     public Object nth(int i, Object notfound) {
         Object ret = nth(i);
-        if (ret == null)
+        if (ret == null) {
             ret = notfound;
+        }
         return ret;
     }
 
@@ -323,7 +327,7 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
     /* IMeta */
     public IPersistentMap meta() {
         if (_meta == null) {
-            _meta = new PersistentArrayMap(new Object[]{makeKeyword("stream"), getSourceStreamId(),
+            _meta = new PersistentArrayMap(new Object[] {makeKeyword("stream"), getSourceStreamId(),
                     makeKeyword("component"), getSourceComponent(), makeKeyword("task"), getSourceTask()});
         }
         return _meta;

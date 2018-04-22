@@ -23,6 +23,9 @@ import java.util.ArrayList;
  * A class that contains tuple values. use new Values("field1", 2, 3) syntax to add values.
  */
 public class Values extends ArrayList<Object> {
+
+    private static final long serialVersionUID = -3618205459656720506L;
+
     public static final int OBJECT = 0;
     public static final int STRING = 1;
     public static final int INTEGER = 2;
@@ -34,8 +37,8 @@ public class Values extends ArrayList<Object> {
 
     public Values(Object... vals) {
         super(vals.length);
-        for (Object o : vals) {
-            add(o);
+        for (Object val : vals) {
+            add(val);
         }
         type = OBJECT;
     }

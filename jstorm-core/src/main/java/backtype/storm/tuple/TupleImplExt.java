@@ -15,17 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.tuple;
 
-import java.util.Iterator;
-import java.util.List;
-
+import backtype.storm.task.GeneralTopologyContext;
 import com.alibaba.jstorm.utils.Pair;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-import backtype.storm.task.GeneralTopologyContext;
+import java.util.Iterator;
+import java.util.List;
 
 public class TupleImplExt extends TupleImpl implements TupleExt {
 
