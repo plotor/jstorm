@@ -15,16 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+
 public class BasicBoltExecutor implements IRichBolt {
+
+    private static final long serialVersionUID = 466268975965168507L;
+
     public static Logger LOG = LoggerFactory.getLogger(BasicBoltExecutor.class);
 
     private IBasicBolt _bolt;
@@ -47,11 +52,13 @@ public class BasicBoltExecutor implements IRichBolt {
         _collector.setContext(input);
         try {
             _bolt.execute(input, _collector);
+            // 自动 ack
             _collector.getOutputter().ack(input);
         } catch (FailedException e) {
             if (e instanceof ReportedFailedException) {
                 _collector.reportError(e);
             }
+            // 自动 fail
             _collector.getOutputter().fail(input);
         }
     }

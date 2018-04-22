@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.task.OutputCollector;
@@ -29,6 +30,9 @@ import java.util.Map;
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public class ControlBoltExecutor implements IRichBolt {
+
+    private static final long serialVersionUID = -8796519996526343665L;
+
     public static Logger LOG = LoggerFactory.getLogger(ControlBoltExecutor.class);
 
     private IControlBolt _bolt;

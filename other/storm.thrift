@@ -49,6 +49,9 @@ struct GlobalStreamId {
   #Going to need to add an enum for the stream type (NORMAL or FAILURE)
 }
 
+/**
+ * 消息分组方式
+ **/
 union Grouping {
   1: list<string> fields; //empty list means global grouping
   2: NullStruct shuffle; // tuple is sent to random task
@@ -61,6 +64,9 @@ union Grouping {
   9: NullStruct localFirst; //  local worker shuffle > local node shuffle > other node shuffle
 }
 
+/**
+ * 流信息
+ **/
 struct StreamInfo {
 
   // 输出字段列表
@@ -71,16 +77,29 @@ struct StreamInfo {
 
 }
 
+/**
+ * 用于与非 java 语言交互，通过标准输入输出来交换数据
+ **/
 struct ShellComponent {
   // should change this to 1: required list<string> execution_command;
   1: string execution_command;
   2: string script;
 }
 
+/**
+ * 串行化后的 java 对象 or ShellComponent 对象 or java 对象
+ **/
 union ComponentObject {
+
+  // 记录串行化后的 java 对象
   1: binary serialized_java;
+
+  // ShellComponent 对象
   2: ShellComponent shell;
+
+  // java 对象
   3: JavaObject java_object;
+
 }
 
 /**
@@ -109,14 +128,23 @@ struct ComponentCommon {
 }
 
 struct SpoutSpec {
+
+  // 实现具体 spout 逻辑的对象
   1: required ComponentObject spout_object;
+
+  // 描述其输入输出的 common 对象
   2: required ComponentCommon common;
   // can force a spout to be non-distributed by overriding the component configuration
   // and setting TOPOLOGY_MAX_TASK_PARALLELISM to 1
 }
 
+// BoltSpec
 struct Bolt {
+
+  // 实现具体 bolt 逻辑的对象
   1: required ComponentObject bolt_object;
+
+  // 描述其输入输出的 common 对象
   2: required ComponentCommon common;
 }
 
@@ -127,8 +155,11 @@ struct StateSpoutSpec {
   2: required ComponentCommon common;
 }
 
+/**
+ * 描述 Topology 的组成
+ **/
 struct StormTopology {
-  //ids must be unique across maps
+  // ids must be unique across maps
   // #workers to use is in conf
   1: required map<string, SpoutSpec> spouts;
   2: required map<string, Bolt> bolts;
@@ -163,6 +194,9 @@ exception KeyAlreadyExistsException {
   1: required string msg;
 }
 
+/**
+ * 描述了由用户提交的 Topology 的基本情况，主要供 Nimbus 使用
+ **/
 struct TopologySummary {
   1: required string id;
   2: required string name;
@@ -173,12 +207,17 @@ struct TopologySummary {
   7: optional string errorInfo;
 }
 
+/**
+ * 描述了每一个 Supervisor 的基本信息
+ * Supervisor 代表机器，一个 Supervisor 上可以启动多个 Worker （通常为 4 个），每个 Worker 上可以启动多个 Executor
+ * 主要供 Nimbus 使用
+ **/
 struct SupervisorSummary {
   1: required string host;
   2: required string supervisorId;
   3: required i32 uptimeSecs;
   4: required i32 numWorkers;
-  5: required i32 numUsedWorkers;
+  5: required i32 numUsedWorkers; // 已经占用的 Worker 数目
   6: optional string version;
   7: optional string buildTs;
   8: optional i32 port;
@@ -200,6 +239,9 @@ struct NimbusSummary {
   7: required string version;
 }
 
+/**
+ * 集群中所包含的 Supervisor 的数目及其基本信息，以及正在集群上运行的 Topology 基本信息
+ **/
 struct ClusterSummary {
   1: required NimbusSummary nimbus;
   2: required list<SupervisorSummary> supervisors;
@@ -479,7 +521,9 @@ service Nimbus {
 }
 
 struct DRPCRequest {
+  // 函数的参数列表
   1: required string func_args;
+  // 请求的 request_id
   2: required string request_id;
 }
 

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.spout.SpoutOutputCollector;
@@ -28,6 +29,9 @@ import java.util.Map;
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public class ControlSpoutExecutor implements IRichSpout {
+
+    private static final long serialVersionUID = 1292556119598796181L;
+
     public static Logger LOG = LoggerFactory.getLogger(ControlSpoutExecutor.class);
 
     private IControlSpout _spout;
@@ -76,7 +80,7 @@ public class ControlSpoutExecutor implements IRichSpout {
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return  _spout.getComponentConfiguration();
+        return _spout.getComponentConfiguration();
     }
 
     @Override

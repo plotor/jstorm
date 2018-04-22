@@ -103,8 +103,13 @@ import java.util.Set;
  */
 public class TopologyBuilder {
 
+    /** 存储所有的 Bolt 对象 */
     protected Map<String, IRichBolt> _bolts = new HashMap<>();
+
+    /** 存储所有的 Spout 对象 */
     protected Map<String, IRichSpout> _spouts = new HashMap<>();
+
+    /** 存储所有的 Spout 和 Bolt 对象 */
     protected Map<String, ComponentCommon> _commons = new HashMap<>();
     protected boolean hasStatefulBolt = false;
 
@@ -131,26 +136,26 @@ public class TopologyBuilder {
             bolt = this.maybeAddCheckpointTupleForwarder(bolt);
             ComponentCommon common = this.getComponentCommon(boltId, bolt);
             try {
-                maybeAddCheckpointInputs(common);
-                maybeAddWatermarkInputs(common, bolt);
+                this.maybeAddCheckpointInputs(common);
+                this.maybeAddWatermarkInputs(common, bolt);
+                // 以序列化的方式进行记录
                 boltSpecs.put(boltId, new Bolt(ComponentObject.serialized_java(Utils.javaSerialize(bolt)), common));
             } catch (RuntimeException wrapperCause) {
                 if (wrapperCause.getCause() != null && NotSerializableException.class.equals(wrapperCause.getCause().getClass())) {
                     throw new IllegalStateException(
-                            "Bolt '" + boltId + "' contains a non-serializable field of type "
-                                    + wrapperCause.getCause().getMessage() + ", " +
+                            "Bolt '" + boltId + "' contains a non-serializable field of type " + wrapperCause.getCause().getMessage() + ", " +
                                     "which was instantiated prior to topology creation. "
-                                    + wrapperCause.getCause().getMessage() + " " +
-                                    "should be instantiated within the prepare method of '" + boltId +
-                                    " at the earliest.", wrapperCause);
+                                    + wrapperCause.getCause().getMessage() + " should be instantiated within the prepare method of '" + boltId + " at the earliest.", wrapperCause);
                 }
                 throw wrapperCause;
             }
         }
+        // 遍历处理 spout
         for (String spoutId : _spouts.keySet()) {
             IRichSpout spout = _spouts.get(spoutId);
-            ComponentCommon common = getComponentCommon(spoutId, spout);
+            ComponentCommon common = this.getComponentCommon(spoutId, spout);
             try {
+                // 以序列化的方式进行记录
                 spoutSpecs.put(spoutId, new SpoutSpec(ComponentObject.serialized_java(Utils.javaSerialize(spout)), common));
             } catch (RuntimeException wrapperCause) {
                 if (wrapperCause.getCause() != null && NotSerializableException.class.equals(wrapperCause.getCause().getClass())) {
@@ -163,9 +168,7 @@ public class TopologyBuilder {
             }
         }
 
-        StormTopology stormTopology = new StormTopology(spoutSpecs,
-                boltSpecs,
-                new HashMap<String, StateSpoutSpec>());
+        StormTopology stormTopology = new StormTopology(spoutSpecs, boltSpecs, new HashMap<String, StateSpoutSpec>());
         //stormTopology.set_worker_hooks(_workerHooks);
         return stormTopology;
     }
@@ -179,7 +182,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IRichBolt bolt) throws IllegalArgumentException {
-        return setBolt(id, bolt, null);
+        return this.setBolt(id, bolt, null);
     }
 
     /**
@@ -192,8 +195,11 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
-        validateUnusedId(id);
-        initCommon(id, bolt, parallelism_hint);
+        // 保证 id 在 topology 范围内的全局唯一
+        this.validateUnusedId(id);
+        // 初始化并记录组件信息到 _commons 集合中
+        this.initCommon(id, bolt, parallelism_hint);
+        // 记录 bolt 到 _bolt 集合中
         _bolts.put(id, bolt);
         return new BoltGetter(id);
     }
@@ -210,7 +216,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IBasicBolt bolt) throws IllegalArgumentException {
-        return setBolt(id, bolt, null);
+        return this.setBolt(id, bolt, null);
     }
 
     /**
@@ -226,7 +232,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IBasicBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
-        return setBolt(id, new BasicBoltExecutor(bolt), parallelism_hint);
+        return this.setBolt(id, new BasicBoltExecutor(bolt), parallelism_hint);
     }
 
     /**
@@ -241,11 +247,11 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public BoltDeclarer setBolt(String id, IWindowedBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
-        return setBolt(id, new backtype.storm.topology.WindowedBoltExecutor(bolt), parallelism_hint);
+        return this.setBolt(id, new backtype.storm.topology.WindowedBoltExecutor(bolt), parallelism_hint);
     }
 
     public BoltDeclarer setBolt(String id, IWindowedBolt bolt) throws IllegalArgumentException {
-        return setBolt(id, new backtype.storm.topology.WindowedBoltExecutor(bolt), null);
+        return this.setBolt(id, new backtype.storm.topology.WindowedBoltExecutor(bolt), null);
     }
 
     /**
@@ -258,13 +264,12 @@ public class TopologyBuilder {
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, BaseWindowedBolt<Tuple> bolt, Number parallelism_hint) throws
-                                                                                                  IllegalArgumentException {
+    public BoltDeclarer setBolt(String id, BaseWindowedBolt<Tuple> bolt, Number parallelism_hint) throws IllegalArgumentException {
         boolean isEventTime = WindowAssigner.isEventTime(bolt.getWindowAssigner());
         if (isEventTime && bolt.getTimestampExtractor() == null) {
             throw new IllegalArgumentException("timestamp extractor must be defined in event time!");
         }
-        return setBolt(id, new WindowedBoltExecutor(bolt), parallelism_hint);
+        return this.setBolt(id, new WindowedBoltExecutor(bolt), parallelism_hint);
     }
 
     /**
@@ -285,7 +290,7 @@ public class TopologyBuilder {
      */
     public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt, Number parallelism_hint) throws IllegalArgumentException {
         hasStatefulBolt = true;
-        return setBolt(id, new StatefulBoltExecutor<T>(bolt), parallelism_hint);
+        return this.setBolt(id, new StatefulBoltExecutor<T>(bolt), parallelism_hint);
     }
 
     /**
@@ -303,7 +308,7 @@ public class TopologyBuilder {
      */
     public <T extends State> BoltDeclarer setBolt(String id, IStatefulWindowedBolt<T> bolt, Number parallelism_hint) throws IllegalArgumentException {
         hasStatefulBolt = true;
-        return setBolt(id, new StatefulBoltExecutor<T>(new StatefulWindowedBoltExecutor<T>(bolt)), parallelism_hint);
+        return this.setBolt(id, new StatefulBoltExecutor<T>(new StatefulWindowedBoltExecutor<T>(bolt)), parallelism_hint);
     }
 
     /**
@@ -314,7 +319,7 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public SpoutDeclarer setSpout(String id, IRichSpout spout) throws IllegalArgumentException {
-        return setSpout(id, spout, null);
+        return this.setSpout(id, spout, null);
     }
 
     /**
@@ -328,8 +333,11 @@ public class TopologyBuilder {
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public SpoutDeclarer setSpout(String id, IRichSpout spout, Number parallelism_hint) throws IllegalArgumentException {
-        validateUnusedId(id);
-        initCommon(id, spout, parallelism_hint);
+        // 保证 id 在 topology 范围内的全局唯一
+        this.validateUnusedId(id);
+        // 初始化并记录组件信息到 _commons 集合中
+        this.initCommon(id, spout, parallelism_hint);
+        // 记录组件到 _spout 集合中
         _spouts.put(id, spout);
         return new SpoutGetter(id);
     }
@@ -342,11 +350,11 @@ public class TopologyBuilder {
      * @param spout the control spout
      */
     public SpoutDeclarer setSpout(String id, IControlSpout spout) {
-        return setSpout(id, spout, null);
+        return this.setSpout(id, spout, null);
     }
 
     public SpoutDeclarer setSpout(String id, IControlSpout spout, Number parallelism_hint) {
-        return setSpout(id, new ControlSpoutExecutor(spout), parallelism_hint);
+        return this.setSpout(id, new ControlSpoutExecutor(spout), parallelism_hint);
     }
 
     /**
@@ -360,15 +368,15 @@ public class TopologyBuilder {
      * @return use the returned object to declare the inputs to this component
      */
     public BoltDeclarer setBolt(String id, IControlBolt bolt, Number parallelism_hint) {
-        return setBolt(id, new ControlBoltExecutor(bolt), parallelism_hint);
+        return this.setBolt(id, new ControlBoltExecutor(bolt), parallelism_hint);
     }
 
     public BoltDeclarer setBolt(String id, IControlBolt bolt) {
-        return setBolt(id, bolt, null);
+        return this.setBolt(id, bolt, null);
     }
 
     public void setStateSpout(String id, IRichStateSpout stateSpout) throws IllegalArgumentException {
-        setStateSpout(id, stateSpout, null);
+        this.setStateSpout(id, stateSpout, null);
     }
 
     public void setStateSpout(String id, IRichStateSpout stateSpout, Number parallelism_hint) throws IllegalArgumentException {
@@ -385,10 +393,14 @@ public class TopologyBuilder {
         if (null == workerHook) {
             throw new IllegalArgumentException("WorkerHook must not be null.");
         }
-
         _workerHooks.add(ByteBuffer.wrap(Utils.javaSerialize(workerHook)));
     }
 
+    /**
+     * 保证 id 在 topology 范围内的全局唯一
+     *
+     * @param id
+     */
     protected void validateUnusedId(String id) {
         if (_bolts.containsKey(id)) {
             throw new IllegalArgumentException("Bolt has already been declared for id " + id);
@@ -413,7 +425,7 @@ public class TopologyBuilder {
 
     private void maybeAddCheckpointInputs(ComponentCommon common) {
         if (hasStatefulBolt) {
-            addCheckPointInputs(common);
+            this.addCheckPointInputs(common);
         }
     }
 
@@ -467,6 +479,13 @@ public class TopologyBuilder {
         }
     }
 
+    /**
+     * 获取组件对应的 {@link ComponentCommon} 对象
+     *
+     * @param id
+     * @param component
+     * @return
+     */
     private ComponentCommon getComponentCommon(String id, IComponent component) {
         ComponentCommon ret = new ComponentCommon(_commons.get(id));
 
@@ -478,6 +497,14 @@ public class TopologyBuilder {
         return ret;
     }
 
+    /**
+     * 初始化并记录组件信息到 _commons 集合中
+     *
+     * @param id
+     * @param component
+     * @param parallelism
+     * @throws IllegalArgumentException
+     */
     protected void initCommon(String id, IComponent component, Number parallelism) throws IllegalArgumentException {
         ComponentCommon common = new ComponentCommon();
         common.set_inputs(new HashMap<GlobalStreamId, Grouping>());
@@ -488,8 +515,10 @@ public class TopologyBuilder {
             }
             common.set_parallelism_hint(dop);
         } else {
+            // 默认设置并行度为 1
             common.set_parallelism_hint(1);
         }
+        // 获取组件相关的配置
         Map conf = component.getComponentConfiguration();
         if (conf != null) common.set_json_conf(JSONValue.toJSONString(conf));
         _commons.put(id, common);
@@ -509,6 +538,7 @@ public class TopologyBuilder {
 
     protected class ConfigGetter<T extends ComponentConfigurationDeclarer> extends BaseConfigurationDeclarer<T> {
 
+        /** 所包装组件的 ID */
         String _id;
 
         public ConfigGetter(String id) {
@@ -516,8 +546,10 @@ public class TopologyBuilder {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public T addConfigurations(Map conf) {
             if (conf != null && conf.containsKey(Config.TOPOLOGY_KRYO_REGISTER)) {
+                // 在通常的非事务流处理中，不允许设置组件的序列化方式
                 throw new IllegalArgumentException("Cannot set serializations for a component using fluent API");
             }
             String currConf = _commons.get(_id).get_json_conf();
@@ -533,6 +565,7 @@ public class TopologyBuilder {
     }
 
     protected class BoltGetter extends ConfigGetter<BoltDeclarer> implements BoltDeclarer {
+
         protected String _boltId;
 
         public BoltGetter(String boltId) {
