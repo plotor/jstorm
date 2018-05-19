@@ -6,11 +6,11 @@
     <parent>
         <groupId>com.alibaba.jstorm</groupId>
         <artifactId>jstorm-all</artifactId>
-        <version>2.4.0</version>
+        <version>2.2.1</version>
         <relativePath>../../</relativePath>
     </parent>
+    <artifactId>metaq-transaction</artifactId>
 
-    <artifactId>jstorm-rocket-mq</artifactId>
     <properties>
         <jstorm.version>${project.version}</jstorm.version>
         <metaq.version>3.1.8</metaq.version>
@@ -28,30 +28,11 @@
             <artifactId>metaq-client</artifactId>
             <version>${metaq.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
             <version>1.11</version>
         </dependency>
-
-        <!--
-        <dependency>
-            <groupId>com.alibaba.rocketmq</groupId>
-            <artifactId>rocketmq-common</artifactId>
-            <version>3.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.rocketmq</groupId>
-            <artifactId>rocketmq-client</artifactId>
-            <version>3.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>com.alibaba.rocketmq</groupId>
-            <artifactId>rocketmq-remoting</artifactId>
-            <version>3.0.1</version>
-        </dependency>
-         -->
     </dependencies>
 
     <build>

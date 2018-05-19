@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    
+
     <parent>
         <groupId>com.alibaba.jstorm</groupId>
         <artifactId>performance-test</artifactId>
@@ -9,13 +9,11 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>performance-test-flink</artifactId>
-    
+    <artifactId>flink</artifactId>
+
     <packaging>jar</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
-
-
 
     <dependencies>
         <dependency>
@@ -214,7 +212,6 @@
                 </configuration>
             </plugin>
         </plugins>
-
 
         <!-- If you want to use Java 8 Lambda Expressions uncomment the following lines -->
         <!--

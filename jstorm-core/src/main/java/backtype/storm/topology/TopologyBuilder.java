@@ -113,8 +113,6 @@ public class TopologyBuilder {
     protected Map<String, ComponentCommon> _commons = new HashMap<>();
     protected boolean hasStatefulBolt = false;
 
-    // private Map<String, Map<GlobalStreamId, Grouping>> _inputs = new HashMap<String, Map<GlobalStreamId, Grouping>>();
-
     private Map<String, StateSpoutSpec> _stateSpouts = new HashMap<>();
     private List<ByteBuffer> _workerHooks = new ArrayList<>();
 
@@ -130,6 +128,7 @@ public class TopologyBuilder {
         Map<String, Bolt> boltSpecs = new HashMap<>();
         Map<String, SpoutSpec> spoutSpecs = new HashMap<>();
         this.maybeAddCheckpointSpout();
+
         // 遍历处理 bolt
         for (String boltId : _bolts.keySet()) {
             IRichBolt bolt = _bolts.get(boltId);
@@ -150,6 +149,7 @@ public class TopologyBuilder {
                 throw wrapperCause;
             }
         }
+
         // 遍历处理 spout
         for (String spoutId : _spouts.keySet()) {
             IRichSpout spout = _spouts.get(spoutId);

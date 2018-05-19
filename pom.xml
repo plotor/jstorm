@@ -142,23 +142,28 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <test.extra.args>-Djava.net.preferIPv4Stack=true</test.extra.args>
-
         <!-- dependency versions -->
         <powermock.version>1.4.11</powermock.version>
         <hadoop.version>2.6.2</hadoop.version>
     </properties>
     <modules>
         <module>jstorm-core</module>
-        <module>example/sequence-split-merge</module>
         <module>jstorm-ui</module>
-        <!--<module>jstorm-utility/jstorm-rocket-mq</module>-->
+        <module>jstorm-hdfs</module>
+        <module>jstorm-yarn</module>
+        <module>jstorm-hbase</module>
         <module>jstorm-utility/jstorm-kafka</module>
-        <module>jstorm-utility/ons</module>
+        <module>jstorm-utility/jstorm-ons</module>
         <module>jstorm-utility/jstorm-flux</module>
         <module>jstorm-utility/jstorm-elasticsearch</module>
-        <module>jstorm-on-yarn</module>
-        <module>jstorm-hbase-metrics-plugin</module>
-        <module>jstorm-hdfs</module>
+        <module>jstorm-utility/jstorm-rocket-mq</module>
+        <module>jstorm-utility/topology-monitor</module>
+        <module>jstorm-utility/metaq-transaction</module>
+        <module>jstorm-utility/performance-test/jstrom</module>
+        <module>jstorm-utility/performance-test/strom</module>
+        <module>jstorm-utility/performance-test/heron</module>
+        <module>jstorm-utility/performance-test/flink</module>
+        <module>example/sequence-split-merge</module>
     </modules>
 
     <profiles>
@@ -169,6 +174,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.6</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>
@@ -182,91 +188,7 @@
                 </plugins>
             </build>
         </profile>
-
-        <!--
-        <profile>
-          <id>dist</id>
-          <modules>
-            <module>storm-dist/binary</module>
-            <module>storm-dist/source</module>
-          </modules>
-          <build>
-            <plugins>
-              <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                  <execution>
-                    <id>attach-sources</id>
-                    <goals>
-                      <goal>jar</goal>
-                    </goals>
-                  </execution>
-                </executions>
-              </plugin>
-              <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                  <outputDirectory>${project.build.directory}/javadoc</outputDirectory>
-                  <reportOutputDirectory>./docs/javadoc</reportOutputDirectory>
-                </configuration>
-                <executions>
-                  <execution>
-                    <id>attach-javadocs</id>
-                    <goals>
-                      <goal>jar</goal>
-                    </goals>
-                  </execution>
-                  <execution>
-                    <id>aggregate</id>
-                    <goals>
-                      <goal>aggregate</goal>
-                    </goals>
-                    <phase>site</phase>
-                  </execution>
-                </executions>
-              </plugin>
-              <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <configuration>
-                  <archive>
-                    <manifest>
-                      <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
-                      <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
-                    </manifest>
-                  </archive>
-                </configuration>
-              </plugin>
-          </plugins>
-        </build>
-      </profile>
-      -->
     </profiles>
-
-    <!--
-      <distributionManagement>
-        <repository>
-          <id>releases</id>
-          <name>releases</name>
-          <url>http://mvnrepo.alibaba-inc.com/nexus/content/repositories/releases/</url>
-        </repository>
-        <snapshotRepository>
-          <id>snapshots</id>
-          <name>snapshots</name>
-          <url>http://mvnrepo.alibaba-inc.com/nexus/content/repositories/snapshots/</url>
-        </snapshotRepository>
-        <snapshotRepository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-        <repository>
-          <id>ossrh</id>
-          <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-      </distributionManagement>
-    -->
 
     <repositories>
         <repository>
@@ -431,24 +353,6 @@
                     </execution>
                 </executions>
             </plugin>
-
-            <!--
-            // if release jstorm to maven center repository
-            // please set parent as oss-parent
-                <plugin>
-              <groupId>org.apache.maven.plugins</groupId>
-              <artifactId>maven-gpg-plugin</artifactId>
-              <executions>
-                <execution>
-                  <id>sign-artifacts</id>
-                  <phase>verify</phase>
-                  <goals>
-                    <goal>sign</goal>
-                  </goals>
-                </execution>
-              </executions>
-            </plugin>
-             -->
 
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>

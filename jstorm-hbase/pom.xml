@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jstorm-hbase-metrics-plugin</artifactId>
+    <artifactId>jstorm-hbase</artifactId>
 
     <dependencies>
         <dependency>

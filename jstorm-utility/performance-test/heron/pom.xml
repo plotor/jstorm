@@ -9,7 +9,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>performance-test-heron</artifactId>
+    <artifactId>heron</artifactId>
     
     <packaging>jar</packaging>
 

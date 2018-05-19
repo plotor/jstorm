@@ -181,6 +181,12 @@ public class Utils {
         }
     }
 
+    /**
+     * 将对象执行 java 序列化到内存
+     *
+     * @param obj
+     * @return
+     */
     public static byte[] javaSerialize(Object obj) {
         if (obj instanceof byte[]) {
             return (byte[]) obj;

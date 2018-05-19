@@ -9,7 +9,7 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>performance-test-jstrom</artifactId>
+    <artifactId>strom</artifactId>
     
     <packaging>jar</packaging>
 
@@ -20,9 +20,9 @@
     <dependencies>
  
         <dependency>
-            <groupId>com.alibaba.jstorm</groupId>
-            <artifactId>jstorm-core</artifactId>
-            <version>${jstorm.version}</version>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-core</artifactId>
+            <version>${storm.version}</version>
             <scope>provided</scope>
         </dependency>
         
