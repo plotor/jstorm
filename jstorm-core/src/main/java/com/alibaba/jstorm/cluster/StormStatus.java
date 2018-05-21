@@ -15,22 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.cluster;
 
-import java.io.Serializable;
-
-import java.util.Objects;
+import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-import com.alibaba.jstorm.daemon.nimbus.StatusType;
+import java.io.Serializable;
 
 /**
  * author: lixin/longda
  *
  * Dedicate Topology status
  *
- * Topology status: active/inactive/killed/rebalancing killTimeSecs: when status isn't killed, it is -1 and useless. when status is killed, do kill operation
+ * Topology status: active/inactive/killed/rebalancing
+ *
+ * killTimeSecs: when status isn't killed, it is -1 and useless. when status is killed, do kill operation
  * after killTimeSecs seconds when status is rebalancing, do rebalancing opation after delaySecs seconds restore oldStatus as current status
  */
 public class StormStatus implements Serializable {

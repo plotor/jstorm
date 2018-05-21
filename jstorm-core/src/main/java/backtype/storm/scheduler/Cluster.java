@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.scheduler;
 
 import java.util.ArrayList;
@@ -75,10 +76,12 @@ public class Cluster {
 
     public void blacklistHost(String host) {
         // this is so it plays well with setting blackListedHosts to an immutable list
-        if (blackListedHosts == null)
+        if (blackListedHosts == null) {
             blackListedHosts = new HashSet<>();
-        if (!(blackListedHosts instanceof HashSet))
+        }
+        if (!(blackListedHosts instanceof HashSet)) {
             blackListedHosts = new HashSet<>(blackListedHosts);
+        }
         blackListedHosts.add(host);
     }
 
@@ -192,8 +195,9 @@ public class Cluster {
     }
 
     public Set<Integer> getAssignablePorts(SupervisorDetails supervisor) {
-        if (isBlackListed(supervisor.id))
+        if (isBlackListed(supervisor.id)) {
             return new HashSet<>();
+        }
         return supervisor.allPorts;
     }
 

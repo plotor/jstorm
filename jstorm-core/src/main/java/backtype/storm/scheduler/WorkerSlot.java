@@ -15,11 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.scheduler;
 
 import java.io.Serializable;
 
+/**
+ * slot
+ */
 public class WorkerSlot implements Comparable<WorkerSlot>, Serializable {
+
     private static final long serialVersionUID = -4451854497340313268L;
 
     String nodeId;
@@ -60,20 +65,26 @@ public class WorkerSlot implements Comparable<WorkerSlot>, Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         WorkerSlot other = (WorkerSlot) obj;
         if (nodeId == null) {
-            if (other.nodeId != null)
+            if (other.nodeId != null) {
                 return false;
-        } else if (!nodeId.equals(other.nodeId))
+            }
+        } else if (!nodeId.equals(other.nodeId)) {
             return false;
-        if (port != other.port)
+        }
+        if (port != other.port) {
             return false;
+        }
         return true;
     }
 

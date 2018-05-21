@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus;
 
 import backtype.storm.Config;
@@ -39,13 +40,6 @@ import com.alibaba.jstorm.schedule.MonitorRunnable;
 import com.alibaba.jstorm.utils.DefaultUncaughtExceptionHandler;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.server.THsHaServer;
@@ -53,6 +47,14 @@ import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * NimbusServer workflow:
@@ -62,9 +64,15 @@ import org.slf4j.LoggerFactory;
  * when the topology's status is monitor, nimbus would reassign workers
  * 4. start one thread, every nimbus.cleanup.inbox.freq.secs cleanup useless jar
  *
+ * 清除中断的Topology（删除本地目录/storm-local-dir/nimbus/topologyid/stormdis和zk上的/storm-zk-root/storms/topologyid）
+ * 设置/storm-zk-root/storms/topology中的Topology状态为active
+ * 启动一个monitor线程，每nimbus.monitor.reeq.secs检查/storm-zk-root/storms中所有Topology状态，如果Topology中有task是不活动的则讲Topology状态转换为monitor（这个状态下nimbus会重新分配workers）
+ * 启动一个cleaner线程，每nimubs.cleanup.inbox.freq.secs清除无用的jar
+ *
  * @author version 1: Nathan Marz version 2: Lixin/Chenjun version 3: Longda
  */
 public class NimbusServer {
+
     private static final Logger LOG = LoggerFactory.getLogger(NimbusServer.class);
 
     private NimbusData data;
@@ -97,6 +105,12 @@ public class NimbusServer {
         JStormServerUtils.createPid(pidDir);
     }
 
+    /**
+     * 启动 nimbus 服务
+     *
+     * @param conf
+     * @param inimbus
+     */
     @SuppressWarnings("rawtypes")
     private void launchServer(final Map conf, INimbus inimbus) {
         LOG.info("Begin to start nimbus with conf " + conf);

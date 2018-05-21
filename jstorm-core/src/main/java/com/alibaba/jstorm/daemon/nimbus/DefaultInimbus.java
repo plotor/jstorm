@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus;
 
 import backtype.storm.scheduler.INimbus;
@@ -22,6 +23,7 @@ import backtype.storm.scheduler.IScheduler;
 import backtype.storm.scheduler.SupervisorDetails;
 import backtype.storm.scheduler.Topologies;
 import backtype.storm.scheduler.WorkerSlot;
+
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -34,9 +36,8 @@ public class DefaultInimbus implements INimbus {
     }
 
     @Override
-    public Collection<WorkerSlot> allSlotsAvailableForScheduling(Collection<SupervisorDetails> existingSupervisors,
-                                                                 Topologies topologies,
-                                                                 Set<String> topologiesMissingAssignments) {
+    public Collection<WorkerSlot> allSlotsAvailableForScheduling(
+            Collection<SupervisorDetails> existingSupervisors, Topologies topologies, Set<String> topologiesMissingAssignments) {
         Collection<WorkerSlot> result = new HashSet<>();
         for (SupervisorDetails detail : existingSupervisors) {
             for (Integer port : detail.getAllPorts())

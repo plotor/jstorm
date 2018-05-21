@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.cluster;
 
 import backtype.storm.generated.TopologyTaskHbInfo;
@@ -33,7 +34,10 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import org.apache.zookeeper.KeeperException.NodeExistsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -45,12 +49,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.KeeperException.NodeExistsException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class StormZkClusterState implements StormClusterState {
+
     private static Logger LOG = LoggerFactory.getLogger(StormZkClusterState.class);
 
     private ClusterState cluster_state;
@@ -460,8 +461,9 @@ public class StormZkClusterState implements StormClusterState {
             remove_lastErr_time(topologyId);
             lastErrInfo = null;
         }
-        if (lastErrInfo == null)
+        if (lastErrInfo == null) {
             lastErrInfo = new HashMap<>();
+        }
 
         // The error time is used to indicate how long the error info is present
         // in UI
@@ -619,8 +621,9 @@ public class StormZkClusterState implements StormClusterState {
         for (Integer taskId : taskIds) {
             TaskInfo taskInfo = taskInfoMap.get(taskId);
             if (taskInfo != null) {
-                if (taskInfo.getComponentId().equalsIgnoreCase(componentId))
+                if (taskInfo.getComponentId().equalsIgnoreCase(componentId)) {
                     rtn.add(taskId);
+                }
             }
         }
         return rtn;
@@ -703,11 +706,11 @@ public class StormZkClusterState implements StormClusterState {
         cluster_state.delete_node(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPERATOR + hostPort);
     }
 
-
     @Override
     public boolean try_to_be_leader(String path, String host, RunnableCallback callback) throws Exception {
-        if (callback != null)
+        if (callback != null) {
             this.master_callback.set(callback);
+        }
         try {
             cluster_state.tryToBeLeader(path, host.getBytes());
         } catch (NodeExistsException e) {
@@ -751,7 +754,6 @@ public class StormZkClusterState implements StormClusterState {
         delete_node_blobstore(blobPath, nimbusInfo.toHostPortString());
         cluster_state.set_ephemeral_node(path, null);
     }
-
 
     @Override
     public List<String> active_keys() throws Exception {
@@ -835,8 +837,9 @@ public class StormZkClusterState implements StormClusterState {
     public List<String> get_blacklist() throws Exception {
         String stormPath = Cluster.blacklist_path("blacklist");
         Object blackListObj = getObject(stormPath, false);
-        if (blackListObj != null)
+        if (blackListObj != null) {
             return (List<String>) blackListObj;
+        }
         return new ArrayList<>();
     }
 
