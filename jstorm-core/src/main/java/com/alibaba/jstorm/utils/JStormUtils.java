@@ -15,48 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.utils;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.management.ManagementFactory;
-import java.lang.management.MemoryMXBean;
-import java.lang.management.MemoryUsage;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-
-import javax.management.ObjectName;
-
+import backtype.storm.Config;
+import backtype.storm.generated.MetricInfo;
+import backtype.storm.generated.MetricSnapshot;
+import backtype.storm.generated.Nimbus.Iface;
+import backtype.storm.messaging.TaskMessage;
+import backtype.storm.task.TopologyContext;
+import backtype.storm.utils.NimbusClientWrapper;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
+import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormBase;
+import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
-
+import com.alibaba.jstorm.metric.AsmWindow;
+import com.alibaba.jstorm.metric.MetaType;
+import com.alibaba.jstorm.metric.MetricType;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
@@ -73,22 +51,39 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
-import com.alibaba.jstorm.callback.RunnableCallback;
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.metric.AsmWindow;
-import com.alibaba.jstorm.metric.MetaType;
-import com.alibaba.jstorm.metric.MetricType;
-
-import backtype.storm.Config;
-import backtype.storm.generated.MetricInfo;
-import backtype.storm.generated.MetricSnapshot;
-import backtype.storm.generated.Nimbus.Iface;
-import backtype.storm.messaging.TaskMessage;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.utils.NimbusClientWrapper;
-import backtype.storm.utils.Utils;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import javax.management.ObjectName;
 
 /**
  * JStorm utility
@@ -242,6 +237,7 @@ public class JStormUtils {
 
     /**
      * Gets the pid of current JVM, because Java doesn't provide a real way to do this.
+     * 返回当前 JVM 对应的 pid
      */
     public static String process_pid() {
         String name = ManagementFactory.getRuntimeMXBean().getName();
@@ -249,7 +245,6 @@ public class JStormUtils {
         if (split.length != 2) {
             throw new RuntimeException("Got unexpected process name: " + name);
         }
-
         return split[0];
     }
 
@@ -264,12 +259,11 @@ public class JStormUtils {
         launchProcess(command, new HashMap<String, String>(), false);
     }
 
-
     /**
      * Extract dir from the jar to dest dir
      *
      * @param jarpath path to jar
-     * @param dir     dir to be extracted
+     * @param dir dir to be extracted
      * @param destdir destination dir
      */
     public static void extractDirFromJar(String jarpath, String dir, String destdir) {
@@ -300,20 +294,22 @@ public class JStormUtils {
                             out.close();
                         }
                     } finally {
-                        if (in != null)
+                        if (in != null) {
                             in.close();
+                        }
                     }
                 }
             }
         } catch (Exception e) {
             LOG.warn("No " + dir + " from " + jarpath + "!\n" + e.getMessage());
         } finally {
-            if (zipFile != null)
+            if (zipFile != null) {
                 try {
                     zipFile.close();
                 } catch (Exception e) {
                     LOG.warn(e.getMessage());
                 }
+            }
 
         }
     }
@@ -334,6 +330,11 @@ public class JStormUtils {
         }
     }
 
+    /**
+     * kill pid
+     *
+     * @param pid
+     */
     public static void process_killed(Integer pid) {
         try {
             exec_command("kill " + pid);
@@ -405,8 +406,9 @@ public class JStormUtils {
             value = Double.valueOf(usedCpu);
         } catch (Exception e) {
             LOG.warn("Failed to get cpu usage ratio.");
-            if (output != null)
+            if (output != null) {
                 LOG.warn("Output string is \"" + output + "\"");
+            }
             value = 0.0;
         }
 
@@ -441,9 +443,9 @@ public class JStormUtils {
                 sb.append("\n");
                 sb.append(errorOutput);
                 long start = System.currentTimeMillis();
-                while (isAlive(process)){
+                while (isAlive(process)) {
                     Utils.sleep(100);
-                    if (System.currentTimeMillis() - start > timeOut){
+                    if (System.currentTimeMillis() - start > timeOut) {
                         process.destroy();
                         LOG.warn(command + " is timeout. {} ", sb.toString());
                     }
@@ -456,9 +458,10 @@ public class JStormUtils {
 
             } catch (Throwable e) {
                 LOG.error("Failed to run " + command + ", " + e.getCause(), e);
-            }finally {
-                if (isAlive(process))
+            } finally {
+                if (isAlive(process)) {
                     process.destroy();
+                }
             }
 
             if (output != null) {
@@ -493,8 +496,9 @@ public class JStormUtils {
             }
         } catch (Exception e) {
             LOG.warn("Failed to get full gc.");
-            if (output != null)
+            if (output != null) {
                 LOG.warn("Output string is \"" + output + "\"");
+            }
         }
         return value;
     }
@@ -613,7 +617,6 @@ public class JStormUtils {
                 16, //SIGSTKFLT
         };
 
-
         for (int signal : signals) {
             instance.registerSignal(signal, null, true);
         }
@@ -626,9 +629,9 @@ public class JStormUtils {
      * <p>
      * This function will ignore whether the command is successfully executed or not
      *
-     * @param command       command to be executed
-     * @param environment   env vars
-     * @param workDir       working directory
+     * @param command command to be executed
+     * @param environment env vars
+     * @param workDir working directory
      * @param resultHandler exec result handler
      * @return output stream
      * @throws IOException
@@ -672,15 +675,22 @@ public class JStormUtils {
 
     }
 
-    protected static java.lang.Process launchProcess(final List<String> cmdlist,
-                                                     final Map<String, String> environment) throws IOException {
+    /**
+     * 执行命令行
+     *
+     * @param cmdlist
+     * @param environment
+     * @return
+     * @throws IOException
+     */
+    protected static java.lang.Process launchProcess(
+            final List<String> cmdlist, final Map<String, String> environment) throws IOException {
         ProcessBuilder builder = new ProcessBuilder(cmdlist);
         builder.redirectErrorStream(true);
         Map<String, String> process_evn = builder.environment();
         for (Entry<String, String> entry : environment.entrySet()) {
             process_evn.put(entry.getKey(), entry.getValue());
         }
-
         return builder.start();
     }
 
@@ -704,19 +714,28 @@ public class JStormUtils {
         return sb.toString();
     }
 
-
-    public static String launchProcess(final String command, final List<String> cmdlist,
-                                       final Map<String, String> environment, boolean backend) throws IOException {
+    /**
+     * 执行命令行
+     *
+     * @param command
+     * @param cmdlist
+     * @param environment
+     * @param backend
+     * @return
+     * @throws IOException
+     */
+    public static String launchProcess(
+            final String command, final List<String> cmdlist, final Map<String, String> environment, boolean backend)
+            throws IOException {
         if (backend) {
+            // 后台执行
             new Thread(new Runnable() {
                 @Override
                 public void run() {
                     List<String> cmdWrapper = new ArrayList<>();
-
                     cmdWrapper.add("nohup");
                     cmdWrapper.addAll(cmdlist);
                     cmdWrapper.add("&");
-
                     try {
                         launchProcess(cmdWrapper, environment);
                     } catch (IOException e) {
@@ -726,16 +745,15 @@ public class JStormUtils {
             }).start();
             return null;
         } else {
+            // 前台执行
             try {
                 Process process = launchProcess(cmdlist, environment);
-
                 StringBuilder sb = new StringBuilder();
                 String output = JStormUtils.getOutput(process.getInputStream());
                 String errorOutput = JStormUtils.getOutput(process.getErrorStream());
                 sb.append(output);
                 sb.append("\n");
                 sb.append(errorOutput);
-
                 int ret = process.waitFor();
                 if (ret != 0) {
                     LOG.warn(command + " is terminated abnormally. ret={}, str={}", ret, sb.toString());
@@ -745,7 +763,6 @@ public class JStormUtils {
             } catch (Throwable e) {
                 LOG.error("Failed to run " + command + ", " + e.getCause(), e);
             }
-
             return "";
         }
     }
@@ -755,23 +772,21 @@ public class JStormUtils {
      * but some little problem have been found,
      * such as exitCode/output string so still use the old method to start process
      *
-     * @param command     command to be executed
+     * @param command command to be executed
      * @param environment env vars
-     * @param backend     whether the command is executed at backend
+     * @param backend whether the command is executed at backend（后台）
      * @return outputString
      * @throws IOException
      */
-    public static String launchProcess(final String command,
-                                       final Map<String, String> environment, boolean backend) throws IOException {
+    public static String launchProcess(
+            final String command, final Map<String, String> environment, boolean backend) throws IOException {
         String[] cmds = command.split(" ");
-
         ArrayList<String> cmdList = new ArrayList<>();
         for (String tok : cmds) {
             if (!StringUtils.isBlank(tok)) {
                 cmdList.add(tok);
             }
         }
-
         return launchProcess(command, cmdList, environment, backend);
     }
 
@@ -1340,8 +1355,9 @@ public class JStormUtils {
     public static String getLogDir() {
         String file = JStormUtils.getLogFileName();
         if (file != null) {
-            if (file.lastIndexOf(File.separator) < 0)
+            if (file.lastIndexOf(File.separator) < 0) {
                 return "";
+            }
             return file.substring(0, file.lastIndexOf(File.separator));
         }
 
@@ -1586,16 +1602,18 @@ public class JStormUtils {
     }
 
     public static Map parseJson(String json) {
-        if (json == null)
+        if (json == null) {
             return new HashMap();
-        else
+        } else {
             return (Map) JSONValue.parse(json);
+        }
     }
 
     public static String mergeIntoJson(Map into, Map newMap) {
         Map res = new HashMap(into);
-        if (newMap != null)
+        if (newMap != null) {
             res.putAll(newMap);
+        }
         return JSONValue.toJSONString(res);
     }
 
@@ -1603,8 +1621,8 @@ public class JStormUtils {
      * Get Topology Metrics
      *
      * @param topologyName topology name
-     * @param metricType,  please refer to MetaType, default to MetaType.TASK.getT()
-     * @param window,      please refer to AsmWindow, default to AsmWindow.M1_WINDOW
+     * @param metricType, please refer to MetaType, default to MetaType.TASK.getT()
+     * @param window, please refer to AsmWindow, default to AsmWindow.M1_WINDOW
      * @return topology metrics
      */
     public static Map<String, Double> getMetrics(Map conf, String topologyName, MetaType metricType, Integer window) {
@@ -1729,8 +1747,9 @@ public class JStormUtils {
 
     public static boolean isAlive(Process process) {
         try {
-            if (process != null)
+            if (process != null) {
                 process.exitValue();
+            }
             return false;
         } catch (IllegalThreadStateException e) {
             return true;

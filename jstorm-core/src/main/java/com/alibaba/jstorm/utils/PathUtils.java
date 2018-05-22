@@ -15,17 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.jstorm.utils;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+package com.alibaba.jstorm.utils;
 
 import com.google.common.base.Joiner;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author yannian
@@ -96,6 +97,11 @@ public class PathUtils {
         FileUtils.forceMkdir(new File(path));
     }
 
+    /**
+     * 删除指定路径
+     *
+     * @param path
+     */
     public static void rmpath(String path) {
         LOG.debug("Removing path " + path);
         boolean succ = (new File(path)).delete();

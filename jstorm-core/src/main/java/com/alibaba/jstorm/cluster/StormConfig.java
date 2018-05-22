@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.cluster;
 
 import backtype.storm.Config;
@@ -108,6 +109,12 @@ public class StormConfig {
         return ConfigExtension.getClusterName(conf);
     }
 
+    /**
+     * 校验是否是本地模式
+     *
+     * @param conf
+     * @return
+     */
     public static boolean local_mode(Map conf) {
         String mode = (String) conf.get(Config.STORM_CLUSTER_MODE);
         if (mode != null) {
@@ -132,12 +139,12 @@ public class StormConfig {
 
     /**
      * validate whether the mode is distributed
+     * 验证是否是分布式运行模式
      */
     public static void validate_distributed_mode(Map<?, ?> conf) {
         if (StormConfig.local_mode(conf)) {
             throw new IllegalArgumentException("Cannot start server in local mode!");
         }
-
     }
 
     public static void validate_local_mode(Map<?, ?> conf) {
@@ -316,8 +323,15 @@ public class StormConfig {
 
     }
 
+    /**
+     * 创建 ${storm.local.dir}/nimbus 目录
+     *
+     * @param conf
+     * @return
+     * @throws IOException
+     */
     public static String masterLocalDir(Map conf) throws IOException {
-        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "nimbus";
+        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "nimbus"; // storm.local.dir
         try {
             FileUtils.forceMkdir(new File(ret));
         } catch (IOException e) {
@@ -369,6 +383,13 @@ public class StormConfig {
         return ret;
     }
 
+    /**
+     * 创建 ${storm.local.dir}/nimbus/ininumbus 目录
+     *
+     * @param conf
+     * @return
+     * @throws IOException
+     */
     public static String masterInimbus(Map conf) throws IOException {
         String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "ininumbus";
         try {
@@ -381,7 +402,7 @@ public class StormConfig {
     }
 
     /**
-     * Return nimbus's pid dir
+     * 创建并返回 创建 ${storm.local.dir}/nimbus/pids 目录
      */
     public static String masterPids(Map conf) throws IOException {
         String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "pids";

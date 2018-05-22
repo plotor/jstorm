@@ -60,6 +60,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * All nimbus data
  */
 public class NimbusData {
+
     private static final Logger LOG = LoggerFactory.getLogger(NimbusData.class);
 
     /**

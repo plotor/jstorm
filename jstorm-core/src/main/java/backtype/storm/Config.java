@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm;
 
 import backtype.storm.serialization.IKryoDecorator;
@@ -151,7 +152,6 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT = "storm.daemon.metrics.reporter.plugin.duration.unit";
 
-
     /**
      * A specify csv reporter directory for CvsPreparableReporter daemon metrics reporter.
      */
@@ -168,7 +168,6 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_ZOOKEEPER_PORT = "storm.zookeeper.port";
     public static final Object STORM_ZOOKEEPER_PORT_SCHEMA = ConfigValidation.IntegerValidator;
 
-
     /**
      * A list of hosts of Exhibitor servers used to discover/maintain connection to ZooKeeper cluster.
      * Any configured ZooKeeper servers will be used for the curator/exhibitor backup connection string.
@@ -179,9 +178,10 @@ public class Config extends HashMap<String, Object> {
      * The port Storm will use to connect to each of the exhibitor servers.
      */
     public static final String STORM_EXHIBITOR_PORT = "storm.exhibitor.port";
+
     /**
-     * A directory on the local filesystem used by Storm for any local filesystem usage it needs. The directory must exist and the Storm daemons must have
-     * permission to read/write from this location.
+     * A directory on the local filesystem used by Storm for any local filesystem usage it needs.
+     * The directory must exist and the Storm daemons must have permission to read/write from this location.
      */
     public static final String STORM_LOCAL_DIR = "storm.local.dir";
     public static final Object STORM_LOCAL_DIR_SCHEMA = String.class;
@@ -1302,7 +1302,6 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_SECS = "topology.tick.tuple.freq.secs";
     public static final Object TOPOLOGY_TICK_TUPLE_FREQ_SECS_SCHEMA = ConfigValidation.IntegerValidator;
 
-
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_MS = "topology.tick.tuple.freq.ms";
     public static final Object TOPOLOGY_TICK_TUPLE_FREQ_MS_SCHEMA = ConfigValidation.IntegerValidator;
 
@@ -1341,7 +1340,7 @@ public class Config extends HashMap<String, Object> {
      * Maximum number of tuples that can be stored inmemory cache in windowing operators for fast access without fetching
      * them from store.
      */
-    public static final String TOPOLOGY_TRIDENT_WINDOWING_INMEMORY_CACHE_LIMIT="topology.trident.windowing.cache.tuple.limit";
+    public static final String TOPOLOGY_TRIDENT_WINDOWING_INMEMORY_CACHE_LIMIT = "topology.trident.windowing.cache.tuple.limit";
     /**
      * Name of the topology. This config is automatically set by Storm when the topology is submitted.
      */
@@ -1467,7 +1466,6 @@ public class Config extends HashMap<String, Object> {
      */
     public static final String SUPERVISOR_BLOBSTORE = "supervisor.blobstore.class";
 
-
     /**
      * What directory to use for the blobstore. The directory is expected to be an
      * absolute path when using HDFS blobstore, for LocalFsBlobStore it could be either
@@ -1503,7 +1501,7 @@ public class Config extends HashMap<String, Object> {
     public static final String BLOBSTORE_HDFS_DEFAULT_FS = "blobstore.hdfs.defaultFS";
 
     /**
-     *  Set replication factor for a blob in HDFS Blobstore Implementation
+     * Set replication factor for a blob in HDFS Blobstore Implementation
      */
     public static final String STORM_BLOBSTORE_REPLICATION_FACTOR = "storm.blobstore.replication.factor";
 

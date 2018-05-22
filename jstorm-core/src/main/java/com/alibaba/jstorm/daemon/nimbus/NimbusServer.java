@@ -100,8 +100,16 @@ public class NimbusServer {
         instance.launchServer(config, iNimbus);
     }
 
+    /**
+     * 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}
+     *
+     * @param conf
+     * @throws Exception
+     */
     private void createPid(Map conf) throws Exception {
+        // 创建 ${storm.local.dir}/nimbus 目录
         String pidDir = StormConfig.masterPids(conf);
+        // 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}
         JStormServerUtils.createPid(pidDir);
     }
 
@@ -116,16 +124,19 @@ public class NimbusServer {
         LOG.info("Begin to start nimbus with conf " + conf);
 
         try {
-            // 1. check whether mode is distributed or not
+            // 1. 验证当前为分布式运行模式
             StormConfig.validate_distributed_mode(conf);
 
-            createPid(conf);
+            // 2. 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}
+            this.createPid(conf);
 
-            initShutdownHook();
+            // 3. 注册 shutdown hook 方法，用于执行在 JVM 进程终止时的清理逻辑
+            this.initShutdownHook();
 
+            // 4. 模板方法
             inimbus.prepare(conf, StormConfig.masterInimbus(conf));
 
-            data = createNimbusData(conf, inimbus);
+            data = this.createNimbusData(conf, inimbus);
 
             initFollowerThread(conf);
 
@@ -334,14 +345,15 @@ public class NimbusServer {
         LOG.info("Successfully init Follower thread");
     }
 
+    /**
+     * 注册 shutdownHook 方法，用于在服务终止时执行一些清理工作
+     */
     private void initShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 NimbusServer.this.cleanup();
             }
-
         });
-        //JStormUtils.registerJStormSignalHandler();
     }
 
     public void cleanup() {
@@ -360,11 +372,6 @@ public class NimbusServer {
             t.cleanup();
             JStormUtils.sleepMs(10);
             t.interrupt();
-            // try {
-            // t.join();
-            // } catch (InterruptedException e) {
-            // LOG.error("join thread", e);
-            // }
             LOG.info("Successfully cleanup " + t.getThread().getName());
         }
 
@@ -400,7 +407,6 @@ public class NimbusServer {
         LOG.info("Successfully shutdown nimbus");
         // make sure shutdown nimbus
         JStormUtils.halt_process(0, "!!!Shutdown!!!");
-
     }
 
     public void uploadMetrics(String topologyId, TopologyMetric topologyMetric) throws TException {

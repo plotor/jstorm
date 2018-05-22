@@ -15,7 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.utils;
+
+import backtype.storm.Config;
+import backtype.storm.GenericOptionsParser;
+import backtype.storm.generated.KeyNotFoundException;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.blobstore.BlobStoreUtils;
+import com.alibaba.jstorm.blobstore.ClientBlobStore;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.StormConfig;
+import org.apache.commons.io.FileUtils;
+import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,21 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
-
-import backtype.storm.generated.KeyNotFoundException;
-import com.alibaba.jstorm.blobstore.BlobStoreUtils;
-import com.alibaba.jstorm.blobstore.ClientBlobStore;
-import org.apache.commons.io.FileUtils;
-import org.apache.thrift.TException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
-import backtype.storm.GenericOptionsParser;
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.StormConfig;
 
 /**
  * storm utils
@@ -67,8 +66,9 @@ public class JStormServerUtils {
 
         Map stormConf = (Map) StormConfig.readLocalObject(topologyId, localStormConfPath);
 
-        if (stormConf == null)
+        if (stormConf == null) {
             throw new IOException("Get topology conf error: " + topologyId);
+        }
 
         List<String> libs = (List<String>) stormConf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
         if (libs != null) {
@@ -102,12 +102,14 @@ public class JStormServerUtils {
 
         Map stormConf = (Map) StormConfig.readLocalObject(topologyId, localStormConfPath);
 
-        if (stormConf == null)
+        if (stormConf == null) {
             throw new IOException("Get topology conf error: " + topologyId);
+        }
 
         List<String> libs = (List<String>) stormConf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
-        if (libs == null)
+        if (libs == null) {
             return;
+        }
         for (String libName : libs) {
             String localStromLibPath = StormConfig.stormlib_path(localRoot, libName);
             String masterStormLibPath = StormConfig.stormlib_path(masterCodeDir, libName);
@@ -115,9 +117,14 @@ public class JStormServerUtils {
         }
     }
 
+    /**
+     * 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}
+     *
+     * @param dir ${storm.local.dir}/nimbus/pids
+     * @throws Exception
+     */
     public static void createPid(String dir) throws Exception {
         File file = new File(dir);
-
         if (!file.exists()) {
             file.mkdirs();
         } else if (!file.isDirectory()) {
@@ -126,10 +133,11 @@ public class JStormServerUtils {
 
         String[] existPids = file.list();
         if (existPids == null) {
-            existPids = new String[]{};
+            existPids = new String[] {};
         }
         for (String existPid : existPids) {
             try {
+                // 杀死对应的进程
                 JStormUtils.kill(Integer.valueOf(existPid));
                 PathUtils.rmpath(dir + File.separator + existPid);
             } catch (Exception e) {
@@ -137,9 +145,9 @@ public class JStormServerUtils {
             }
         }
 
-        // touch pid before
+        // 获取当前 JVM 进程 ID
         String pid = JStormUtils.process_pid();
-        String pidPath = dir + File.separator + pid;
+        String pidPath = dir + File.separator + pid; // ${storm.local.dir}/nimbus/pids/${pid}
         PathUtils.touch(pidPath);
         LOG.info("Successfully touch pid  " + pidPath);
     }
