@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.nimbus;
 
 import backtype.storm.Config;
@@ -26,6 +27,9 @@ import java.io.Serializable;
 import java.util.Map;
 
 public class NimbusInfo implements Serializable {
+
+    private static final long serialVersionUID = -6289738558145898120L;
+
     private static final Logger LOG = LoggerFactory.getLogger(NimbusInfo.class);
 
     private static final String DELIM = ":";
@@ -49,6 +53,12 @@ public class NimbusInfo implements Serializable {
         }
     }
 
+    /**
+     * 基于 conf 构造 NimbusInfo 对象
+     *
+     * @param conf
+     * @return
+     */
     public static NimbusInfo fromConf(Map conf) {
         String host;
         if (!ConfigExtension.isNimbusUseIp(conf)) {
@@ -77,7 +87,7 @@ public class NimbusInfo implements Serializable {
         return host;
     }
 
-    public String getHostPort(){
+    public String getHostPort() {
         return host + ":" + port;
     }
 

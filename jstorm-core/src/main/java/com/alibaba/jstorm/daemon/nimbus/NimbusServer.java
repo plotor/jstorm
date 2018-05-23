@@ -233,7 +233,6 @@ public class NimbusServer {
         }
     }
 
-    @SuppressWarnings("rawtypes")
     private NimbusData createNimbusData(Map conf, INimbus inimbus) throws Exception {
         // Callback callback=new TimerCallBack();
         // StormTimer timer=Timer.mkTimerTimer(callback);

@@ -30,6 +30,12 @@ import java.util.Random;
 import java.util.Set;
 
 public class MessageId {
+
+    /**
+     * 存储的是anchor和anchor value。
+     * 而anchor其实就是root_id，它在spout中生成，并且一路透传到所有的bolt中，
+     * 属于同一个tuple tree中的消息都会有相同的root_id，它可以唯一标识spout发出来的这条消息（以及从下游bolt根据这个tuple衍生发出的消息）。
+     */
     private Map<Long, Long> _anchorsToIds;
 
     public MessageId() {

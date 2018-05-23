@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.blobstore;
 
 import backtype.storm.daemon.Shutdownable;
@@ -149,7 +150,7 @@ public abstract class BlobStore implements Shutdownable {
     public static final void validateKey(String key) throws IllegalArgumentException {
         if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !KEY_PATTERN.matcher(key).matches()) {
             LOG.error("'{}' does not appear to be valid {}", key, KEY_PATTERN);
-            throw new IllegalArgumentException(key+" does not appear to be a valid blob key");
+            throw new IllegalArgumentException(key + " does not appear to be a valid blob key");
         }
     }
 
@@ -162,7 +163,7 @@ public abstract class BlobStore implements Shutdownable {
      * @throws KeyAlreadyExistsException
      * @throws IOException
      */
-    public void createBlob(String key, byte [] data, SettableBlobMeta meta) throws KeyAlreadyExistsException, IOException {
+    public void createBlob(String key, byte[] data, SettableBlobMeta meta) throws KeyAlreadyExistsException, IOException {
         AtomicOutputStream out = null;
         try {
             out = createBlob(key, meta);
@@ -197,7 +198,7 @@ public abstract class BlobStore implements Shutdownable {
             }
             out.close();
         } catch (IOException | RuntimeException e) {
-            if (out !=null) {
+            if (out != null) {
                 out.cancel();
             }
         } finally {
@@ -221,7 +222,7 @@ public abstract class BlobStore implements Shutdownable {
         }
         byte[] buffer = new byte[2048];
         int len = 0;
-        try{
+        try {
             while ((len = in.read(buffer)) > 0) {
                 out.write(buffer, 0, len);
             }
@@ -240,7 +241,7 @@ public abstract class BlobStore implements Shutdownable {
      * @throws IOException
      * @throws KeyNotFoundException
      */
-    public byte[] readBlob(String key) throws IOException, KeyNotFoundException{
+    public byte[] readBlob(String key) throws IOException, KeyNotFoundException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         readBlobTo(key, out);
         byte[] bytes = out.toByteArray();
@@ -288,12 +289,12 @@ public abstract class BlobStore implements Shutdownable {
         }
 
         @Override
-        public void write(byte []b) throws IOException {
+        public void write(byte[] b) throws IOException {
             out.write(b);
         }
 
         @Override
-        public void write(byte []b, int offset, int len) throws IOException {
+        public void write(byte[] b, int offset, int len) throws IOException {
             out.write(b, offset, len);
         }
     }

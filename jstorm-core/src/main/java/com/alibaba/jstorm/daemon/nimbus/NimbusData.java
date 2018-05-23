@@ -133,8 +133,8 @@ public class NimbusData {
     public NimbusData(final Map conf, INimbus inimbus) throws Exception {
         this.conf = conf;
 
-        createFileHandler();
-        mkBlobCacheMap();
+        this.createFileHandler();
+        this.mkBlobCacheMap();
         this.nimbusHostPortInfo = NimbusInfo.fromConf(conf);
         this.blobStore = BlobStoreUtils.getNimbusBlobStore(conf, nimbusHostPortInfo);
 
@@ -145,7 +145,7 @@ public class NimbusData {
 
         this.stormClusterState = Cluster.mk_storm_cluster_state(conf);
 
-        createCache();
+        this.createCache();
 
         this.taskHeartbeatsCache = new ConcurrentHashMap<>();
 
@@ -213,6 +213,7 @@ public class NimbusData {
 
             }
         };
+        // ${nimbus.file.copy.expiration.secs}  默认为 30 秒
         int file_copy_expiration_secs = JStormUtils.parseInt(conf.get(Config.NIMBUS_FILE_COPY_EXPIRATION_SECS), 30);
         uploaders = new TimeCacheMap<>(file_copy_expiration_secs, expiredCallback);
         downloaders = new TimeCacheMap<>(file_copy_expiration_secs, expiredCallback);

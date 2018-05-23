@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.execute.spout;
 
 import backtype.storm.Config;
@@ -26,7 +27,6 @@ import backtype.storm.tuple.MessageId;
 import backtype.storm.tuple.TupleImplExt;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.client.spout.IAckValueSpout;
 import com.alibaba.jstorm.client.spout.IFailValueSpout;
 import com.alibaba.jstorm.common.metric.AsmHistogram;
@@ -44,15 +44,13 @@ import com.alibaba.jstorm.task.comm.UnanchoredSend;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.TimeOutMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * spout collector, sending tuple through this Object
@@ -103,10 +101,11 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
 
         random = new Random(Utils.secureRandomLong());
 
-        if (spout instanceof IAckValueSpout || spout instanceof IFailValueSpout)
+        if (spout instanceof IAckValueSpout || spout instanceof IFailValueSpout) {
             isCacheTuple = true;
-        else
+        } else {
             isCacheTuple = false;
+        }
 
         String componentId = topology_context.getThisComponentId();
         emitTotalTimer = (AsmHistogram) JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(
@@ -145,15 +144,13 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
         return sendCtrlMsg(streamId, tuple, messageId, null);
     }
 
-    protected List<Integer> sendSpoutMsg(String outStreamId, List<Object> values, Object messageId,
-                                         Integer outTaskId, ICollectorCallback callback) {
-        java.util.List<Integer> outTasks;
-        outTasks = sendMsg(outStreamId, values, messageId, outTaskId, callback);
-        return outTasks;
+    protected List<Integer> sendSpoutMsg(
+            String outStreamId, List<Object> values, Object messageId, Integer outTaskId, ICollectorCallback callback) {
+        return this.sendMsg(outStreamId, values, messageId, outTaskId, callback);
     }
 
-    void unanchoredSend(TopologyContext topologyContext, TaskSendTargets taskTargets, TaskTransfer transfer_fn,
-                        String stream, List<Object> values) {
+    void unanchoredSend(TopologyContext topologyContext, TaskSendTargets taskTargets,
+                        TaskTransfer transfer_fn, String stream, List<Object> values) {
         UnanchoredSend.send(topologyContext, taskTargets, transfer_fn, stream, values);
     }
 
@@ -161,13 +158,13 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
         transfer_fn.transferControl(tupleExt);
     }
 
-    protected void sendMsgToAck(String outStreamId, List<Object> values, Object messageId, Long rootId,
-                                List<Long> ackSeq, boolean needAck) {
+    protected void sendMsgToAck(
+            String outStreamId, List<Object> values, Object messageId, Long rootId, List<Long> ackSeq, boolean needAck) {
         if (needAck) {
             TupleInfo info = TupleInfo.buildTupleInfo(outStreamId, messageId, values, System.currentTimeMillis(), isCacheTuple);
             pending.putHead(rootId, info);
             List<Object> ackerTuple = JStormUtils.mk_list((Object) rootId, JStormUtils.bit_xor_vals(ackSeq), task_id);
-            unanchoredSend(topology_context, sendTargets, transfer_fn, Acker.ACKER_INIT_STREAM_ID, ackerTuple);
+            this.unanchoredSend(topology_context, sendTargets, transfer_fn, Acker.ACKER_INIT_STREAM_ID, ackerTuple);
         } else if (messageId != null) {
             TupleInfo info = TupleInfo.buildTupleInfo(outStreamId, messageId, values, 0, isCacheTuple);
             AckSpoutMsg ack = new AckSpoutMsg(rootId, spout, null, info, task_stats);
@@ -175,14 +172,15 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
         }
     }
 
-    public List<Integer> sendMsg(String out_stream_id, List<Object> values, Object message_id,
-                                 Integer out_task_id, ICollectorCallback callback) {
+    public List<Integer> sendMsg(
+            String out_stream_id, List<Object> values, Object message_id, Integer out_task_id, ICollectorCallback callback) {
         final long startTime = emitTotalTimer.getTime();
         try {
             boolean needAck = (message_id != null) && (ackerNum > 0);
             Long root_id = getRootId(message_id);
             List<Integer> outTasks;
 
+            // 得到目标 taskId 列表
             if (out_task_id != null) {
                 outTasks = sendTargets.get(out_task_id, out_stream_id, values, null, root_id);
             } else {
@@ -206,8 +204,9 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
                 transfer_fn.transfer(tp);
             }
             sendMsgToAck(out_stream_id, values, message_id, root_id, ackSeq, needAck);
-            if (callback != null)
+            if (callback != null) {
                 callback.execute(out_stream_id, outTasks, values);
+            }
             return outTasks;
         } finally {
             emitTotalTimer.updateTime(startTime);

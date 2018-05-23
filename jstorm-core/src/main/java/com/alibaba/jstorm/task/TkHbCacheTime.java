@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task;
 
 import backtype.storm.generated.TaskHeartbeat;
@@ -22,10 +23,13 @@ import backtype.storm.generated.TaskHeartbeat;
 import com.alibaba.jstorm.utils.TimeUtils;
 
 /**
+ * 任务心跳缓存？
+ *
  * TkHbCacheTime is used in taskHeartCache (Map<topologyId, Map<taskId, Map<tkHbCacheTime, time>>>)
  */
 
 public class TkHbCacheTime {
+
     private int nimbusTime;
     private int taskReportedTime;
     private int taskAssignedTime;

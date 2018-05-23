@@ -15,10 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.task;
 
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -88,12 +90,14 @@ public class OutputCollector extends OutputCollectorCb {
     }
 
     /**
+     * 后续component会向acker发送ack响应
+     *
      * Emits a new tuple to a specific stream with a single anchor. The emitted
      * values must be immutable.
      *
      * @param streamId the stream to emit to
-     * @param anchor   the tuple to anchor to
-     * @param tuple    the new output tuple from this bolt
+     * @param anchor the tuple to anchor to
+     * @param tuple the new output tuple from this bolt
      * @return the list of task ids that this new tuple was sent to
      */
     public List<Integer> emit(String streamId, Tuple anchor, List<Object> tuple) {
@@ -105,13 +109,15 @@ public class OutputCollector extends OutputCollectorCb {
     }
 
     /**
+     * 后续component不会向acker发送ack响应
+     *
      * Emits a new unanchored tuple to the specified stream. Because it's
      * unanchored, if a failure happens downstream, this new tuple won't affect
      * whether any spout tuples are considered failed or not. The emitted values
      * must be immutable.
      *
      * @param streamId the stream to emit to
-     * @param tuple    the new output tuple from this bolt
+     * @param tuple the new output tuple from this bolt
      * @return the list of task ids that this new tuple was sent to
      */
     public List<Integer> emit(String streamId, List<Object> tuple) {
@@ -127,7 +133,7 @@ public class OutputCollector extends OutputCollectorCb {
      * tuples. The emitted values must be immutable.
      *
      * @param anchors the tuples to anchor to
-     * @param tuple   the new output tuple from this bolt
+     * @param tuple the new output tuple from this bolt
      * @return the list of task ids that this new tuple was sent to
      */
     public List<Integer> emit(Collection<Tuple> anchors, List<Object> tuple) {
@@ -143,7 +149,7 @@ public class OutputCollector extends OutputCollectorCb {
      * emitted values must be immutable.
      *
      * @param anchor the tuple to anchor to
-     * @param tuple  the new output tuple from this bolt
+     * @param tuple the new output tuple from this bolt
      * @return the list of task ids that this new tuple was sent to
      */
     public List<Integer> emit(Tuple anchor, List<Object> tuple) {
@@ -179,11 +185,11 @@ public class OutputCollector extends OutputCollectorCb {
      * grouping, an error will occur at runtime. The emitted values must be
      * immutable.
      *
-     * @param taskId   the taskId to send the new tuple to
+     * @param taskId the taskId to send the new tuple to
      * @param streamId the stream to send the tuple on. It must be declared as a
-     *                 direct stream in the topology definition.
-     * @param anchor   the tuple to anchor to
-     * @param tuple    the new output tuple from this bolt
+     * direct stream in the topology definition.
+     * @param anchor the tuple to anchor to
+     * @param tuple the new output tuple from this bolt
      */
     public void emitDirect(int taskId, String streamId, Tuple anchor,
                            List<Object> tuple) {
@@ -204,10 +210,10 @@ public class OutputCollector extends OutputCollectorCb {
      * use anchors, so downstream failures won't affect the failure status of
      * any spout tuples. The emitted values must be immutable.
      *
-     * @param taskId   the taskId to send the new tuple to
+     * @param taskId the taskId to send the new tuple to
      * @param streamId the stream to send the tuple on. It must be declared as a
-     *                 direct stream in the topology definition.
-     * @param tuple    the new output tuple from this bolt
+     * direct stream in the topology definition.
+     * @param tuple the new output tuple from this bolt
      */
     public void emitDirect(int taskId, String streamId, List<Object> tuple) {
         emitDirect(taskId, streamId, (List) null, tuple);
@@ -231,9 +237,9 @@ public class OutputCollector extends OutputCollectorCb {
      * in Java.
      * </p>
      *
-     * @param taskId  the taskId to send the new tuple to
+     * @param taskId the taskId to send the new tuple to
      * @param anchors the tuples to anchor to
-     * @param tuple   the new output tuple from this bolt
+     * @param tuple the new output tuple from this bolt
      */
     public void emitDirect(int taskId, Collection<Tuple> anchors,
                            List<Object> tuple) {
@@ -261,7 +267,7 @@ public class OutputCollector extends OutputCollectorCb {
      *
      * @param taskId the taskId to send the new tuple to
      * @param anchor the tuple to anchor to
-     * @param tuple  the new output tuple from this bolt
+     * @param tuple the new output tuple from this bolt
      */
     public void emitDirect(int taskId, Tuple anchor, List<Object> tuple) {
         emitDirect(taskId, Utils.DEFAULT_STREAM_ID, anchor, tuple);
@@ -291,7 +297,7 @@ public class OutputCollector extends OutputCollectorCb {
      * </p>
      *
      * @param taskId the taskId to send the new tuple to
-     * @param tuple  the new output tuple from this bolt
+     * @param tuple the new output tuple from this bolt
      */
     public void emitDirect(int taskId, List<Object> tuple) {
         emitDirect(taskId, Utils.DEFAULT_STREAM_ID, tuple);
