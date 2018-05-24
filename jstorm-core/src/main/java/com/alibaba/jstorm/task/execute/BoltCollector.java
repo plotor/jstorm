@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.execute;
 
 import backtype.storm.Config;
@@ -39,6 +40,9 @@ import com.alibaba.jstorm.task.comm.UnanchoredSend;
 import com.alibaba.jstorm.task.error.ITaskReportErr;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RotatingMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -46,8 +50,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * bolt output interface, do emit/ack/fail
@@ -93,7 +95,7 @@ public class BoltCollector extends OutputCollectorCb {
 
         String componentId = topologyContext.getThisComponentId();
         this.emitTimer = (AsmHistogram) JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(
-                        topologyContext.getTopologyId(), componentId, taskId, MetricDef.COLLECTOR_EMIT_TIME, MetricType.HISTOGRAM),
+                topologyContext.getTopologyId(), componentId, taskId, MetricDef.COLLECTOR_EMIT_TIME, MetricType.HISTOGRAM),
                 new AsmHistogram());
         this.emitTimer.setEnabled(false);
         this.random = new Random(Utils.secureRandomLong());
@@ -140,12 +142,16 @@ public class BoltCollector extends OutputCollectorCb {
         MessageId ret = null;
         if (anchors != null && ackerNum > 0) {
             Map<Long, Long> anchors_to_ids = new HashMap<>();
+            // 在一般的情况下anchors的size=1，见BasicOutputCollector类，即为当前收到的inputTuple。
             for (Tuple a : anchors) {
                 if (a.getMessageId() != null) {
                     Long edge_id = MessageId.generateId(random);
+                    // 这里会将<inputTuple, edge_id>放入pending_acks
                     put_xor(pendingAcks, a, edge_id);
                     MessageId messageId = a.getMessageId();
                     if (messageId != null) {
+                        // 这里将每一对<root_id, edge_id>放入anchors_to_ids（一般情况下也只有一对），
+                        // 由于anchors_to_ids是一个空map，因此put_xor里面，相当于拿root_id对应的值^0 = root_id的值
                         for (Long root_id : messageId.getAnchorsToIds().keySet()) {
                             put_xor(anchors_to_ids, root_id, edge_id);
                         }
@@ -162,6 +168,7 @@ public class BoltCollector extends OutputCollectorCb {
         final long start = emitTimer.getTime();
         List<Integer> outTasks = null;
         try {
+            // 一样地获取所有目标task列表
             if (out_task_id != null) {
                 outTasks = sendTargets.get(out_task_id, out_stream_id, values, anchors, null);
             } else {
@@ -169,8 +176,10 @@ public class BoltCollector extends OutputCollectorCb {
             }
 
             tryRotate();
+            // 遍历所有目标task，每一个目标task的message id= <root_id, edge_id>，其中edge_id是在这个bolt里新生成的随机数
             for (Integer t : outTasks) {
                 MessageId msgId = getMessageId(anchors);
+                // 往目标bolt发送消息
                 TupleImplExt tp = new TupleImplExt(topologyContext, values, taskId, out_stream_id, msgId);
                 tp.setTargetTaskId(t);
                 taskTransfer.transfer(tp);
@@ -181,8 +190,9 @@ public class BoltCollector extends OutputCollectorCb {
             if (outTasks == null) {
                 outTasks = new ArrayList<>();
             }
-            if (callback != null)
+            if (callback != null) {
                 callback.execute(out_stream_id, outTasks, values);
+            }
             emitTimer.updateTime(start);
         }
         return outTasks;
@@ -237,11 +247,13 @@ public class BoltCollector extends OutputCollectorCb {
     public void ack(Tuple input) {
         if (input.getMessageId() != null) {
             Long ack_val = 0L;
+            // 这里取出sendMsg放入的对象：<inputTuple, edge_id>
             Object pend_val = pendingAcks.remove(input);
             if (pend_val != null) {
                 ack_val = (Long) (pend_val);
             }
 
+            // 发送ack消息，messageId = <root_id, inputTuple的随机数 ^ edge_id>
             for (Entry<Long, Long> e : input.getMessageId().getAnchorsToIds().entrySet()) {
                 unanchoredSend(topologyContext, sendTargets, taskTransfer, Acker.ACKER_ACK_STREAM_ID,
                         JStormUtils.mk_list((Object) e.getKey(), JStormUtils.bit_xor(e.getValue(), ack_val)));

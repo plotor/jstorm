@@ -18,7 +18,10 @@
 package com.alibaba.jstorm.blobstore;
 
 import backtype.storm.daemon.Shutdownable;
-import backtype.storm.generated.*;
+import backtype.storm.generated.KeyAlreadyExistsException;
+import backtype.storm.generated.KeyNotFoundException;
+import backtype.storm.generated.ReadableBlobMeta;
+import backtype.storm.generated.SettableBlobMeta;
 import backtype.storm.nimbus.NimbusInfo;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -28,7 +31,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.regex.Pattern;
 
 /**
@@ -55,6 +60,7 @@ public abstract class BlobStore implements Shutdownable {
 
     /**
      * Allows us to initialize the blob store
+     *
      * @param conf The storm configuration
      * @param baseDir The directory path to store the blobs
      * @param nimbusInfo Contains the nimbus host, port and leadership information.
@@ -63,6 +69,7 @@ public abstract class BlobStore implements Shutdownable {
 
     /**
      * Creates the blob.
+     *
      * @param key Key for the blob.
      * @param meta Metadata which contains the acls information
      * @return AtomicOutputStream returns a stream into which the data
@@ -73,6 +80,7 @@ public abstract class BlobStore implements Shutdownable {
 
     /**
      * Updates the blob data.
+     *
      * @param key Key for the blob.
      * @return AtomicOutputStream returns a stream into which the data
      * can be written.
@@ -83,6 +91,7 @@ public abstract class BlobStore implements Shutdownable {
     /**
      * Gets the current version of metadata for a blob
      * to be viewed by the user or downloaded by the supervisor.
+     *
      * @param key Key for the blob.
      * @return AtomicOutputStream returns a stream into which the data
      * can be written.
@@ -92,6 +101,7 @@ public abstract class BlobStore implements Shutdownable {
 
     /**
      * Sets the metadata with renewed acls for the blob.
+     *
      * @param key Key for the blob.
      * @param meta Metadata which contains the updated
      * acls information.
@@ -101,6 +111,7 @@ public abstract class BlobStore implements Shutdownable {
 
     /**
      * Deletes the blob data and metadata.
+     *
      * @param key Key for the blob.
      * @throws KeyNotFoundException
      */
@@ -108,6 +119,7 @@ public abstract class BlobStore implements Shutdownable {
 
     /**
      * Gets the InputStream to read the blob details
+     *
      * @param key Key for the blob.
      * @return InputStreamWithMeta has the additional
      * file length and version information.
@@ -118,12 +130,14 @@ public abstract class BlobStore implements Shutdownable {
     /**
      * Returns an iterator with all the list of
      * keys currently available on the blob store.
+     *
      * @return Iterator<String>
      */
     public abstract Iterator<String> listKeys();
 
     /**
      * Gets the replication factor of the blob.
+     *
      * @param key Key for the blob.
      * @return BlobReplication object containing the
      * replication factor for the blob.
@@ -133,6 +147,7 @@ public abstract class BlobStore implements Shutdownable {
 
     /**
      * Modifies the replication factor of the blob.
+     *
      * @param key Key for the blob.
      * @param replication The replication factor the
      * blob has to be set.
@@ -145,6 +160,7 @@ public abstract class BlobStore implements Shutdownable {
 
     /**
      * Validates key checking for potentially harmful patterns
+     *
      * @param key Key for the blob.
      */
     public static final void validateKey(String key) throws IllegalArgumentException {
@@ -157,6 +173,7 @@ public abstract class BlobStore implements Shutdownable {
     /**
      * Wrapper called to create the blob which contains
      * the byte data
+     *
      * @param key Key for the blob.
      * @param data Byte data that needs to be uploaded.
      * @param meta Metadata which contains the acls information
@@ -180,6 +197,7 @@ public abstract class BlobStore implements Shutdownable {
     /**
      * Wrapper called to create the blob which contains
      * the byte data
+     *
      * @param key Key for the blob.
      * @param in InputStream from which the data is read to be
      * written as a part of the blob.
@@ -209,6 +227,7 @@ public abstract class BlobStore implements Shutdownable {
     /**
      * Reads the blob from the blob store
      * and writes it into the output stream.
+     *
      * @param key Key for the blob.
      * @param out Output stream
      * privilege for the blob.
@@ -235,7 +254,8 @@ public abstract class BlobStore implements Shutdownable {
     /**
      * Wrapper around readBlobTo which
      * returns a ByteArray output stream.
-     * @param key  Key for the blob.
+     *
+     * @param key Key for the blob.
      * the read privilege for the blob.
      * @return ByteArrayOutputStream
      * @throws IOException

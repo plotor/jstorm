@@ -151,6 +151,7 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
 
     void unanchoredSend(TopologyContext topologyContext, TaskSendTargets taskTargets,
                         TaskTransfer transfer_fn, String stream, List<Object> values) {
+        // 发送给acker。会根据__acker_init这个stream直接找到task id进行发送。
         UnanchoredSend.send(topologyContext, taskTargets, transfer_fn, stream, values);
     }
 
@@ -161,11 +162,14 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
     protected void sendMsgToAck(
             String outStreamId, List<Object> values, Object messageId, Long rootId, List<Long> ackSeq, boolean needAck) {
         if (needAck) {
+            // ack消息的逻辑在这里面，上面对所有的目标task分别emit消息，但是ack_init消息只需要发送一条。
             TupleInfo info = TupleInfo.buildTupleInfo(outStreamId, messageId, values, System.currentTimeMillis(), isCacheTuple);
             pending.putHead(rootId, info);
+            // messageId = <root_id, 所有目标task的messageId随机数值的异或>
             List<Object> ackerTuple = JStormUtils.mk_list((Object) rootId, JStormUtils.bit_xor_vals(ackSeq), task_id);
             this.unanchoredSend(topology_context, sendTargets, transfer_fn, Acker.ACKER_INIT_STREAM_ID, ackerTuple);
         } else if (messageId != null) {
+            // 这里的逻辑，处理没有acker，但是仍然实现了IAckValueSpout接口的情况，需要给这种spout回调ack方法的机会。
             TupleInfo info = TupleInfo.buildTupleInfo(outStreamId, messageId, values, 0, isCacheTuple);
             AckSpoutMsg ack = new AckSpoutMsg(rootId, spout, null, info, task_stats);
             ack.run();
@@ -177,7 +181,7 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
         final long startTime = emitTotalTimer.getTime();
         try {
             boolean needAck = (message_id != null) && (ackerNum > 0);
-            Long root_id = getRootId(message_id);
+            Long root_id = this.getRootId(message_id);
             List<Integer> outTasks;
 
             // 得到目标 taskId 列表
@@ -188,17 +192,19 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
             }
 
             List<Long> ackSeq = new ArrayList<>();
+            // 遍历所有的目标task，每个task的messageId=<root_id, 随机数值>
             for (Integer t : outTasks) {
                 MessageId msgId;
                 if (needAck) {
                     // Long as = MessageId.generateId();
                     Long as = MessageId.generateId(random);
                     msgId = MessageId.makeRootId(root_id, as);
-                    ackSeq.add(as);
+                    ackSeq.add(as); // 添加到ackSeq list中，后面会有用
                 } else {
                     msgId = null;
                 }
 
+                // 扔到transfer queue中，即进入发送队列
                 TupleImplExt tp = new TupleImplExt(topology_context, values, task_id, out_stream_id, msgId);
                 tp.setTargetTaskId(t);
                 transfer_fn.transfer(tp);
@@ -254,6 +260,12 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
         report_error.report(error);
     }
 
+    /**
+     * 生成随机的root_id，但是需要确保在当前spout中不能有重复的，不然就不能保证ack的准确性了
+     *
+     * @param messageId
+     * @return
+     */
     protected Long getRootId(Object messageId) {
         Boolean needAck = (messageId != null) && (ackerNum > 0);
 

@@ -15,12 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.window;
 
 import backtype.storm.tuple.Tuple;
+
 import java.io.Serializable;
 
 /**
+ * 用来定义如何从你的tuple消息中抽取出event time的时间戳。
+ * 通常建议你的window bolt直接实现此接口即可，不需要再单独写一个类。
+ *
  * @author wange
  * @since 16/12/16
  */

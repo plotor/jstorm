@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.window;
 
 import backtype.storm.tuple.Tuple;
@@ -59,7 +60,7 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
     /**
      * define a sliding count window
      *
-     * @param size  count size
+     * @param size count size
      * @param slide slide size
      */
     public BaseWindowedBolt<T> countWindow(long size, long slide) {
@@ -84,7 +85,6 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
         this.windowAssigner = TumblingProcessingTimeWindows.of(s);
         return this;
     }
-
 
     /**
      * add state window to tumbling windows.
@@ -117,7 +117,7 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
     /**
      * define a sliding processing time window
      *
-     * @param size  window size
+     * @param size window size
      * @param slide slide size
      */
     public BaseWindowedBolt<T> timeWindow(Time size, Time slide) {
@@ -148,7 +148,7 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
     /**
      * define a sliding ingestion time window
      *
-     * @param size  window size
+     * @param size window size
      * @param slide slide size
      */
     public BaseWindowedBolt<T> ingestionTimeWindow(Time size, Time slide) {
@@ -179,7 +179,7 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
     /**
      * define a sliding event time window
      *
-     * @param size  window size
+     * @param size window size
      * @param slide slide size
      */
     public BaseWindowedBolt<T> eventTimeWindow(Time size, Time slide) {
@@ -192,7 +192,6 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
         this.windowAssigner = SlidingEventTimeWindows.of(s, l);
         return this;
     }
-
 
     /**
      * define a session processing time window

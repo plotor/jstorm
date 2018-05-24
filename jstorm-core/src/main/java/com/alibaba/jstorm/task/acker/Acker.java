@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.acker;
 
 import backtype.storm.Config;
@@ -24,10 +25,11 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RotatingMap;
-import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author yannian/Longda
@@ -64,6 +66,7 @@ public class Acker implements IBolt {
         Object id = input.getValue(0);
         AckObject curr = pending.get(id);
         String stream_id = input.getSourceStreamId();
+        // __acker_init消息，由spout发送，直接放入pending map中
         if (Acker.ACKER_INIT_STREAM_ID.equals(stream_id)) {
             if (curr == null) {
                 curr = new AckObject();
@@ -79,6 +82,7 @@ public class Acker implements IBolt {
             }
 
         } else if (Acker.ACKER_ACK_STREAM_ID.equals(stream_id)) {
+            // __ack_ack消息
             if (curr != null) {
                 curr.update_ack(input.getValue(1));
             } else {
@@ -90,6 +94,7 @@ public class Acker implements IBolt {
                 pending.put(id, curr);
             }
         } else if (Acker.ACKER_FAIL_STREAM_ID.equals(stream_id)) {
+            // 也有可能直接fail了
             if (curr == null) {
                 // do nothing
                 // already timeout, should go fail
@@ -101,6 +106,7 @@ public class Acker implements IBolt {
             return;
         }
 
+        // 告诉spout这个消息ack/fail了
         Integer task = curr.spout_task;
         if (task != null) {
             if (curr.val == 0) {
@@ -116,6 +122,7 @@ public class Acker implements IBolt {
             }
         }
 
+        // 这里只是更新metrics
         // add this operation to update acker stats
         collector.ack(input);
 
