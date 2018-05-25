@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.callback;
 
 import backtype.storm.daemon.Shutdownable;
@@ -22,20 +23,26 @@ import backtype.storm.daemon.Shutdownable;
 /**
  * Base Runnable/Callback function
  *
+ * 对 {@link Runnable}/{@link Callback}/{@link Shutdownable} 的一个聚合，提供了基础实现
+ *
  * @author yannian
  */
 public class RunnableCallback implements Runnable, Callback, Shutdownable {
+
+    @Override
+    public void run() {
+    }
 
     @Override
     public <T> Object execute(T... args) {
         return null;
     }
 
-    public void preRun() {
+    @Override
+    public void shutdown() {
     }
 
-    @Override
-    public void run() {
+    public void preRun() {
     }
 
     public void postRun() {
@@ -47,9 +54,6 @@ public class RunnableCallback implements Runnable, Callback, Shutdownable {
 
     public Object getResult() {
         return null;
-    }
-
-    public void shutdown() {
     }
 
     public String getThreadName() {

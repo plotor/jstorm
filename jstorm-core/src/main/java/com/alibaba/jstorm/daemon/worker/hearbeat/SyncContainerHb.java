@@ -17,22 +17,21 @@
  */
 package com.alibaba.jstorm.daemon.worker.hearbeat;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class SyncContainerHb extends RunnableCallback {
     private final static Logger LOG = LoggerFactory.getLogger(SyncContainerHb.class);
@@ -293,13 +292,17 @@ public class SyncContainerHb extends RunnableCallback {
     public static AsyncLoopThread mkNimbusInstance(Map conf) throws IOException {
         boolean isEnable = ConfigExtension.isEnableContainerNimbus();
         if (!isEnable) {
-            LOG.info("Run nimbus without Apsara/Yarn container");
+            LOG.info("Run nimbus without Apsara（阿里云飞天）/Yarn container");
             return null;
         }
 
+        // 获取目录:${container.nimbus.heartbeat}
         String containerHbDir = ConfigExtension.getContainerNimbusHearbeat();
+        // 创建 ${storm.local.dir}/nimbus/nimbus.heartbeat
         String hbDir = StormConfig.masterHearbeatForContainer(conf);
+        // 获取心跳过期时间，默认 4 分钟
         int timeout = ConfigExtension.getContainerHeartbeatTimeoutSeconds(conf);
+        // 获取心跳频率
         int frequency = ConfigExtension.getContainerHeartbeatFrequence(conf);
 
         return mkInstance(containerHbDir, hbDir, timeout, frequency);

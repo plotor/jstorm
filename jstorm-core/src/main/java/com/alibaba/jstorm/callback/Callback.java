@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.callback;
 
 /**
@@ -23,5 +24,7 @@ package com.alibaba.jstorm.callback;
  * @author lixin 2012-3-12
  */
 public interface Callback {
+
     <T> Object execute(T... args);
+
 }

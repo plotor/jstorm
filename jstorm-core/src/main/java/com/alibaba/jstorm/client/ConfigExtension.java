@@ -19,20 +19,18 @@ package com.alibaba.jstorm.client;
 
 import backtype.storm.Config;
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.config.DefaultConfigUpdateHandler;
 import com.alibaba.jstorm.utils.JStormUtils;
-
 import com.alibaba.jstorm.utils.TimeUtils;
-import java.util.HashSet;
-import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ConfigExtension {
     /**
@@ -138,6 +136,7 @@ public class ConfigExtension {
     protected static final String NIMBUS_DEAMON_HTTPSERVER_PORT = "nimbus.deamon.logview.port";
 
     public static Integer getNimbusDeamonHttpserverPort(Map conf) {
+        // ${nimbus.deamon.logview.port}
         return JStormUtils.parseInt(conf.get(NIMBUS_DEAMON_HTTPSERVER_PORT), DEFAULT_DEAMON_HTTPSERVER_PORT);
     }
 
@@ -391,6 +390,7 @@ public class ConfigExtension {
      * Get to know whether nimbus is run under Apsara/Yarn container
      */
     public static boolean isEnableContainerNimbus() {
+        // ${container.nimbus.heartbeat}
         String path = System.getenv(CONTAINER_NIMBUS_HEARTBEAT);
         return !StringUtils.isBlank(path);
     }
@@ -399,6 +399,7 @@ public class ConfigExtension {
      * Get Apsara/Yarn nimbus container's hearbeat dir
      */
     public static String getContainerNimbusHearbeat() {
+        // ${container.nimbus.heartbeat}
         return System.getenv(CONTAINER_NIMBUS_HEARTBEAT);
     }
 
@@ -422,12 +423,14 @@ public class ConfigExtension {
     protected static final String CONTAINER_HEARTBEAT_TIMEOUT_SECONDS = "container.heartbeat.timeout.seconds";
 
     public static int getContainerHeartbeatTimeoutSeconds(Map conf) {
+        // ${container.heartbeat.timeout.seconds}
         return JStormUtils.parseInt(conf.get(CONTAINER_HEARTBEAT_TIMEOUT_SECONDS), 240);
     }
 
     protected static final String CONTAINER_HEARTBEAT_FREQUENCE = "container.heartbeat.frequence";
 
     public static int getContainerHeartbeatFrequence(Map conf) {
+        // ${container.heartbeat.frequence}
         return JStormUtils.parseInt(conf.get(CONTAINER_HEARTBEAT_FREQUENCE), 10);
     }
 

@@ -15,18 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.callback;
 
+import backtype.storm.utils.Time;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.SmartThread;
 import com.google.common.annotations.VisibleForTesting;
-import java.lang.Thread.UncaughtExceptionHandler;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.utils.Time;
-
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.SmartThread;
+import java.lang.Thread.UncaughtExceptionHandler;
 
 /**
  * wraps timer thread to execute afn every several seconds, if an exception is thrown, run killFn
@@ -34,6 +33,7 @@ import com.alibaba.jstorm.utils.SmartThread;
  * @author yannian
  */
 public class AsyncLoopThread implements SmartThread {
+
     private static final Logger LOG = LoggerFactory.getLogger(AsyncLoopThread.class);
 
     private Thread thread;
@@ -56,6 +56,13 @@ public class AsyncLoopThread implements SmartThread {
         this.init(afn, daemon, kill_fn, priority, start);
     }
 
+    /**
+     * @param afn
+     * @param daemon 是否是守护线程
+     * @param kill_fn
+     * @param priority 线程优先级
+     * @param start 是否启动
+     */
     private void init(RunnableCallback afn, boolean daemon, RunnableCallback kill_fn, int priority, boolean start) {
         if (kill_fn == null) {
             kill_fn = new AsyncLoopDefaultKill();

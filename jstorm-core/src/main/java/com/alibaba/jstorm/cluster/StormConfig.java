@@ -417,9 +417,10 @@ public class StormConfig {
 
     /**
      * Return nimbus's heartbeat dir for apsara
+     * 创建 ${storm.local.dir}/nimbus/nimbus.heartbeat
      */
     public static String masterHearbeatForContainer(Map conf) throws IOException {
-        String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "nimbus.heartbeat";
+        String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "nimbus.heartbeat"; // ${storm.local.dir}/nimbus/nimbus.heartbeat
         try {
             FileUtils.forceMkdir(new File(ret));
         } catch (IOException e) {

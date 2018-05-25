@@ -136,15 +136,19 @@ public class NimbusServer {
             // 4. 模板方法
             inimbus.prepare(conf, StormConfig.masterInimbus(conf));
 
+            // 5. 基于 conf 创建 NimbusData 对象
             data = this.createNimbusData(conf, inimbus);
 
-            initFollowerThread(conf);
+            // 6. 注册一个 follower 线程
+            this.initFollowerThread(conf);
 
+            // 7.
             int port = ConfigExtension.getNimbusDeamonHttpserverPort(conf);
             hs = new Httpserver(port, conf);
             hs.start();
 
-            initContainerHBThread(conf);
+            // 8. 初始化容器心跳线程
+            this.initContainerHBThread(conf);
 
             serviceHandler = new ServiceHandler(data);
             initThrift(conf);
@@ -154,9 +158,8 @@ public class NimbusServer {
             }
             LOG.error("Fail to run nimbus ", e);
         } finally {
-            cleanup();
+            this.cleanup();
         }
-
         LOG.info("Quit nimbus");
     }
 
@@ -323,6 +326,11 @@ public class NimbusServer {
         thriftServer.serve();
     }
 
+    /**
+     * leader-follower 线程模型
+     *
+     * @param conf
+     */
     @SuppressWarnings("unused")
     private void initFollowerThread(Map conf) {
         // when this nimbus become leader, we will execute this callback, to init some necessary data/thread

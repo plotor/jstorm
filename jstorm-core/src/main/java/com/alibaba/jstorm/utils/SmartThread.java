@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.utils;
 
 /**
  * @author yannian
  */
 public interface SmartThread {
+
     void start();
 
     void join() throws InterruptedException;
@@ -30,4 +32,5 @@ public interface SmartThread {
     Boolean isSleeping();
 
     void cleanup();
+
 }

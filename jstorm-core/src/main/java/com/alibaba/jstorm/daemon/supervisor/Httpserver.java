@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
 
 import backtype.storm.Constants;
@@ -22,7 +23,12 @@ import backtype.storm.daemon.Shutdownable;
 import backtype.storm.utils.Utils;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.daemon.worker.Worker;
-import com.alibaba.jstorm.utils.*;
+import com.alibaba.jstorm.utils.FileAttribute;
+import com.alibaba.jstorm.utils.HttpserverUtils;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.Pair;
+import com.alibaba.jstorm.utils.PathUtils;
+import com.alibaba.jstorm.utils.TimeFormat;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Maps;
@@ -34,11 +40,23 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.net.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.net.BindException;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -202,7 +220,6 @@ public class Httpserver implements Shutdownable {
             sendResponse(t, HttpURLConnection.HTTP_OK, logPair.getSecond());
         }
 
-
         private Pair<Long, byte[]> queryLog(HttpExchange t, Map<String, String> paramMap) throws IOException {
             String fileParam = paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PARAM_LOGFILE);
             String _pageSize = paramMap.get(HttpserverUtils.HTTPSERVER_LOGVIEW_PAGE_SIZE);
@@ -276,7 +293,7 @@ public class Httpserver implements Shutdownable {
             File file = new File(path);
             String[] files = file.list();
             if (files == null) {
-                files = new String[]{};
+                files = new String[] {};
             }
 
             for (String fileName : files) {
@@ -381,7 +398,6 @@ public class Httpserver implements Shutdownable {
             String resp = JStormUtils.to_json(ret);
             sendResponse(t, HttpURLConnection.HTTP_OK, resp);
         }
-
 
         private Map<Object, Object> searchFromTail(String logFile, long offset, String key, int maxMatch, int lookBack,
                                                    int lookAhead, int maxBlocks, int blockSize, boolean caseIgnore) throws IOException {
@@ -661,7 +677,6 @@ public class Httpserver implements Shutdownable {
                 sb.append("Failed to execute " + cmd + ", " + e.getCause());
             }
         }
-
 
         void handleJstat(StringBuilder sb, Integer pid) {
             String cmd = "jstat -gc " + pid;

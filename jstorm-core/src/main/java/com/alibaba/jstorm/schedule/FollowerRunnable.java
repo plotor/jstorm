@@ -15,20 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule;
 
-import java.util.*;
-
+import backtype.storm.Config;
+import backtype.storm.utils.Utils;
 import com.alibaba.jstorm.blobstore.BlobStore;
 import com.alibaba.jstorm.blobstore.BlobStoreUtils;
 import com.alibaba.jstorm.blobstore.BlobSynchronizer;
 import com.alibaba.jstorm.blobstore.LocalFsBlobStore;
 import com.alibaba.jstorm.callback.Callback;
-import com.google.common.collect.Sets;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Cluster;
@@ -36,10 +32,19 @@ import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.daemon.nimbus.NimbusData;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.NetWorkUtils;
+import com.google.common.collect.Sets;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-import backtype.storm.utils.Utils;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+/**
+ * leader-follower 线程模型
+ */
 public class FollowerRunnable implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(FollowerRunnable.class);
 
@@ -128,7 +133,6 @@ public class FollowerRunnable implements Runnable {
             }
         }
     }
-
 
     // sets up blobstore state for all current keys
     private void setupBlobstore() throws Exception {
@@ -233,7 +237,6 @@ public class FollowerRunnable implements Runnable {
             }
         }
     }
-
 
     private void tryToBeLeader(final Map conf) throws Exception {
         boolean allowed = check_nimbus_priority();

@@ -683,7 +683,7 @@ public class JStormUtils {
      * @return
      * @throws IOException
      */
-    protected static java.lang.Process launchProcess(
+    protected static Process launchProcess(
             final List<String> cmdlist, final Map<String, String> environment) throws IOException {
         ProcessBuilder builder = new ProcessBuilder(cmdlist);
         builder.redirectErrorStream(true);

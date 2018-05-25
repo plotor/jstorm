@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.callback;
 
 import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
  * Killer callback
+ * 当进程被 kill 时回调
  *
  * @author yannian
  */
