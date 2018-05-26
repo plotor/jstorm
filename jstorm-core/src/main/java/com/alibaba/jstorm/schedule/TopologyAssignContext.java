@@ -15,15 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule;
 
 import backtype.storm.generated.StormTopology;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
-import java.util.Map;
-import java.util.Set;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+
+import java.util.Map;
+import java.util.Set;
 
 public class TopologyAssignContext {
 

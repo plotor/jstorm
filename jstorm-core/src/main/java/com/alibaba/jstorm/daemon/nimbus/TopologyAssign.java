@@ -36,7 +36,7 @@ import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.metric.JStormMetrics;
 import com.alibaba.jstorm.schedule.Assignment;
 import com.alibaba.jstorm.schedule.AssignmentBak;
-import com.alibaba.jstorm.schedule.IToplogyScheduler;
+import com.alibaba.jstorm.schedule.ITopologyScheduler;
 import com.alibaba.jstorm.schedule.TopologyAssignContext;
 import com.alibaba.jstorm.schedule.default_assign.DefaultTopologyScheduler;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
@@ -85,15 +85,21 @@ public class TopologyAssign implements Runnable {
     }
 
     protected NimbusData nimbusData;
-    protected Map<String, IToplogyScheduler> schedulers;
+    protected Map<String, ITopologyScheduler> schedulers;
     private Thread thread;
     public static final String DEFAULT_SCHEDULER_NAME = "default";
 
+    /**
+     * 赋值、创建默认调度器
+     *
+     * @param nimbusData
+     */
     public void init(NimbusData nimbusData) {
         this.nimbusData = nimbusData;
         this.schedulers = new HashMap<>();
 
-        IToplogyScheduler defaultScheduler = new DefaultTopologyScheduler();
+        // 调度器
+        ITopologyScheduler defaultScheduler = new DefaultTopologyScheduler();
         defaultScheduler.prepare(nimbusData.getConf());
 
         schedulers.put(DEFAULT_SCHEDULER_NAME, defaultScheduler);
@@ -109,7 +115,7 @@ public class TopologyAssign implements Runnable {
         thread.interrupt();
     }
 
-    protected static LinkedBlockingQueue<TopologyAssignEvent> queue = new LinkedBlockingQueue<TopologyAssignEvent>();
+    protected static LinkedBlockingQueue<TopologyAssignEvent> queue = new LinkedBlockingQueue<>();
 
     public static void push(TopologyAssignEvent event) {
         queue.offer(event);
@@ -117,6 +123,7 @@ public class TopologyAssign implements Runnable {
 
     volatile boolean runFlag = false;
 
+    @Override
     public void run() {
         LOG.info("TopologyAssign thread has been started");
         runFlag = true;
@@ -132,10 +139,10 @@ public class TopologyAssign implements Runnable {
                 continue;
             }
 
-            boolean isSuccess = doTopologyAssignment(event);
+            boolean isSuccess = this.doTopologyAssignment(event);
             if (isSuccess) {
                 try {
-                    cleanupDisappearedTopology();
+                    this.cleanupDisappearedTopology();
                 } catch (Exception e) {
                     LOG.error("Failed to do cleanup disappeared topology ", e);
                 }
@@ -175,14 +182,19 @@ public class TopologyAssign implements Runnable {
             Assignment oldAssignment = null;
             boolean isReassign = event.isScratch();
             if (isReassign) {
+                // 如果是已存在的拓扑，需要先将之前的信息存储下来
                 oldAssignment = nimbusData.getStormClusterState().assignment_info(event.getTopologyId(), null);
             }
-            assignment = mkAssignment(event);
 
-            pushTaskStartEvent(oldAssignment, assignment, event);
+            // 执行新的任务分配
+            assignment = this.mkAssignment(event);
+
+            // 将 task 添加到集群的 metrics
+            this.pushTaskStartEvent(oldAssignment, assignment, event);
 
             if (!isReassign) {
-                setTopologyStatus(event);
+                // 如果是新的拓扑，则进行激活
+                this.setTopologyStatus(event);
             }
         } catch (Throwable e) {
             LOG.error("Failed to assign topology " + event.getTopologyId(), e);
@@ -191,7 +203,8 @@ public class TopologyAssign implements Runnable {
         }
 
         if (assignment != null) {
-            backupAssignment(assignment, event);
+            // 将拓扑信息备份到 ZK 上
+            this.backupAssignment(assignment, event);
         }
         event.done();
         return true;
@@ -319,6 +332,14 @@ public class TopologyAssign implements Runnable {
         LOG.info("Update " + topologyId + " " + status);
     }
 
+    /**
+     * 初始化拓扑分配的上下文信息，生成 {@link TopologyAssignContext} 对象
+     *
+     * @param event
+     * @return
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
     protected TopologyAssignContext prepareTopologyAssign(TopologyAssignEvent event) throws Exception {
         TopologyAssignContext ret = new TopologyAssignContext();
 
@@ -330,14 +351,18 @@ public class TopologyAssign implements Runnable {
         LOG.info("prepareTopologyAssign, topoMasterId={}", topoMasterId);
 
         Map<Object, Object> nimbusConf = nimbusData.getConf();
+        // 读取拓扑的配置信息
         Map<Object, Object> topologyConf = StormConfig.read_nimbus_topology_conf(topologyId, nimbusData.getBlobStore());
 
+        // 读取拓扑的结构信息
         StormTopology rawTopology = StormConfig.read_nimbus_topology_code(topologyId, nimbusData.getBlobStore());
         ret.setRawTopology(rawTopology);
 
+        // 设置一些配置信息
         Map stormConf = new HashMap();
-        LOG.info("GET RESERVE_WORKERS from ={}", Utils.readDefaultConfig());
-        LOG.info("RESERVE_WORKERS ={}", Utils.readDefaultConfig().get(Config.RESERVE_WORKERS));
+        LOG.info("GET RESERVE_WORKERS from = {}", Utils.readDefaultConfig());
+        LOG.info("RESERVE_WORKERS = {}", Utils.readDefaultConfig().get(Config.RESERVE_WORKERS));
+        // 设置保留的 worker 数目 ${jstorm.reserve.workers}
         stormConf.put(Config.RESERVE_WORKERS, Utils.readDefaultConfig().get(Config.RESERVE_WORKERS));
         stormConf.putAll(nimbusConf);
         stormConf.putAll(topologyConf);
@@ -351,15 +376,22 @@ public class TopologyAssign implements Runnable {
         for (Entry<String, SupervisorInfo> supInfo : supInfos.entrySet()) {
             SupervisorInfo supervisor = supInfo.getValue();
             if (supervisor != null) {
+                // 设置全部的端口为可用，后面会通过 HB 去除掉已被使用的 worker
                 supervisor.setAvailableWorkerPorts(supervisor.getWorkerPorts());
             }
         }
 
-        getAliveSupervsByHb(supInfos, nimbusConf);
+        // 基于超时机制从 supervisorInfos 中剔除已经死亡的 supervisor
+        this.getAliveSupervsByHb(supInfos, nimbusConf);
         if (supInfos.size() == 0) {
             throw new FailedAssignTopologyException("Failed to make assignment " + topologyId + ", due to no alive supervisor");
         }
 
+        /**
+         * 获取 topology 中的组件信息 <task_id, component_id>
+         * 对于一个拓扑而言，taskid 总是从1开始分配的，并且，相同的组件taskid是相邻的。
+         * 比如你定义了一个SocketSpout（并行度5），一个PrintBolt（并行度4，那么SocketSpout的taskid可能是1-5，PrintBolt的taskid可能是6-9。
+         */
         Map<Integer, String> taskToComponent = Cluster.get_all_task_component(stormClusterState, topologyId, null);
         ret.setTaskToComponent(taskToComponent);
 
@@ -373,8 +405,7 @@ public class TopologyAssign implements Runnable {
         ret.setAllTaskIds(allTaskIds);
 
         Set<Integer> aliveTasks = new HashSet<>();
-        // unstoppedTasks are tasks which are alive on no supervisor's(dead)
-        // machine
+        // unstoppedTasks are tasks which are alive on no supervisor's(dead) machine
         Set<Integer> unstoppedTasks = new HashSet<>();
         Set<Integer> deadTasks = new HashSet<>();
         Set<ResourceWorkerSlot> unstoppedWorkers;
@@ -401,14 +432,13 @@ public class TopologyAssign implements Runnable {
         ret.setDeadTaskIds(deadTasks);
         ret.setUnstoppedTaskIds(unstoppedTasks);
 
-        // Step 2: get all slots resource, free slots/ alive slots/ unstopped
-        // slots
+        // Step 2: get all slots resource, free slots/ alive slots/ unstopped slots
         getFreeSlots(supInfos, stormClusterState);
         ret.setCluster(supInfos);
 
         if (existingAssignment == null) {
+            // 没有旧的分配信息
             ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_NEW);
-
             try {
                 AssignmentBak lastAssignment = stormClusterState.assignment_bak(event.getTopologyName());
                 if (lastAssignment != null) {
@@ -435,19 +465,25 @@ public class TopologyAssign implements Runnable {
     }
 
     /**
-     * make assignments for a topology The nimbus core function, this function has been totally rewrite
+     * make assignments for a topology
+     *
+     * The nimbus core function, this function has been totally rewrite
      *
      * @throws Exception
      */
     public Assignment mkAssignment(TopologyAssignEvent event) throws Exception {
         String topologyId = event.getTopologyId();
         LOG.info("Determining assignment for " + topologyId);
-        TopologyAssignContext context = prepareTopologyAssign(event);
+        TopologyAssignContext context = this.prepareTopologyAssign(event);
         Set<ResourceWorkerSlot> assignments;
         if (!StormConfig.local_mode(nimbusData.getConf())) {
-            IToplogyScheduler scheduler = schedulers.get(DEFAULT_SCHEDULER_NAME);
+            // 集群模式
+            // 获取模式的调度器
+            ITopologyScheduler scheduler = schedulers.get(DEFAULT_SCHEDULER_NAME);
+            // 为 topology 分配 worker
             assignments = scheduler.assignTasks(context);
         } else {
+            // 本地模式
             assignments = mkLocalAssignment(context);
         }
 
@@ -748,8 +784,9 @@ public class TopologyAssign implements Runnable {
     /**
      * Get free resources
      */
-    public static void getFreeSlots(Map<String, SupervisorInfo> supervisorInfos,
-                                    StormClusterState stormClusterState) throws Exception {
+    public static void getFreeSlots(
+            Map<String, SupervisorInfo> supervisorInfos, StormClusterState stormClusterState) throws Exception {
+        // 获取集群分配信息: <topology_id, Assignment>
         Map<String, Assignment> assignments = Cluster.get_all_assignment(stormClusterState, null);
         for (Entry<String, Assignment> entry : assignments.entrySet()) {
             Assignment assignment = entry.getValue();
@@ -760,6 +797,7 @@ public class TopologyAssign implements Runnable {
                     // the supervisor is dead
                     continue;
                 }
+                // 去除已经分配出去的 worker
                 supervisorInfo.getAvailableWorkerPorts().remove(worker.getPort());
             }
         }
@@ -835,6 +873,12 @@ public class TopologyAssign implements Runnable {
         }
     }
 
+    /**
+     * 基于超时机制从 supervisorInfos 中剔除已经死亡的 supervisor
+     *
+     * @param supervisorInfos
+     * @param conf
+     */
     private void getAliveSupervsByHb(Map<String, SupervisorInfo> supervisorInfos, Map conf) {
         int currentTime = TimeUtils.current_time_secs();
         int hbTimeout = JStormUtils.parseInt(conf.get(Config.NIMBUS_SUPERVISOR_TIMEOUT_SECS), (JStormUtils.MIN_1 * 3));
@@ -842,13 +886,15 @@ public class TopologyAssign implements Runnable {
 
         for (Entry<String, SupervisorInfo> entry : supervisorInfos.entrySet()) {
             SupervisorInfo supInfo = entry.getValue();
-            int lastReportTime = supInfo.getTimeSecs();
+            int lastReportTime = supInfo.getTimeSecs(); // 最近一次上报时间
             if ((currentTime - lastReportTime) > hbTimeout) {
+                // 上报时间距离当前已经超期则认为结点已经死亡，加入剔除集合中
                 LOG.warn("Supervisor-" + supInfo.getHostName() + " is dead. lastReportTime=" + lastReportTime);
                 supervisorTobeRemoved.add(entry.getKey());
             }
         }
 
+        // 从 supervisorInfos 提出已经死亡的 supervisor
         for (String name : supervisorTobeRemoved) {
             supervisorInfos.remove(name);
         }

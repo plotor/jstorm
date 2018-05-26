@@ -15,18 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule;
+
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
-
-import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 
 /**
  * Assignment of one topology, stored in /ZK-DIR/assignments/{topologyId}
@@ -38,8 +38,11 @@ import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
  * @author Lixin/Longda
  */
 public class Assignment implements Serializable {
+
     public enum AssignmentType {
-        Assign, UpdateTopology, ScaleTopology
+        Assign,
+        UpdateTopology,
+        ScaleTopology
     }
 
     private static final long serialVersionUID = 6087667851333314069L;
@@ -118,8 +121,9 @@ public class Assignment implements Serializable {
     public Set<Integer> getCurrentSuperviosrTasks(String supervisorId) {
         Set<Integer> Tasks = new HashSet<>();
         for (ResourceWorkerSlot worker : workers) {
-            if (worker.getNodeId().equals(supervisorId))
+            if (worker.getNodeId().equals(supervisorId)) {
                 Tasks.addAll(worker.getTasks());
+            }
         }
         return Tasks;
     }
@@ -127,24 +131,27 @@ public class Assignment implements Serializable {
     public Set<Integer> getCurrentSuperviosrWorkers(String supervisorId) {
         Set<Integer> workerSet = new HashSet<>();
         for (ResourceWorkerSlot worker : workers) {
-            if (worker.getNodeId().equals(supervisorId))
+            if (worker.getNodeId().equals(supervisorId)) {
                 workerSet.add(worker.getPort());
+            }
         }
         return workerSet;
     }
 
     public Set<Integer> getCurrentWorkerTasks(String supervisorId, int port) {
         for (ResourceWorkerSlot worker : workers) {
-            if (worker.getNodeId().equals(supervisorId) && worker.getPort() == port)
+            if (worker.getNodeId().equals(supervisorId) && worker.getPort() == port) {
                 return worker.getTasks();
+            }
         }
         return new HashSet<>();
     }
 
     public ResourceWorkerSlot getWorkerByTaskId(Integer taskId) {
         for (ResourceWorkerSlot worker : workers) {
-            if (worker.getTasks().contains(taskId))
+            if (worker.getTasks().contains(taskId)) {
                 return worker;
+            }
         }
         return null;
     }
@@ -180,35 +187,47 @@ public class Assignment implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         Assignment other = (Assignment) obj;
         if (masterCodeDir == null) {
-            if (other.masterCodeDir != null)
+            if (other.masterCodeDir != null) {
                 return false;
-        } else if (!masterCodeDir.equals(other.masterCodeDir))
+            }
+        } else if (!masterCodeDir.equals(other.masterCodeDir)) {
             return false;
+        }
         if (nodeHost == null) {
-            if (other.nodeHost != null)
+            if (other.nodeHost != null) {
                 return false;
-        } else if (!nodeHost.equals(other.nodeHost))
+            }
+        } else if (!nodeHost.equals(other.nodeHost)) {
             return false;
+        }
         if (taskStartTimeSecs == null) {
-            if (other.taskStartTimeSecs != null)
+            if (other.taskStartTimeSecs != null) {
                 return false;
-        } else if (!taskStartTimeSecs.equals(other.taskStartTimeSecs))
+            }
+        } else if (!taskStartTimeSecs.equals(other.taskStartTimeSecs)) {
             return false;
+        }
         if (workers == null) {
-            if (other.workers != null)
+            if (other.workers != null) {
                 return false;
-        } else if (!workers.equals(other.workers))
+            }
+        } else if (!workers.equals(other.workers)) {
             return false;
-        if (timeStamp != other.timeStamp)
+        }
+        if (timeStamp != other.timeStamp) {
             return false;
+        }
         return true;
     }
 

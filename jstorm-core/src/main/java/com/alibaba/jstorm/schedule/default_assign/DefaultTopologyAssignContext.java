@@ -15,10 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule.default_assign;
 
 import backtype.storm.Config;
-import backtype.storm.generated.*;
+import backtype.storm.generated.Bolt;
+import backtype.storm.generated.ComponentCommon;
+import backtype.storm.generated.SpoutSpec;
+import backtype.storm.generated.StateSpoutSpec;
+import backtype.storm.generated.StormTopology;
 import backtype.storm.utils.ThriftTopologyUtils;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
@@ -29,8 +34,13 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 public class DefaultTopologyAssignContext extends TopologyAssignContext {
 
@@ -44,7 +54,13 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
     private final int unstoppedWorkerNum;
     private final int reserveWorkerNum;
 
+    /**
+     * 计算 worker 的数目
+     *
+     * @return
+     */
     private int computeWorkerNum() {
+        // 获取拓扑设置的 worker 数目
         Integer settingNum = JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_WORKERS));
 
         int ret, hintSum = 0, tmCount = 0;
@@ -65,14 +81,17 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
                 common = ((StateSpoutSpec) component).get_common();
             }
 
+            // 获取组件并行度
             int hint = common.get_parallelism_hint();
             if (componentName.equals(Common.TOPOLOGY_MASTER_COMPONENT_ID)) {
                 tmCount += hint;
                 continue;
             }
+            // 计算所有组件并行度之和
             hintSum += hint;
         }
 
+        // 取较小值
         if (settingNum == null) {
             ret = hintSum;
         } else {
@@ -84,14 +103,14 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
             if (isTmSingleWorker) {
                 // Assign a single worker for topology master
                 ret += tmCount;
-                setAssignSingleWorkerForTM(true);
+                this.setAssignSingleWorkerForTM(true);
                 ConfigExtension.setTopologyMasterSingleWorker(stormConf, true);
             }
         } else {
             // If not configured, judge this config by worker number
             if (ret >= 10) {
                 ret += tmCount;
-                setAssignSingleWorkerForTM(true);
+                this.setAssignSingleWorkerForTM(true);
                 ConfigExtension.setTopologyMasterSingleWorker(stormConf, true);
             }
         }
@@ -160,7 +179,9 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
             throw new FailedAssignTopologyException("Failed to generate system topology");
         }
 
-        sidToHostname = generateSidToHost();
+        // <supervisor_id, hostname>
+        sidToHostname = this.generateSidToHost();
+        // <hostname, supervisor_id>
         hostToSid = JStormUtils.reverse_map(sidToHostname);
 
         if (oldAssignment != null && oldAssignment.getWorkers() != null) {
@@ -169,19 +190,19 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
             oldWorkers = new HashSet<>();
         }
 
-        refineDeadTasks();
+        this.refineDeadTasks();
 
         componentTasks = JStormUtils.reverse_map(context.getTaskToComponent());
 
         for (Entry<String, List<Integer>> entry : componentTasks.entrySet()) {
             List<Integer> componentTaskList = entry.getValue();
-
             Collections.sort(componentTaskList);
         }
 
-        totalWorkerNum = computeWorkerNum();
+        // 计算 worker 的数目
+        totalWorkerNum = this.computeWorkerNum();
 
-        unstoppedWorkerNum = computeUnstoppedAssignments();
+        unstoppedWorkerNum = this.computeUnstoppedAssignments();
 
         reserveWorkerNum = ConfigExtension.getReserveWorkers(stormConf);
     }

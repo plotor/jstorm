@@ -15,16 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.jstorm.schedule;
 
-import java.util.Map;
-import java.util.Set;
+package com.alibaba.jstorm.schedule;
 
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 
-public interface IToplogyScheduler {
+import java.util.Map;
+import java.util.Set;
+
+public interface ITopologyScheduler {
+
     void prepare(Map conf);
 
+    /**
+     * 为 topology 分配 worker
+     *
+     * @param context
+     * @return
+     * @throws FailedAssignTopologyException
+     */
     Set<ResourceWorkerSlot> assignTasks(TopologyAssignContext context) throws FailedAssignTopologyException;
+
 }

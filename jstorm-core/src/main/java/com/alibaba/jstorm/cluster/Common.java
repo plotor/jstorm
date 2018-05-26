@@ -15,11 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.cluster;
 
 import backtype.storm.Config;
 import backtype.storm.Constants;
-import backtype.storm.generated.*;
+import backtype.storm.generated.Bolt;
+import backtype.storm.generated.ComponentCommon;
+import backtype.storm.generated.ComponentObject;
+import backtype.storm.generated.GlobalStreamId;
+import backtype.storm.generated.Grouping;
+import backtype.storm.generated.InvalidTopologyException;
+import backtype.storm.generated.JavaObject;
+import backtype.storm.generated.ShellComponent;
+import backtype.storm.generated.SpoutSpec;
+import backtype.storm.generated.StateSpoutSpec;
+import backtype.storm.generated.StormTopology;
+import backtype.storm.generated.StreamInfo;
 import backtype.storm.metric.SystemBolt;
 import backtype.storm.spout.ShellSpout;
 import backtype.storm.task.IBolt;
@@ -44,13 +56,21 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URLClassLoader;
 import java.security.InvalidParameterException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * Base utility function
  *
- * 1. base topology validation 2. add streams/inputs
+ * 1. base topology validation
+ * 2. add streams/inputs
  *
  * @author yannian/Longda
  */
@@ -138,12 +158,14 @@ public class Common {
         int index = topologyId.lastIndexOf('-');
         if (index != -1 && index > 2) {
             index = topologyId.lastIndexOf('-', index - 1);
-            if (index != -1 && index > 0)
+            if (index != -1 && index > 0) {
                 ret = topologyId.substring(0, index);
-            else
+            } else {
                 throw new InvalidTopologyException(topologyId + " is not a valid topologyId");
-        } else
+            }
+        } else {
             throw new InvalidTopologyException(topologyId + " is not a valid topologyId");
+        }
         return ret;
     }
 
@@ -361,7 +383,6 @@ public class Common {
         outputs.put(TOPOLOGY_MASTER_REGISTER_METRICS_RESP_STREAM_ID, Thrift.outputFields(list));
         list = JStormUtils.mk_list(TopologyMaster.FILED_UDF_STREAM_EVENT);
         outputs.put(TopologyMaster.USER_DEFINED_STREAM, Thrift.outputFields(list));
-        
 
         IBolt topologyMaster = new TopologyMaster();
 
@@ -618,9 +639,11 @@ public class Common {
         return topology;
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes"})
     public static StormTopology system_topology(Map storm_conf, StormTopology topology) throws InvalidTopologyException {
         StormTopology ret = topology.deepCopy();
+
+        // 添加 acker
         add_acker(storm_conf, ret);
         addTopologyMaster(storm_conf, ret);
         add_metrics_component(ret);
@@ -762,12 +785,14 @@ public class Common {
             }
         }
         for (String spout : spouts) {
-            if (relationship.get(spout) == null)
+            if (relationship.get(spout) == null) {
                 relationship.put(spout, new HashSet<String>());
+            }
         }
         for (String bolt : bolts) {
-            if (relationship.get(bolt) == null)
+            if (relationship.get(bolt) == null) {
                 relationship.put(bolt, new HashSet<String>());
+            }
         }
         return relationship;
     }

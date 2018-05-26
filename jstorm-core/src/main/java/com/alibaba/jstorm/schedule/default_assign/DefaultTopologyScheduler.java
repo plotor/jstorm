@@ -15,24 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule.default_assign;
+
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
+import com.alibaba.jstorm.schedule.Assignment;
+import com.alibaba.jstorm.schedule.ITopologyScheduler;
+import com.alibaba.jstorm.schedule.TopologyAssignContext;
+import com.alibaba.jstorm.utils.FailedAssignTopologyException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.alibaba.jstorm.client.ConfigExtension;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+public class DefaultTopologyScheduler implements ITopologyScheduler {
 
-import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
-import com.alibaba.jstorm.schedule.Assignment;
-import com.alibaba.jstorm.schedule.IToplogyScheduler;
-import com.alibaba.jstorm.schedule.TopologyAssignContext;
-import com.alibaba.jstorm.utils.FailedAssignTopologyException;
-
-public class DefaultTopologyScheduler implements IToplogyScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultTopologyScheduler.class);
 
     @SuppressWarnings("unused")
@@ -91,7 +92,7 @@ public class DefaultTopologyScheduler implements IToplogyScheduler {
      * Get the task Map which the task is alive and will be kept only when type is ASSIGN_TYPE_MONITOR, it is valid
      *
      * @param defaultContext default topology context
-     * @param needAssigns    a set of tasks to be assigned
+     * @param needAssigns a set of tasks to be assigned
      * @return a set of assigned slots
      */
     public Set<ResourceWorkerSlot> getKeepAssign(DefaultTopologyAssignContext defaultContext, Set<Integer> needAssigns) {
@@ -129,12 +130,14 @@ public class DefaultTopologyScheduler implements IToplogyScheduler {
 
         DefaultTopologyAssignContext defaultContext = new DefaultTopologyAssignContext(context);
         if (assignType == TopologyAssignContext.ASSIGN_TYPE_REBALANCE) {
-            // Mark all current assigned worker as available. Current assignment will be restored in task scheduler.
-            freeUsed(defaultContext);
+            // Mark all current assigned worker as available.
+            // Current assignment will be restored in task scheduler.
+            this.freeUsed(defaultContext);
         }
         LOG.info("Dead tasks:" + defaultContext.getDeadTaskIds());
         LOG.info("Unstopped tasks:" + defaultContext.getUnstoppedTaskIds());
 
+        // 获取需要分配的 task 集合
         Set<Integer> needAssignTasks = getNeedAssignTasks(defaultContext);
 
         Set<ResourceWorkerSlot> keepAssigns = getKeepAssign(defaultContext, needAssignTasks);
@@ -145,16 +148,15 @@ public class DefaultTopologyScheduler implements IToplogyScheduler {
         ret.addAll(defaultContext.getUnstoppedWorkers());
 
         int allocWorkerNum = defaultContext.getTotalWorkerNum() - defaultContext.getUnstoppedWorkerNum() - keepAssigns.size();
-        LOG.info("allocWorkerNum=" + allocWorkerNum + ", totalWorkerNum=" +
-                defaultContext.getTotalWorkerNum() + ", keepWorkerNum=" + keepAssigns.size());
+        LOG.info("allocWorkerNum=" + allocWorkerNum + ", totalWorkerNum=" + defaultContext.getTotalWorkerNum() + ", keepWorkerNum=" + keepAssigns.size());
 
         if (allocWorkerNum <= 0) {
             LOG.warn("Don't need assign workers, all workers are fine " + defaultContext.toDetailString());
             throw new FailedAssignTopologyException("Don't need assign worker, all workers are fine ");
         }
 
-        List<ResourceWorkerSlot> availableWorkers = WorkerScheduler.getInstance().getAvailableWorkers(
-                defaultContext, needAssignTasks, allocWorkerNum);
+        List<ResourceWorkerSlot> availableWorkers =
+                WorkerScheduler.getInstance().getAvailableWorkers(defaultContext, needAssignTasks, allocWorkerNum);
         TaskScheduler taskScheduler = new TaskScheduler(defaultContext, needAssignTasks, availableWorkers);
         Set<ResourceWorkerSlot> assignment = new HashSet<>(taskScheduler.assign());
 

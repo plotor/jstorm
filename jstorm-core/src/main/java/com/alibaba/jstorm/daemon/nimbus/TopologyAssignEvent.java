@@ -15,12 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus;
+
+import com.alibaba.jstorm.cluster.StormStatus;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import com.alibaba.jstorm.cluster.StormStatus;
 
 public class TopologyAssignEvent {
 

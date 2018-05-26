@@ -986,8 +986,10 @@ public class Config extends HashMap<String, Object> {
     public static final Object TOPOLOGY_MULTILANG_SERIALIZER_SCHEMA = String.class;
 
     /**
-     * How many processes should be spawned around the cluster to execute this topology. Each process will execute some number of tasks as threads within them.
-     * This parameter should be used in conjunction with the parallelism hints on each component in the topology to tune the performance of a topology.
+     * How many processes should be spawned（生成） around the cluster to execute this topology.
+     * Each process will execute some number of tasks as threads within them.
+     * This parameter should be used in conjunction with the parallelism hints on each component in the topology
+     * to tune the performance of a topology.
      */
     public static final String TOPOLOGY_WORKERS = "topology.workers";
     public static final Object TOPOLOGY_WORKERS_SCHEMA = ConfigValidation.IntegerValidator;

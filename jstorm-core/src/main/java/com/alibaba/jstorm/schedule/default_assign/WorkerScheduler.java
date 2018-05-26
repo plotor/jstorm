@@ -15,17 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule.default_assign;
 
-import java.util.*;
-import java.util.Map.Entry;
-
-import org.apache.commons.lang.math.NumberUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.Config;
-
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.client.WorkerAssignment;
 import com.alibaba.jstorm.cluster.Common;
@@ -33,6 +26,21 @@ import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.schedule.TopologyAssignContext;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
 import com.alibaba.jstorm.utils.NetWorkUtils;
+import org.apache.commons.lang.math.NumberUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class WorkerScheduler {
     public static Logger LOG = LoggerFactory.getLogger(WorkerScheduler.class);
@@ -52,22 +60,22 @@ public class WorkerScheduler {
     public List<ResourceWorkerSlot> getAvailableWorkers(
             DefaultTopologyAssignContext context, Set<Integer> needAssign, int allocWorkerNum) {
         int reserveWorkers = context.getReserveWorkerNum();
-        int workersNum = getAvailableWorkersNum(context);
+        int workersNum = this.getAvailableWorkersNum(context);
         if ((workersNum - reserveWorkers) < allocWorkerNum) {
             throw new FailedAssignTopologyException("there's no enough worker. allocWorkerNum="
                     + allocWorkerNum + ", availableWorkerNum=" + workersNum + ",reserveWorkerNum=" + reserveWorkers);
         }
         workersNum = allocWorkerNum;
         List<ResourceWorkerSlot> assignedWorkers = new ArrayList<>();
-        // userdefine assignments, but dont't try to use custom scheduling for
-        // TM bolts now.
-        getRightWorkers(context, needAssign, assignedWorkers, workersNum,
-                getUserDefineWorkers(context, ConfigExtension.getUserDefineAssignment(context.getStormConf())));
+        // user define assignments, but dont't try to use custom scheduling for TM bolts now.
+        this.getRightWorkers(context, needAssign, assignedWorkers, workersNum,
+                this.getUserDefineWorkers(context, ConfigExtension.getUserDefineAssignment(context.getStormConf())));
 
-        // old assignments
+        // 如果配置指定要使用旧的分配，则从旧的分配中选出合适的worker
         if (ConfigExtension.isUseOldAssignment(context.getStormConf())) {
-            getRightWorkers(context, needAssign, assignedWorkers, workersNum, context.getOldWorkers());
+            this.getRightWorkers(context, needAssign, assignedWorkers, workersNum, context.getOldWorkers());
         } else if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_REBALANCE && !context.isReassign()) {
+            // 如果是rebalance，且可以使用原来的worker，将原来使用的worker存储起来。
             int cnt = 0;
             for (ResourceWorkerSlot worker : context.getOldWorkers()) {
                 if (cnt < workersNum) {
@@ -96,19 +104,22 @@ public class WorkerScheduler {
         LOG.info("Get workers from user define and old assignments: " + assignedWorkers);
 
         int restWorkerNum = workersNum - assignedWorkers.size();
-        if (restWorkerNum < 0)
+        if (restWorkerNum < 0) {
             throw new FailedAssignTopologyException(
                     "Too many workers are required for user define or old assignments. workersNum="
                             + workersNum + ", assignedWorkersNum=" + assignedWorkers.size());
+        }
 
+        // restWorkerNum是剩下需要的worker的数目，直接添加ResourceWorkerSlot实例对象
         for (int i = 0; i < restWorkerNum; i++) {
             assignedWorkers.add(new ResourceWorkerSlot());
         }
+        // 这里是获取那些专门指定运行拓扑的supervisor节点
         List<SupervisorInfo> isolationSupervisors = this.getIsolationSupervisors(context);
         if (isolationSupervisors.size() != 0) {
-            putAllWorkerToSupervisor(assignedWorkers, getResAvailSupervisors(isolationSupervisors));
+            this.putAllWorkerToSupervisor(assignedWorkers, getResAvailSupervisors(isolationSupervisors));
         } else {
-            putAllWorkerToSupervisor(assignedWorkers, getResAvailSupervisors(context.getCluster()));
+            this.putAllWorkerToSupervisor(assignedWorkers, getResAvailSupervisors(context.getCluster()));
         }
         this.setAllWorkerMemAndCpu(context.getStormConf(), assignedWorkers);
         LOG.info("Assigned workers=" + assignedWorkers);
@@ -119,10 +130,12 @@ public class WorkerScheduler {
         long defaultSize = ConfigExtension.getMemSizePerWorker(conf);
         int defaultCpu = ConfigExtension.getCpuSlotPerWorker(conf);
         for (ResourceWorkerSlot worker : assignedWorkers) {
-            if (worker.getMemSize() <= 0)
+            if (worker.getMemSize() <= 0) {
                 worker.setMemSize(defaultSize);
-            if (worker.getCpu() <= 0)
+            }
+            if (worker.getCpu() <= 0) {
                 worker.setCpu(defaultCpu);
+            }
         }
     }
 
@@ -175,22 +188,26 @@ public class WorkerScheduler {
         int key = 0;
         Iterator<ResourceWorkerSlot> iterator = assignedWorkers.iterator();
         while (iterator.hasNext()) {
-            if (supervisors.size() == 0)
+            if (supervisors.size() == 0) {
                 break;
-            if (key >= supervisors.size())
+            }
+            if (key >= supervisors.size()) {
                 key = 0;
+            }
             SupervisorInfo supervisor = supervisors.get(key);
             int supervisorUsedPorts = supervisor.getWorkerPorts().size() - supervisor.getAvailableWorkerPorts().size();
             if (supervisorUsedPorts < theoryAveragePorts) {
                 ResourceWorkerSlot worker = iterator.next();
-                if (worker.getNodeId() != null)
+                if (worker.getNodeId() != null) {
                     continue;
+                }
                 worker.setHostname(supervisor.getHostName());
                 worker.setNodeId(supervisor.getSupervisorId());
                 worker.setPort(supervisor.getAvailableWorkerPorts().iterator().next());
                 supervisor.getAvailableWorkerPorts().remove(worker.getPort());
-                if (supervisor.getAvailableWorkerPorts().size() == 0)
+                if (supervisor.getAvailableWorkerPorts().size() == 0) {
                     supervisors.remove(supervisor);
+                }
                 key++;
             } else {
                 overLoadSupervisors.add(supervisor);
@@ -209,36 +226,50 @@ public class WorkerScheduler {
         });
         key = 0;
         while (iterator.hasNext()) {
-            if (overLoadSupervisors.size() == 0)
+            if (overLoadSupervisors.size() == 0) {
                 break;
-            if (key >= overLoadSupervisors.size())
+            }
+            if (key >= overLoadSupervisors.size()) {
                 key = 0;
+            }
             ResourceWorkerSlot worker = iterator.next();
-            if (worker.getNodeId() != null)
+            if (worker.getNodeId() != null) {
                 continue;
+            }
             SupervisorInfo supervisor = overLoadSupervisors.get(key);
             worker.setHostname(supervisor.getHostName());
             worker.setNodeId(supervisor.getSupervisorId());
             worker.setPort(supervisor.getAvailableWorkerPorts().iterator().next());
             supervisor.getAvailableWorkerPorts().remove(worker.getPort());
-            if (supervisor.getAvailableWorkerPorts().size() == 0)
+            if (supervisor.getAvailableWorkerPorts().size() == 0) {
                 overLoadSupervisors.remove(supervisor);
+            }
             key++;
         }
     }
 
+    /**
+     *
+     * @param context 之前准备的拓扑上下文信息
+     * @param needAssign 该拓扑需要分配的各个taskid
+     * @param assignedWorkers 存储那些在这个方法内分配到的worker资源
+     * @param workersNum 拓扑需要分配的worker数目
+     * @param workers 用户自定义的可用的worker资源
+     */
     private void getRightWorkers(DefaultTopologyAssignContext context,
                                  Set<Integer> needAssign, List<ResourceWorkerSlot> assignedWorkers,
                                  int workersNum, Collection<ResourceWorkerSlot> workers) {
         Set<Integer> assigned = new HashSet<>();
         List<ResourceWorkerSlot> users = new ArrayList<>();
-        if (workers == null)
+        if (workers == null) {
             return;
+        }
         for (ResourceWorkerSlot worker : workers) {
             boolean right = true;
             Set<Integer> tasks = worker.getTasks();
-            if (tasks == null)
+            if (tasks == null) {
                 continue;
+            }
             for (Integer task : tasks) {
                 if (!needAssign.contains(task) || assigned.contains(task)) {
                     right = false;
@@ -278,17 +309,25 @@ public class WorkerScheduler {
         return slotNum;
     }
 
+    @SuppressWarnings("unchecked")
     private List<ResourceWorkerSlot> getUserDefineWorkers(
             DefaultTopologyAssignContext context, List<WorkerAssignment> workers) {
         List<ResourceWorkerSlot> ret = new ArrayList<>();
         if (workers == null) {
+            // 用户没有自定义 worker
             return ret;
         }
-        Map<String, List<Integer>> componentToTask = (HashMap<String, List<Integer>>) ((HashMap<String, List<Integer>>)
-                context.getComponentTasks()).clone();
-        if (context.getAssignType() != context.ASSIGN_TYPE_NEW) {
-            checkUserDefineWorkers(context, workers, context.getTaskToComponent());
+
+        Map<String, List<Integer>> componentToTask =
+                (HashMap<String, List<Integer>>) ((HashMap<String, List<Integer>>) context.getComponentTasks()).clone();
+        if (context.getAssignType() != TopologyAssignContext.ASSIGN_TYPE_NEW) {
+            // 如果分配类型不是NEW，则还是从workers资源分配信息列表中去除unstopworker。
+            // 这里是用户有指定某些worker资源属于unstopworker才能去掉。
+            this.checkUserDefineWorkers(context, workers, context.getTaskToComponent());
         }
+
+        // 遍历用户定义的worker，去除那些没有分配task的worker
+        // 用户定义的worker中已经指定哪些task该分配到哪个worker中
         for (WorkerAssignment worker : workers) {
             ResourceWorkerSlot workerSlot = new ResourceWorkerSlot(worker, componentToTask);
             if (workerSlot.getTasks().size() != 0) {

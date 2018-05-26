@@ -15,18 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
 
 import com.alibaba.jstorm.client.ConfigExtension;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
 
 /**
  * Object stored in ZK /ZK-DIR/supervisors
@@ -98,14 +99,16 @@ public class SupervisorInfo implements Serializable {
     }
 
     public void setAvailableWorkerPorts(Set<Integer> workerPorts) {
-        if (availableWorkerPorts == null)
+        if (availableWorkerPorts == null) {
             availableWorkerPorts = new HashSet<>();
+        }
         availableWorkerPorts.addAll(workerPorts);
     }
 
     public Set<Integer> getAvailableWorkerPorts() {
-        if (availableWorkerPorts == null)
+        if (availableWorkerPorts == null) {
             availableWorkerPorts = new HashSet<>();
+        }
         return availableWorkerPorts;
     }
 
@@ -162,38 +165,51 @@ public class SupervisorInfo implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         SupervisorInfo other = (SupervisorInfo) obj;
         if (hostName == null) {
-            if (other.hostName != null)
+            if (other.hostName != null) {
                 return false;
-        } else if (!hostName.equals(other.hostName))
+            }
+        } else if (!hostName.equals(other.hostName)) {
             return false;
+        }
         if (supervisorId == null) {
-            if (other.supervisorId != null)
+            if (other.supervisorId != null) {
                 return false;
-        } else if (!supervisorId.equals(other.supervisorId))
+            }
+        } else if (!supervisorId.equals(other.supervisorId)) {
             return false;
+        }
         if (timeSecs == null) {
-            if (other.timeSecs != null)
+            if (other.timeSecs != null) {
                 return false;
-        } else if (!timeSecs.equals(other.timeSecs))
+            }
+        } else if (!timeSecs.equals(other.timeSecs)) {
             return false;
+        }
         if (uptimeSecs == null) {
-            if (other.uptimeSecs != null)
+            if (other.uptimeSecs != null) {
                 return false;
-        } else if (!uptimeSecs.equals(other.uptimeSecs))
+            }
+        } else if (!uptimeSecs.equals(other.uptimeSecs)) {
             return false;
+        }
         if (workerPorts == null) {
-            if (other.workerPorts != null)
+            if (other.workerPorts != null) {
                 return false;
-        } else if (!workerPorts.equals(other.workerPorts))
+            }
+        } else if (!workerPorts.equals(other.workerPorts)) {
             return false;
+        }
         return true;
     }
 

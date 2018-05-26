@@ -193,7 +193,8 @@ public class Cluster {
         return zkCluster.task_all_info(topologyId);
     }
 
-    public static Map<Integer, String> get_all_task_component(StormClusterState zkCluster, String topologyId, Map<Integer, TaskInfo> taskInfoMap)
+    public static Map<Integer, String> get_all_task_component(
+            StormClusterState zkCluster, String topologyId, Map<Integer, TaskInfo> taskInfoMap)
             throws Exception {
         if (taskInfoMap == null) {
             taskInfoMap = get_all_taskInfo(zkCluster, topologyId);

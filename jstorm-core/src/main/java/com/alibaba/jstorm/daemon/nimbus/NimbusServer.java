@@ -224,7 +224,7 @@ public class NimbusServer {
      * 这个容器线程也是守护线程，且马上就会启动，这个线程的run方法里面包含两个处理：
      *
      * 1. handleWriteDir：这个方法的主要作用是清除掉容器上的过期心跳信息，准确的说，如果JStorm集群容器目录下的心跳信息大于10，则需要清除（从最老的开始）。
-     *   2. handlReadDir：这里主要是用于维护本地是否能接受到集群上的hb信息，如果多次超时则要抛出异常。
+     * 2. handlReadDir：这里主要是用于维护本地是否能接受到集群上的hb信息，如果多次超时则要抛出异常。
      *
      * @param conf
      * @throws IOException
@@ -247,7 +247,7 @@ public class NimbusServer {
         NimbusUtils.cleanupCorruptTopologies(data);
 
         // 拓扑分配
-        initTopologyAssign();
+        this.initTopologyAssign();
 
         // 状态更新
         initTopologyStatus();
