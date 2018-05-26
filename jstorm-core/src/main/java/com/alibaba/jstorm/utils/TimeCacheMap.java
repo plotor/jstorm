@@ -17,13 +17,13 @@
  */
 package com.alibaba.jstorm.utils;
 
+import com.alibaba.jstorm.callback.AsyncLoopRunnable;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import com.alibaba.jstorm.callback.AsyncLoopRunnable;
 
 /**
  * Expires keys that have not been updated in the configured number of seconds.
@@ -54,13 +54,22 @@ public class TimeCacheMap<K, V> implements TimeOutMap<K, V> {
         this.callback = callback;
         final long expirationMillis = expirationSecs * 1000L;
         final long sleepTime = expirationMillis / (numBuckets - 1);
-        cleaner = new Thread(new Runnable() {
+
+        /**
+         * cleaner 线程会一直循环的执行，
+         * 从缓冲区尾部中获取对象，并应用到 callback 的 expire 方法
+         */
+        this.cleaner = new Thread(new Runnable() {
+
+            @Override
             public void run() {
                 while (!AsyncLoopRunnable.getShutdown().get()) {
                     Map<K, V> dead;
                     JStormUtils.sleepMs(sleepTime);
                     synchronized (lock) {
+                        // 从缓冲区中获取对象
                         dead = buckets.removeLast();
+                        // 添加一个空的 map 到缓冲区，从而保证线程的正常运行
                         buckets.addFirst(new HashMap<K, V>());
                     }
                     if (TimeCacheMap.this.callback != null) {

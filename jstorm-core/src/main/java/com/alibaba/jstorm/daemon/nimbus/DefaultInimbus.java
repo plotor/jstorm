@@ -29,12 +29,25 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * 目前对于 {@link INimbus} 默认且唯一的实现
+ */
 public class DefaultInimbus implements INimbus {
 
     @Override
     public void prepare(Map stormConf, String schedulerLocalDir) {
     }
 
+    /**
+     * 返回所有可以在下一次调度中被分配的 slot 集合，包含：
+     * 1. 空闲且可以被分配的 slot
+     * 2. 已被使用且可以被再分配的 slot
+     *
+     * @param existingSupervisors
+     * @param topologies
+     * @param topologiesMissingAssignments
+     * @return
+     */
     @Override
     public Collection<WorkerSlot> allSlotsAvailableForScheduling(
             Collection<SupervisorDetails> existingSupervisors, Topologies topologies, Set<String> topologiesMissingAssignments) {

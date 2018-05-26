@@ -198,6 +198,11 @@ public class JStormUtils {
         JStormUtils.localMode = localMode;
     }
 
+    /**
+     * 终止 JVM 进程
+     *
+     * @param val
+     */
     public static void haltProcess(int val) {
         Runtime.getRuntime().halt(val);
     }

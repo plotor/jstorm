@@ -49,8 +49,8 @@ import java.util.regex.Pattern;
  * The users can upload their blobs through the blob store command
  * line. The command line also allows us to update and delete blobs.
  *
- * Modifying the replication factor only works for HdfsBlobStore
- * as for the LocalFsBlobStore the replication is dependent on
+ * Modifying the replication factor only works for {@link HdfsBlobStore}
+ * as for the {@link LocalFsBlobStore} the replication is dependent on
  * the number of Nimbodes available.
  */
 public abstract class BlobStore implements Shutdownable {

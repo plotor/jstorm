@@ -46,6 +46,7 @@ import java.util.Set;
  * leader-follower 线程模型
  */
 public class FollowerRunnable implements Runnable {
+
     private static final Logger LOG = LoggerFactory.getLogger(FollowerRunnable.class);
 
     private NimbusData data;
@@ -69,6 +70,8 @@ public class FollowerRunnable implements Runnable {
         this.data = data;
         this.sleepTime = sleepTime;
         this.leaderCallback = leaderCallback;
+
+        // 判断是不是本地模式，对于本地模式不适用
         boolean isLocalIp;
         if (!ConfigExtension.isNimbusUseIp(data.getConf())) {
             this.hostPort = NetWorkUtils.hostname() + ":" + Utils.getInt(data.getConf().get(Config.NIMBUS_THRIFT_PORT));
@@ -86,6 +89,7 @@ public class FollowerRunnable implements Runnable {
             throw new RuntimeException(e1);
         }
 
+        // 更新 ZK 上的节点信息
         try {
             data.getStormClusterState().update_nimbus_slave(hostPort, data.uptime());
             data.getStormClusterState().update_nimbus_detail(hostPort, null);
@@ -93,6 +97,8 @@ public class FollowerRunnable implements Runnable {
             LOG.error("failed to register nimbus host!", e);
             throw new RuntimeException();
         }
+
+        // 判断是否存在 leader，如果不存在这尝试成为 leader
         StormClusterState zkClusterState = data.getStormClusterState();
         try {
             if (!zkClusterState.leader_existed()) {
@@ -108,6 +114,7 @@ public class FollowerRunnable implements Runnable {
             }
         } catch (Exception e1) {
             try {
+                // 尝试两次均失败，则删除 ZK 上的信息
                 data.getStormClusterState().unregister_nimbus_host(hostPort);
                 data.getStormClusterState().unregister_nimbus_detail(hostPort);
             } catch (Exception e2) {
@@ -117,6 +124,13 @@ public class FollowerRunnable implements Runnable {
                 throw new RuntimeException(e1);
             }
         }
+
+        /*
+         * 如果 nimbus 使用的是本地存储，则需要需要添加一个回调函数，
+         * 这个回调函数执行当这个nimbus不是leader的时，对blob进行同步。
+         * 此外还需要将那些active的blob存到ZK中，而将死掉的进行清除，
+         * 毕竟本地模式存储无法保证一致性，所以需要ZK进行维护， 而hdfs自带容错机制，能保证数据的一致性
+         */
         blobSyncCallback = new RunnableCallback() {
             @Override
             public void run() {
@@ -170,6 +184,13 @@ public class FollowerRunnable implements Runnable {
         return NetWorkUtils.equals(part[0], NetWorkUtils.ip());
     }
 
+    /**
+     * 首先判断当前保存在ZK上的集群中是否有leader，如果没有则选举当前nimbus为leader线程。
+     * 如果有了leader线程，则需要判断是否跟当前的nimbus相同，如果不相同则停止当前的nimbus，
+     * 毕竟已经有leader存在了。如果是相同的，则需要判断本地的状态中，如果还没有设置为leader，
+     * 表明当前nimbus还没有进行初始化，则先设置nimbus为leader然后回调函数进行初始化，也就是调用init(conf)方法。
+     * 获取一个端口（默认的端口是7621）用于构建HttpServer实例对象。可以用于处理和接受tcp连接，启动一个新的线程进行httpserver的监听。
+     */
     @Override
     public void run() {
         LOG.info("Follower thread starts!");
@@ -202,7 +223,7 @@ public class FollowerRunnable implements Runnable {
 
                 // here the nimbus is not leader
                 if (data.getBlobStore() instanceof LocalFsBlobStore) {
-                    blobSync();
+                    this.blobSync();
                 }
                 zkClusterState.update_nimbus_slave(hostPort, data.uptime());
                 update_nimbus_detail();

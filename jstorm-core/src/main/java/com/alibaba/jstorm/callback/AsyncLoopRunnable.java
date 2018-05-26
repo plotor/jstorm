@@ -15,14 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.callback;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import com.alibaba.jstorm.utils.JStormUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.jstorm.utils.JStormUtils;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * AsyncLoopThread runnable
@@ -32,6 +32,7 @@ import com.alibaba.jstorm.utils.JStormUtils;
  * @author yannian
  */
 public class AsyncLoopRunnable implements Runnable {
+
     private static Logger LOG = LoggerFactory.getLogger(AsyncLoopRunnable.class);
 
     // set shutdown as false is to
@@ -42,10 +43,17 @@ public class AsyncLoopRunnable implements Runnable {
         return shutdown;
     }
 
+    /** 线程函数 */
     private RunnableCallback fn;
     private RunnableCallback killFn;
     private long lastTime = System.currentTimeMillis();
 
+    /**
+     * 对于 fn 和 killFn 的包装
+     *
+     * @param fn
+     * @param killFn
+     */
     public AsyncLoopRunnable(RunnableCallback fn, RunnableCallback killFn) {
         this.fn = fn;
         this.killFn = killFn;

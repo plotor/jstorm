@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus;
 
 import backtype.storm.Config;
@@ -69,6 +70,9 @@ public class NimbusData {
      */
     private final Map<Object, Object> conf;
 
+    /**
+     * 储整个集群的状态，从ZK上获取
+     */
     private StormClusterState stormClusterState;
 
     // Map<topologyId, Map<taskid, TkHbCacheTime>>
@@ -81,13 +85,21 @@ public class NimbusData {
     private TimeCacheMap<Object, Object> blobDownloaders;
     private TimeCacheMap<Object, Object> blobUploaders;
     private TimeCacheMap<Object, Object> blobListers;
+
+    /**
+     * 用来存储blob数据（使用键值存储），提供了两个不同的blob存储方式，一种是本地文件系统存储，一种的hdfs存储，
+     * 两种方式的区别在于，由于本地文件存储并不能保证一致性，所以需要ZK介入来保证，这是JStorm的默认配置。
+     * 如果使用hdfs来存储，则不需要ZK介入，因为hdfs能保证一致性和正确性
+     */
     private BlobStore blobStore;
     private NimbusInfo nimbusHostPortInfo;
 
     private boolean isLaunchedCleaner;
     private boolean isLaunchedMonitor;
 
-    // cache thrift response to avoid scan zk too frequently
+    /**
+     * cache thrift response to avoid scan zk too frequently
+     */
     private NimbusCache nimbusCache;
 
     private int startTime;
@@ -192,7 +204,11 @@ public class NimbusData {
         }
     }
 
+    /**
+     * 创建上传和下载通道，并设置一个守护线程按照设定的过期时间定期对通道进行关闭
+     */
     public void createFileHandler() {
+        // 注册一个 callback 方法，基于回调的方式关闭管道或输入流
         ExpiredCallback<Object, Object> expiredCallback = new ExpiredCallback<Object, Object>() {
             @Override
             public void expire(Object key, Object val) {
@@ -213,12 +229,27 @@ public class NimbusData {
 
             }
         };
-        // ${nimbus.file.copy.expiration.secs}  默认为 30 秒
+
+        /*
+         * 获取超时时间，默认为 30 秒
+         *
+         * During upload/download with the master,
+         * how long an upload or download connection is idle before nimbus considers it dead and drops the connection.
+         */
         int file_copy_expiration_secs = JStormUtils.parseInt(conf.get(Config.NIMBUS_FILE_COPY_EXPIRATION_SECS), 30);
+
+        /*
+         * {@link TimeCacheMap} 在实例化时会启动一个守护线程，
+         * 并依据超时时间循环从 buckets 中去除对象，并应用执行 callback 的 expire 方法
+         * 这里的 expire 逻辑就是执行关闭管道或输入流
+         */
         uploaders = new TimeCacheMap<>(file_copy_expiration_secs, expiredCallback);
         downloaders = new TimeCacheMap<>(file_copy_expiration_secs, expiredCallback);
     }
 
+    /**
+     *
+     */
     public void mkBlobCacheMap() {
         ExpiredCallback<Object, Object> expiredCallback = new ExpiredCallback<Object, Object>() {
             @Override
@@ -246,7 +277,6 @@ public class NimbusData {
         blobDownloaders = new TimeCacheMap<>(expiration_secs, expiredCallback);
         blobListers = new TimeCacheMap<>(expiration_secs, null);
     }
-
 
     public void createCache() throws IOException {
         nimbusCache = new NimbusCache(conf, stormClusterState);

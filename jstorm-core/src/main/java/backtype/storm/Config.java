@@ -459,7 +459,8 @@ public class Config extends HashMap<String, Object> {
     public static final Object NIMBUS_REASSIGN_SCHEMA = Boolean.class;
 
     /**
-     * During upload/download with the master, how long an upload or download connection is idle before nimbus considers it dead and drops the connection.
+     * During upload/download with the master,
+     * how long an upload or download connection is idle before nimbus considers it dead and drops the connection.
      */
     public static final String NIMBUS_FILE_COPY_EXPIRATION_SECS = "nimbus.file.copy.expiration.secs";
     public static final Object NIMBUS_FILE_COPY_EXPIRATION_SECS_SCHEMA = ConfigValidation.IntegerValidator;

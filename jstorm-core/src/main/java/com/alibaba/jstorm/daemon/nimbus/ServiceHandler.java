@@ -18,78 +18,6 @@
  */
 package com.alibaba.jstorm.daemon.nimbus;
 
-import com.alibaba.jstorm.cluster.StormStatus;
-import com.alibaba.jstorm.cluster.StormZkClusterState;
-import com.alibaba.jstorm.daemon.nimbus.metric.DeleteMetricEvent;
-import com.alibaba.jstorm.task.upgrade.GrayUpgradeConfig;
-import com.alibaba.jstorm.utils.LoadConf;
-
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-
-import java.util.regex.Pattern;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.thrift.TException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.jstorm.blobstore.AtomicOutputStream;
-import com.alibaba.jstorm.blobstore.BlobStore;
-import com.alibaba.jstorm.blobstore.BlobStoreUtils;
-import com.alibaba.jstorm.blobstore.InputStreamWithMeta;
-import com.alibaba.jstorm.blobstore.LocalFsBlobStore;
-import com.alibaba.jstorm.callback.impl.RemoveTransitionCallback;
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.Cluster;
-import com.alibaba.jstorm.cluster.Common;
-import com.alibaba.jstorm.cluster.DaemonCommon;
-import com.alibaba.jstorm.cluster.StormBase;
-import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.daemon.nimbus.metric.ClusterMetricsRunnable;
-import com.alibaba.jstorm.daemon.nimbus.metric.assignment.KillTopologyEvent;
-import com.alibaba.jstorm.daemon.nimbus.metric.assignment.StartTopologyEvent;
-import com.alibaba.jstorm.daemon.nimbus.metric.update.UpdateEvent;
-import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
-import com.alibaba.jstorm.metric.MetaType;
-import com.alibaba.jstorm.metric.MetricUtils;
-import com.alibaba.jstorm.metric.SimpleJStormMetric;
-import com.alibaba.jstorm.schedule.Assignment;
-import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
-import com.alibaba.jstorm.task.TaskInfo;
-import com.alibaba.jstorm.task.error.TaskError;
-import com.alibaba.jstorm.utils.FailedAssignTopologyException;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.NetWorkUtils;
-import com.alibaba.jstorm.utils.PathUtils;
-import com.alibaba.jstorm.utils.Thrift;
-import com.alibaba.jstorm.utils.TimeCacheMap;
-import com.alibaba.jstorm.utils.TimeUtils;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-
 import backtype.storm.Config;
 import backtype.storm.GenericOptionsParser;
 import backtype.storm.daemon.Shutdownable;
@@ -132,6 +60,75 @@ import backtype.storm.nimbus.NimbusInfo;
 import backtype.storm.utils.BufferFileInputStream;
 import backtype.storm.utils.BufferInputStream;
 import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.blobstore.AtomicOutputStream;
+import com.alibaba.jstorm.blobstore.BlobStore;
+import com.alibaba.jstorm.blobstore.BlobStoreUtils;
+import com.alibaba.jstorm.blobstore.InputStreamWithMeta;
+import com.alibaba.jstorm.blobstore.LocalFsBlobStore;
+import com.alibaba.jstorm.callback.impl.RemoveTransitionCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.Cluster;
+import com.alibaba.jstorm.cluster.Common;
+import com.alibaba.jstorm.cluster.DaemonCommon;
+import com.alibaba.jstorm.cluster.StormBase;
+import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.cluster.StormStatus;
+import com.alibaba.jstorm.cluster.StormZkClusterState;
+import com.alibaba.jstorm.daemon.nimbus.metric.ClusterMetricsRunnable;
+import com.alibaba.jstorm.daemon.nimbus.metric.DeleteMetricEvent;
+import com.alibaba.jstorm.daemon.nimbus.metric.assignment.KillTopologyEvent;
+import com.alibaba.jstorm.daemon.nimbus.metric.assignment.StartTopologyEvent;
+import com.alibaba.jstorm.daemon.nimbus.metric.update.UpdateEvent;
+import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
+import com.alibaba.jstorm.metric.MetaType;
+import com.alibaba.jstorm.metric.MetricUtils;
+import com.alibaba.jstorm.metric.SimpleJStormMetric;
+import com.alibaba.jstorm.schedule.Assignment;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
+import com.alibaba.jstorm.task.TaskInfo;
+import com.alibaba.jstorm.task.error.TaskError;
+import com.alibaba.jstorm.task.upgrade.GrayUpgradeConfig;
+import com.alibaba.jstorm.utils.FailedAssignTopologyException;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.LoadConf;
+import com.alibaba.jstorm.utils.NetWorkUtils;
+import com.alibaba.jstorm.utils.PathUtils;
+import com.alibaba.jstorm.utils.Thrift;
+import com.alibaba.jstorm.utils.TimeCacheMap;
+import com.alibaba.jstorm.utils.TimeUtils;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 /**
  * Thrift callback, all commands handling entrance
@@ -150,7 +147,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     public ServiceHandler(NimbusData data) {
         this.data = data;
-        conf = data.getConf();
+        this.conf = data.getConf();
     }
 
     /**

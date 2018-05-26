@@ -15,19 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.utils;
 
-import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Time {
     public static Logger LOG = LoggerFactory.getLogger(Time.class);
 
     private static AtomicBoolean simulating = new AtomicBoolean(false);
+
     // TODO: should probably use weak references here or something
     private static volatile Map<Thread, AtomicLong> threadSleepTimes;
     private static final Object sleepTimesLock = new Object();
@@ -71,8 +74,9 @@ public class Time {
             }
         } else {
             long sleepTime = targetTimeMs - currentTimeMillis();
-            if (sleepTime > 0)
+            if (sleepTime > 0) {
                 Thread.sleep(sleepTime);
+            }
         }
     }
 
@@ -93,14 +97,16 @@ public class Time {
     }
 
     public static void advanceTime(long ms) {
-        if (!simulating.get())
+        if (!simulating.get()) {
             throw new IllegalStateException("Cannot simulate time unless in simulation mode");
+        }
         simulatedCurrTimeMs.set(simulatedCurrTimeMs.get() + ms);
     }
 
     public static boolean isThreadWaiting(Thread t) {
-        if (!simulating.get())
+        if (!simulating.get()) {
             throw new IllegalStateException("Must be in simulation mode");
+        }
         AtomicLong time;
         synchronized (sleepTimesLock) {
             time = threadSleepTimes.get(t);

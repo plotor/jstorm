@@ -57,6 +57,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * JStorm的主节点上运行着nimbus的守护进程，主要负责与ZK通信，分发代码，给集群中的从节点分配任务，监视集群状态等等。
+ * 此外nimbus需要维护的所有状态都会存储在ZK中，JStorm为了减少对ZK的访问次数做了一些缓存
+ *
  * NimbusServer workflow:
  * 1. cleanup interrupted topology delete /storm-local-dir/nimbus/topologyid/stormdis delete /storm-zk-root/storms/topologyid
  * 2. set /storm-zk-root/storms/topology stats as run
@@ -90,13 +93,20 @@ public class NimbusServer {
     private final List<AsyncLoopThread> smartThreads = new ArrayList<>();
 
     public static void main(String[] args) throws Exception {
+        // 设置默认的线程异常处理器
         Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
-        // read configuration files
-        @SuppressWarnings("rawtypes")
+
+        // 加载集群配置信息
         Map config = Utils.readStormConfig();
+
         JStormServerUtils.startTaobaoJvmMonitor();
+
         NimbusServer instance = new NimbusServer();
+
+        // 创建一个默认的 nimbus 启动类
         INimbus iNimbus = new DefaultInimbus();
+
+        // 启动 nimbus 服务
         instance.launchServer(config, iNimbus);
     }
 
@@ -147,11 +157,13 @@ public class NimbusServer {
             hs = new Httpserver(port, conf);
             hs.start();
 
-            // 8. 初始化容器心跳线程
+            // 8. 如果集群运行在 YARN 上，则初始化容器心跳线程
             this.initContainerHBThread(conf);
 
             serviceHandler = new ServiceHandler(data);
-            initThrift(conf);
+
+            // 9. 初始化并启动 thrift 服务
+            this.initThrift(conf);
         } catch (Throwable e) {
             if (e instanceof OutOfMemoryError) {
                 LOG.error("Halting due to out of memory error...");
@@ -205,6 +217,18 @@ public class NimbusServer {
         return serviceHandler;
     }
 
+    /**
+     * 主要作用是得知是否能在资源管理器（yarn）上运行jstorm集群，如果可以的话，则需要创建一个新的线程用于处理。
+     * (其实这里使用容器的目的是可以在一个物理集群上运行多个不一样的逻辑集群甚至多个JStorm集群，能动态调整逻辑集群分到的资源，
+     * 此外，资源管理器能提供非常强的可扩展性)。容器线程会被添加到NimbusServer中，后续使用到的时候再详细讲解。
+     * 这个容器线程也是守护线程，且马上就会启动，这个线程的run方法里面包含两个处理：
+     *
+     * 1. handleWriteDir：这个方法的主要作用是清除掉容器上的过期心跳信息，准确的说，如果JStorm集群容器目录下的心跳信息大于10，则需要清除（从最老的开始）。
+     *   2. handlReadDir：这里主要是用于维护本地是否能接受到集群上的hb信息，如果多次超时则要抛出异常。
+     *
+     * @param conf
+     * @throws IOException
+     */
     private void initContainerHBThread(Map conf) throws IOException {
         AsyncLoopThread thread = SyncContainerHb.mkNimbusInstance(conf);
         if (thread != null) {
@@ -222,10 +246,13 @@ public class NimbusServer {
 
         NimbusUtils.cleanupCorruptTopologies(data);
 
+        // 拓扑分配
         initTopologyAssign();
 
+        // 状态更新
         initTopologyStatus();
 
+        // 清除函数
         initCleaner(conf);
 
         initMetricRunnable();
@@ -306,9 +333,15 @@ public class NimbusServer {
         }
     }
 
+    /**
+     * 初始化并启动 thrift 服务
+     *
+     * @param conf
+     * @throws TTransportException
+     */
     @SuppressWarnings("rawtypes")
     private void initThrift(Map conf) throws TTransportException {
-        Integer thrift_port = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT));
+        Integer thrift_port = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT)); // ${nimbus.thrift.port}
         TNonblockingServerSocket socket = new TNonblockingServerSocket(thrift_port);
 
         Integer maxReadBufSize = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE));

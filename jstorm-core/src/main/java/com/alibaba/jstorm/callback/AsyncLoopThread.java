@@ -28,6 +28,8 @@ import org.slf4j.LoggerFactory;
 import java.lang.Thread.UncaughtExceptionHandler;
 
 /**
+ * 对于 {@link SmartThread} 的唯一实现
+ *
  * wraps timer thread to execute afn every several seconds, if an exception is thrown, run killFn
  *
  * @author yannian
@@ -57,21 +59,24 @@ public class AsyncLoopThread implements SmartThread {
     }
 
     /**
-     * @param afn
+     * @param afn 异步线程函数
      * @param daemon 是否是守护线程
-     * @param kill_fn
+     * @param kill_fn 进程被 kill 时操作触发的线程函数
      * @param priority 线程优先级
      * @param start 是否启动
      */
     private void init(RunnableCallback afn, boolean daemon, RunnableCallback kill_fn, int priority, boolean start) {
         if (kill_fn == null) {
+            // 如果没有设置，则默认创建一个
             kill_fn = new AsyncLoopDefaultKill();
         }
 
+        // 基于 AsyncLoopRunnable 对于 afn 和 kfn 进行包装
         Runnable runnable = new AsyncLoopRunnable(afn, kill_fn);
         thread = new Thread(runnable);
         String threadName = afn.getThreadName();
         if (threadName == null) {
+            // 以 afn 的 simpleName 作为线程名称
             threadName = afn.getClass().getSimpleName();
         }
         thread.setName(threadName);
@@ -88,6 +93,7 @@ public class AsyncLoopThread implements SmartThread {
         this.afn = afn;
 
         if (start) {
+            // 启动线程
             thread.start();
         }
     }
@@ -102,6 +108,10 @@ public class AsyncLoopThread implements SmartThread {
         thread.join();
     }
 
+    /**
+     * {@link VisibleForTesting} 只是一个标记，提醒调用方该方法仅仅用于测试
+     * 如果需要在 UT 中对于私有方法进行测试，还是需要使用反射
+     */
     @VisibleForTesting
     public void join(int times) throws InterruptedException {
         thread.join(times);

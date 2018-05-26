@@ -15,10 +15,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus;
 
+import backtype.storm.Config;
+import backtype.storm.generated.StormTopology;
+import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.blobstore.BlobStoreUtils;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.Cluster;
+import com.alibaba.jstorm.cluster.Common;
+import com.alibaba.jstorm.cluster.StormBase;
+import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.cluster.StormStatus;
+import com.alibaba.jstorm.daemon.nimbus.metric.ClusterMetricsRunnable;
+import com.alibaba.jstorm.daemon.nimbus.metric.assignment.TaskStartEvent;
+import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.metric.JStormMetrics;
+import com.alibaba.jstorm.schedule.Assignment;
+import com.alibaba.jstorm.schedule.AssignmentBak;
+import com.alibaba.jstorm.schedule.IToplogyScheduler;
+import com.alibaba.jstorm.schedule.TopologyAssignContext;
+import com.alibaba.jstorm.schedule.default_assign.DefaultTopologyScheduler;
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
+import com.alibaba.jstorm.task.TaskInfo;
+import com.alibaba.jstorm.utils.FailedAssignTopologyException;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,35 +60,9 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.jstorm.blobstore.BlobStoreUtils;
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.Cluster;
-import com.alibaba.jstorm.cluster.Common;
-import com.alibaba.jstorm.cluster.StormBase;
-import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.cluster.StormStatus;
-import com.alibaba.jstorm.daemon.nimbus.metric.ClusterMetricsRunnable;
-import com.alibaba.jstorm.daemon.nimbus.metric.assignment.TaskStartEvent;
-import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
-import com.alibaba.jstorm.schedule.Assignment;
-import com.alibaba.jstorm.schedule.AssignmentBak;
-import com.alibaba.jstorm.schedule.IToplogyScheduler;
-import com.alibaba.jstorm.schedule.TopologyAssignContext;
-import com.alibaba.jstorm.schedule.default_assign.DefaultTopologyScheduler;
-import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
-import com.alibaba.jstorm.task.TaskInfo;
-import com.alibaba.jstorm.utils.FailedAssignTopologyException;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.TimeUtils;
-
-import backtype.storm.Config;
-import backtype.storm.generated.StormTopology;
-import backtype.storm.scheduler.WorkerSlot;
-
+/**
+ * 单例模式
+ */
 public class TopologyAssign implements Runnable {
 
     private final static Logger LOG = LoggerFactory.getLogger(TopologyAssign.class);
@@ -189,8 +190,9 @@ public class TopologyAssign implements Runnable {
             return false;
         }
 
-        if (assignment != null)
+        if (assignment != null) {
             backupAssignment(assignment, event);
+        }
         event.done();
         return true;
     }
@@ -348,8 +350,9 @@ public class TopologyAssign implements Runnable {
         // init all AvailableWorkerPorts
         for (Entry<String, SupervisorInfo> supInfo : supInfos.entrySet()) {
             SupervisorInfo supervisor = supInfo.getValue();
-            if (supervisor != null)
+            if (supervisor != null) {
                 supervisor.setAvailableWorkerPorts(supervisor.getWorkerPorts());
+            }
         }
 
         getAliveSupervsByHb(supInfos, nimbusConf);
@@ -488,8 +491,9 @@ public class TopologyAssign implements Runnable {
     private static Set<ResourceWorkerSlot> mkLocalAssignment(TopologyAssignContext context) throws Exception {
         Set<ResourceWorkerSlot> result = new HashSet<>();
         Map<String, SupervisorInfo> cluster = context.getCluster();
-        if (cluster.size() != 1)
+        if (cluster.size() != 1) {
             throw new RuntimeException();
+        }
         SupervisorInfo localSupervisor = null;
         String supervisorId = null;
         for (Entry<String, SupervisorInfo> entry : cluster.entrySet()) {
@@ -600,8 +604,9 @@ public class TopologyAssign implements Runnable {
             if (oldWorker != null) {
                 Set<Integer> oldTasks = oldWorker.getTasks();
                 for (Integer task : worker.getTasks()) {
-                    if (!(oldTasks.contains(task)))
+                    if (!(oldTasks.contains(task))) {
                         rtn.add(task);
+                    }
                 }
             } else {
                 if (worker.getTasks() != null) {
@@ -784,13 +789,14 @@ public class TopologyAssign implements Runnable {
         Set<Integer> deadTasks = new HashSet<>();
         // Get all tasks whose heartbeat timeout
         for (int taskId : allTaskIds) {
-            if (NimbusUtils.isTaskDead(nimbusData, topologyId, taskId))
+            if (NimbusUtils.isTaskDead(nimbusData, topologyId, taskId)) {
                 deadTasks.add(taskId);
+            }
         }
 
         // Mark the tasks, which were assigned into the same worker with the timeout tasks, as dead task
         for (ResourceWorkerSlot worker : allWorkers) {
-            Set<Integer> tasks =  worker.getTasks();
+            Set<Integer> tasks = worker.getTasks();
             for (Integer task : tasks) {
                 if (deadTasks.contains(task)) {
                     deadTasks.addAll(tasks);

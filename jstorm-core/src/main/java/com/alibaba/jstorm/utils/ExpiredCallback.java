@@ -19,5 +19,7 @@
 package com.alibaba.jstorm.utils;
 
 public interface ExpiredCallback<K, V> {
+
     void expire(K key, V val);
+
 }
