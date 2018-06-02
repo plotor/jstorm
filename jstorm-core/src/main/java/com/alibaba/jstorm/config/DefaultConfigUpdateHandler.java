@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.config;
 
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.Map;
  * @since 2.1.1
  */
 public class DefaultConfigUpdateHandler implements ConfigUpdateHandler {
+
     @Override
     public void init(Map conf) {
 
@@ -38,4 +40,5 @@ public class DefaultConfigUpdateHandler implements ConfigUpdateHandler {
     public void updateYaml(String jsonConf) {
 
     }
+
 }

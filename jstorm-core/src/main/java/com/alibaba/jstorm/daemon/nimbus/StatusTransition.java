@@ -15,10 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus;
 
 import com.alibaba.jstorm.callback.Callback;
-import com.alibaba.jstorm.callback.impl.*;
+import com.alibaba.jstorm.callback.impl.ActiveTransitionCallback;
+import com.alibaba.jstorm.callback.impl.DoRebalanceTransitionCallback;
+import com.alibaba.jstorm.callback.impl.DoneRebalanceTransitionCallback;
+import com.alibaba.jstorm.callback.impl.InactiveTransitionCallback;
+import com.alibaba.jstorm.callback.impl.KillTransitionCallback;
+import com.alibaba.jstorm.callback.impl.ReassignTransitionCallback;
+import com.alibaba.jstorm.callback.impl.RebalanceTransitionCallback;
+import com.alibaba.jstorm.callback.impl.RemoveTransitionCallback;
+import com.alibaba.jstorm.callback.impl.RollbackTransitionCallback;
+import com.alibaba.jstorm.callback.impl.UpdateTopologyTransitionCallback;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormStatus;
 import org.slf4j.Logger;
@@ -29,11 +39,12 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Status changing
+ * Status changing（状态转换）
  *
  * @author version1: lixin version2: Longda
  */
 public class StatusTransition {
+
     private final static Logger LOG = LoggerFactory.getLogger(StatusTransition.class);
 
     private NimbusData data;
@@ -119,7 +130,7 @@ public class StatusTransition {
     /**
      * generate status changing map
      *
-     * @param topologyId    topology id
+     * @param topologyId topology id
      * @param currentStatus current topology status
      * @return Map[StatusType, Map[StatusType, Callback]] means Map[currentStatus, Map[changingStatus, Callback]]
      */

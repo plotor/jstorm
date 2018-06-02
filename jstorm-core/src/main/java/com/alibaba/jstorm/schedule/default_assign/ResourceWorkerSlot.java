@@ -15,7 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule.default_assign;
+
+import backtype.storm.scheduler.WorkerSlot;
+import com.alibaba.jstorm.client.WorkerAssignment;
+import com.alibaba.jstorm.utils.NetWorkUtils;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -26,21 +35,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.scheduler.WorkerSlot;
-
-import com.alibaba.jstorm.client.WorkerAssignment;
-import com.alibaba.jstorm.utils.NetWorkUtils;
-
 /**
  * allocation unit for a worker
  */
 public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
+
     private static final long serialVersionUID = 9138386287559932411L;
+
     public static Logger LOG = LoggerFactory.getLogger(ResourceWorkerSlot.class);
 
     private String hostname;
@@ -123,20 +124,25 @@ public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
 
     public boolean compareToUserDefineWorker(WorkerAssignment worker, Map<Integer, String> taskToComponent) {
         int cpu = worker.getCpu();
-        if (cpu != 0 && this.cpu != cpu)
+        if (cpu != 0 && this.cpu != cpu) {
             return false;
+        }
         long mem = worker.getMem();
-        if (mem != 0 && this.memSize != mem)
+        if (mem != 0 && this.memSize != mem) {
             return false;
+        }
         String jvm = worker.getJvm();
-        if (jvm != null && !jvm.equals(this.jvm))
+        if (jvm != null && !jvm.equals(this.jvm)) {
             return false;
+        }
         String hostName = worker.getHostName();
-        if (!NetWorkUtils.equals(hostname, hostName))
+        if (!NetWorkUtils.equals(hostname, hostName)) {
             return false;
+        }
         int port = worker.getPort();
-        if (port != 0 && port != this.getPort())
+        if (port != 0 && port != this.getPort()) {
             return false;
+        }
         Map<String, Integer> componentToNum = worker.getComponentToNum();
         Map<String, Integer> myComponentToNum = new HashMap<>();
         for (Integer task : tasks) {

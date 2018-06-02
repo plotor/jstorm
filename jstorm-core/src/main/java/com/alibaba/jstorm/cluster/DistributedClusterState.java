@@ -17,6 +17,20 @@
  */
 package com.alibaba.jstorm.cluster;
 
+import backtype.storm.Config;
+import com.alibaba.jstorm.cache.JStormCache;
+import com.alibaba.jstorm.callback.ClusterStateCallback;
+import com.alibaba.jstorm.callback.WatcherCallBack;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.PathUtils;
+import com.alibaba.jstorm.zk.Zookeeper;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.Watcher.Event.EventType;
+import org.apache.zookeeper.Watcher.Event.KeeperState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -25,28 +39,13 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.Watcher.Event.EventType;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
-
-import com.alibaba.jstorm.cache.JStormCache;
-import com.alibaba.jstorm.callback.ClusterStateCallback;
-import com.alibaba.jstorm.callback.WatcherCallBack;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.PathUtils;
-import com.alibaba.jstorm.zk.Zookeeper;
-
 /**
  * All ZK interface implementation
  *
  * @author yannian.mu
  */
 public class DistributedClusterState implements ClusterState {
+
     private static final Logger LOG = LoggerFactory.getLogger(DistributedClusterState.class);
 
     private final Zookeeper zkObj = new Zookeeper();

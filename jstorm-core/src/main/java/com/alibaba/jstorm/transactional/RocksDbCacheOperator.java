@@ -15,27 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
+import backtype.storm.task.TopologyContext;
+import com.alibaba.jstorm.cache.RocksDBCache;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import org.rocksdb.InfoLogLevel;
 import org.rocksdb.Options;
 import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.task.TopologyContext;
-
-import com.alibaba.jstorm.cache.RocksDBCache;
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RocksDbCacheOperator extends RocksDBCache implements ICacheOperator {
+
+    private static final long serialVersionUID = 2724727418357002363L;
+
     public static Logger LOG = LoggerFactory.getLogger(RocksDbCacheOperator.class);
 
     private Map stormConf;
@@ -63,7 +65,7 @@ public class RocksDbCacheOperator extends RocksDBCache implements ICacheOperator
         rocksDbOpt.setMaxLogFileSize(1073741824); // 1G
         rocksDbOpt.setKeepLogFileNum(1);
         rocksDbOpt.setInfoLogLevel(InfoLogLevel.WARN_LEVEL);
-        
+
         try {
             Map<Object, Object> conf = new HashMap<Object, Object>();
             conf.put(ROCKSDB_ROOT_DIR, cacheDir);
@@ -85,17 +87,17 @@ public class RocksDbCacheOperator extends RocksDBCache implements ICacheOperator
         return maxFlushSize;
     }
 
-    @Override 
-    protected byte[] serialize(Object obj) { 
-        output.clear(); 
+    @Override
+    protected byte[] serialize(Object obj) {
+        output.clear();
         kryo.writeObject(output, obj);
-        return output.toBytes(); 
+        return output.toBytes();
     }
 
-    @Override 
-    protected Object deserialize(byte[] data) { 
-        input.setBuffer(data); 
-        return kryo.readObject(input, ArrayList.class); 
+    @Override
+    protected Object deserialize(byte[] data) {
+        input.setBuffer(data);
+        return kryo.readObject(input, ArrayList.class);
     }
 
     public PendingBatch createPendingBatch(long batchId) {

@@ -156,7 +156,7 @@ public class NimbusServer {
             // 6. 注册一个 follower 线程
             this.initFollowerThread(conf);
 
-            // 7.
+            // 7. 创建并启动一个后端 HTTP 服务（默认端口为 7621）
             int port = ConfigExtension.getNimbusDeamonHttpserverPort(conf);
             hs = new Httpserver(port, conf);
             hs.start();
@@ -267,6 +267,14 @@ public class NimbusServer {
         }
     }
 
+    /**
+     * 创建 {@link NimbusData} 对象
+     *
+     * @param conf
+     * @param inimbus
+     * @return
+     * @throws Exception
+     */
     private NimbusData createNimbusData(Map conf, INimbus inimbus) throws Exception {
         // Callback callback=new TimerCallBack();
         // StormTimer timer=Timer.mkTimerTimer(callback);
@@ -345,6 +353,7 @@ public class NimbusServer {
      */
     @SuppressWarnings("rawtypes")
     private void initThrift(Map conf) throws TTransportException {
+        // 获取 thrift 端口，默认为 8627
         Integer thrift_port = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT)); // ${nimbus.thrift.port}
         TNonblockingServerSocket socket = new TNonblockingServerSocket(thrift_port);
 
@@ -370,7 +379,10 @@ public class NimbusServer {
      */
     @SuppressWarnings("unused")
     private void initFollowerThread(Map conf) {
-        // when this nimbus become leader, we will execute this callback, to init some necessary data/thread
+        /*
+         * when this nimbus become leader,
+         * we will execute this callback, to init some necessary data/thread
+         */
         Callback leaderCallback = new Callback() {
             public <T> Object execute(T... args) {
                 try {

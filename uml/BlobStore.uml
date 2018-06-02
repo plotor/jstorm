@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>com.alibaba.jstorm.blobstore.BlobStore</OriginalElement>
+  <nodes>
+    <node x="112.25" y="0.0">com.alibaba.jstorm.blobstore.BlobStore</node>
+    <node x="184.0" y="83.0">com.alibaba.jstorm.hdfs.blobstore.HdfsBlobStore</node>
+    <node x="0.0" y="83.0">com.alibaba.jstorm.blobstore.LocalFsBlobStore</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="com.alibaba.jstorm.blobstore.LocalFsBlobStore" target="com.alibaba.jstorm.blobstore.BlobStore">
+      <point x="0.0" y="-16.5" />
+      <point x="82.0" y="58.0" />
+      <point x="141.0" y="58.0" />
+      <point x="-28.75" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.hdfs.blobstore.HdfsBlobStore" target="com.alibaba.jstorm.blobstore.BlobStore">
+      <point x="0.0" y="-16.5" />
+      <point x="257.5" y="58.0" />
+      <point x="198.5" y="58.0" />
+      <point x="28.75" y="16.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="73.0" y="58.0" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

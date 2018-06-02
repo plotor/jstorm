@@ -797,12 +797,17 @@ public class Common {
         return relationship;
     }
 
+    /**
+     * <task_id, component_id>
+     *
+     * @param taskInfoMap
+     * @return
+     */
     public static Map<Integer, String> getTaskToComponent(Map<Integer, TaskInfo> taskInfoMap) {
         Map<Integer, String> ret = new TreeMap<>();
         for (Entry<Integer, TaskInfo> entry : taskInfoMap.entrySet()) {
             ret.put(entry.getKey(), entry.getValue().getComponentId());
         }
-
         return ret;
     }
 

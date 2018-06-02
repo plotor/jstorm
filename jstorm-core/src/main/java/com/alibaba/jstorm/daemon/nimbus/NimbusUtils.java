@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus;
 
 import backtype.storm.Config;
@@ -32,7 +33,6 @@ import backtype.storm.generated.TopologySummary;
 import backtype.storm.generated.TopologyTaskHbInfo;
 import backtype.storm.utils.ThriftTopologyUtils;
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.blobstore.BlobStore;
 import com.alibaba.jstorm.blobstore.BlobStoreUtils;
 import com.alibaba.jstorm.blobstore.LocalFsBlobStore;
@@ -50,6 +50,8 @@ import com.alibaba.jstorm.task.TkHbCacheTime;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -62,9 +64,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unchecked")
 public class NimbusUtils {
@@ -92,9 +91,9 @@ public class NimbusUtils {
     /**
      * Normalize stormConf
      *
-     * @param conf      cluster conf
+     * @param conf cluster conf
      * @param stormConf storm topology conf
-     * @param topology  storm topology
+     * @param topology storm topology
      * @return normalized conf
      * @throws Exception
      */
@@ -159,8 +158,9 @@ public class NimbusUtils {
             }
 
             boolean isTransactionTopo = JStormUtils.parseBoolean(mtmp.get(ConfigExtension.TRANSACTION_TOPOLOGY), false);
-            if (isTransactionTopo)
+            if (isTransactionTopo) {
                 stormConf.put(ConfigExtension.TRANSACTION_TOPOLOGY, true);
+            }
         }
 
         Map kryoRegisterMap = mapifySerializations(kryoRegisterList);
@@ -220,8 +220,8 @@ public class NimbusUtils {
      * finalize component's task parallelism
      *
      * @param stormConf storm conf
-     * @param topology  storm topology
-     * @param fromConf  means if the parallelism is read from conf file instead of reading from topology code
+     * @param topology storm topology
+     * @param fromConf means if the parallelism is read from conf file instead of reading from topology code
      * @return normalized topology
      */
     public static StormTopology normalizeTopology(Map stormConf, StormTopology topology, boolean fromConf) {
@@ -414,10 +414,13 @@ public class NimbusUtils {
         // the following is (zkReportTime == reportTime)
         Integer taskHBTimeout = data.getTopologyTaskTimeout().get(topologyId);
         if (taskHBTimeout == null)
-            // default to 2 min
+        // default to 2 min
+        {
             taskHBTimeout = JStormUtils.parseInt(data.getConf().get(Config.NIMBUS_TASK_TIMEOUT_SECS));
-        if (taskId == topoTasksHbInfo.get_topologyMasterId())
+        }
+        if (taskId == topoTasksHbInfo.get_topologyMasterId()) {
             taskHBTimeout = (taskHBTimeout / 2);
+        }
         if (nowSecs - nimbusTime > taskHBTimeout) {
             // task is dead
             long ts = ((long) nimbusTime) * 1000;

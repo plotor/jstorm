@@ -46,6 +46,7 @@ import java.util.Map;
  * </p>
  */
 public interface IBolt extends Serializable {
+
     /**
      * Called when a task for this component is initialized within a worker on the cluster. It provides the bolt with the environment in which the bolt
      * executes.

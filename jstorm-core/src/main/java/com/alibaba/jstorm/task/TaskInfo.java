@@ -15,12 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.jstorm.task;
 
-import java.io.Serializable;
+package com.alibaba.jstorm.task;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+
+import java.io.Serializable;
 
 /**
  * /storm-zk-root/tasks/{topologyid}/{taskid} data
@@ -28,6 +29,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 public class TaskInfo implements Serializable {
 
     private static final long serialVersionUID = 5625165079055837777L;
+
     private String componentId;
     private String componentType;
 

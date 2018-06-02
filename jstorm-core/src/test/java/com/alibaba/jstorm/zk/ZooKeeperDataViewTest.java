@@ -32,7 +32,6 @@ import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.schedule.Assignment;
 import com.alibaba.jstorm.task.TaskInfo;
-import com.alibaba.jstorm.zk.Zookeeper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -177,7 +176,7 @@ public class ZooKeeperDataViewTest {
         for (String element : elements) {
             Node node = new Node(
                     (parent.getPath().length() > 1 ? parent.getPath() : "")
-                            + Cluster.ZK_SEPERATOR + element);
+                            + Cluster.ZK_SEPARATOR + element);
             byte[] data = zkobj.getData(zk, node.getPath(), false);
             if (data != null && data.length > 0) {
                 Object obj = Utils.maybe_deserialize(data);
@@ -194,7 +193,7 @@ public class ZooKeeperDataViewTest {
             return;
         }
 
-        Node root = new Node(Cluster.ZK_SEPERATOR);
+        Node root = new Node(Cluster.ZK_SEPARATOR);
         viewNode(root);
 
         System.out.println(gson.toJson(root));

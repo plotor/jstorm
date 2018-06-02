@@ -1459,7 +1459,8 @@ public class Config extends HashMap<String, Object> {
     public static final Object TOPOLOGY_ISOLATED_MACHINES_SCHEMA = Number.class;
 
     /**
-     * FQCN of a class that implements {@code ITopologyActionNotifierPlugin} @see backtype.storm.nimbus.ITopologyActionNotifierPlugin for details.
+     * FQCN of a class that implements {@code ITopologyActionNotifierPlugin}
+     * @see backtype.storm.nimbus.ITopologyActionNotifierPlugin for details.
      */
     public static final String NIMBUS_TOPOLOGY_ACTION_NOTIFIER_PLUGIN = "nimbus.topology.action.notifier.plugin.class";
     public static final Object NIMBUS_TOPOLOGY_ACTION_NOTIFIER_PLUGIN_SCHEMA = ConfigValidation.StringsValidator;

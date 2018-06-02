@@ -431,7 +431,7 @@ public class StormConfig {
     }
 
     public static String masterDbDir(Map conf) throws IOException {
-        return masterLocalDir(conf) + FILE_SEPERATEOR + "rocksdb";
+        return masterLocalDir(conf) + FILE_SEPERATEOR + "rocksdb"; // ${storm.local.dir}/nimbus/rocksdb
     }
 
     public static String metricDbDir(Map conf) throws IOException {
@@ -487,9 +487,20 @@ public class StormConfig {
         return PathUtils.read_dir_contents(path);
     }
 
-    public static Map read_nimbus_topology_conf(String topologyId, BlobStore blobStore)
-            throws IOException, KeyNotFoundException {
-        return Utils.javaDeserialize(blobStore.readBlob(master_stormconf_key(topologyId)), Map.class);
+    /**
+     * 读取指定 topology 的配置信息
+     * 位于：jstorm-local/nimbus/stormlist/{topology_id}/stormconf.ser
+     *
+     * @param topologyId
+     * @param blobStore
+     * @return
+     * @throws IOException
+     * @throws KeyNotFoundException
+     */
+    public static Map read_nimbus_topology_conf(String topologyId, BlobStore blobStore) throws IOException, KeyNotFoundException {
+        return Utils.javaDeserialize(
+                // {topology_id}-stormconf.ser
+                blobStore.readBlob(master_stormconf_key(topologyId)), Map.class);
     }
 
     public static void write_nimbus_topology_conf(String topologyId, Map topoConf, NimbusData data)
@@ -515,9 +526,20 @@ public class StormConfig {
         return (Map) readLocalObject(topologyId, readFile);
     }
 
-    public static StormTopology read_nimbus_topology_code(String topologyId, BlobStore blobStore)
-            throws IOException, KeyNotFoundException {
-        return Utils.javaDeserialize(blobStore.readBlob(master_stormcode_key(topologyId)), StormTopology.class);
+    /**
+     * 读取指定 topology 的序列化结构信息
+     * 位于：jstorm-local/nimbus/stormlist/{topology_id}/stormcode.ser
+     *
+     * @param topologyId
+     * @param blobStore
+     * @return
+     * @throws IOException
+     * @throws KeyNotFoundException
+     */
+    public static StormTopology read_nimbus_topology_code(String topologyId, BlobStore blobStore) throws IOException, KeyNotFoundException {
+        return Utils.javaDeserialize(
+                // {topology_id}-stormcode.ser
+                blobStore.readBlob(master_stormcode_key(topologyId)), StormTopology.class);
     }
 
     public static void write_nimbus_topology_code(String topologyId, byte[] data, NimbusData nimbusData) throws Exception {

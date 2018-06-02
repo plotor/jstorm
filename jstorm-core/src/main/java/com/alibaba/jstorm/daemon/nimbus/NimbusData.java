@@ -157,6 +157,7 @@ public class NimbusData {
 
         this.stormClusterState = Cluster.mk_storm_cluster_state(conf);
 
+        // 创建 memCache 和 dbCache
         this.createCache();
 
         this.taskHeartbeatsCache = new ConcurrentHashMap<>();
@@ -169,14 +170,14 @@ public class NimbusData {
 
         this.inimubs = inimbus;
 
-        localMode = StormConfig.local_mode(conf);
+        this.localMode = StormConfig.local_mode(conf);
 
         this.metricCache = new JStormMetricCache(conf, this.stormClusterState);
         this.clusterName = ConfigExtension.getClusterName(conf);
 
-        pendingSubmitTopologies = new TimeCacheMap<>(JStormUtils.MIN_10);
-        topologyTaskTimeout = new ConcurrentHashMap<>();
-        tasksHeartbeat = new ConcurrentHashMap<>();
+        this.pendingSubmitTopologies = new TimeCacheMap<>(JStormUtils.MIN_10);
+        this.topologyTaskTimeout = new ConcurrentHashMap<>();
+        this.tasksHeartbeat = new ConcurrentHashMap<>();
 
         // init nimbus metric reporter
         this.metricsReporter = new JStormMetricsReporter(this);

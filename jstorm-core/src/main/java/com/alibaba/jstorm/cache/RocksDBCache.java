@@ -15,27 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.cache;
 
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
-
 import org.apache.commons.lang.StringUtils;
-import org.rocksdb.*;
-import org.rocksdb.util.SizeUnit;
+import org.rocksdb.Options;
+import org.rocksdb.RocksDB;
+import org.rocksdb.WriteBatch;
+import org.rocksdb.WriteOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * RocksDB is an embeddable persistent key-value store for fast storage.
+ *
+ * @link https://github.com/facebook/rocksdb
+ */
 public class RocksDBCache implements JStormCache {
+
     private static final long serialVersionUID = 705938812240167583L;
+
     private static Logger LOG = LoggerFactory.getLogger(RocksDBCache.class);
 
     static {

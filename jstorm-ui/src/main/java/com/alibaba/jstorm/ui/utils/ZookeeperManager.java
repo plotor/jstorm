@@ -55,7 +55,7 @@ public class ZookeeperManager {
 
             List<String> elements = clusterState.get_children(parent, false);
             for (String element : elements) {
-                String path = PathUtils.normalize_path(parent + Cluster.ZK_SEPERATOR + element);
+                String path = PathUtils.normalize_path(parent + Cluster.ZK_SEPARATOR + element);
                 nodes.add(new ZookeeperNode(parent, element, hasChildren(clusterState, path)));
             }
         } catch (Exception e) {

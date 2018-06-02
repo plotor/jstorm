@@ -31,6 +31,7 @@ import java.util.*;
  * Very basic blob store impl with no ACL handling.
  */
 public class FileBlobStoreImpl {
+
     private static final long FULL_CLEANUP_FREQ = 60 * 60 * 1000L;
     private static final int BUCKETS = 1024;
     private static final Logger LOG = LoggerFactory.getLogger(FileBlobStoreImpl.class);

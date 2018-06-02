@@ -15,36 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.metric;
-
-import com.alibaba.jstorm.config.Refreshable;
-import com.alibaba.jstorm.config.RefreshableComponents;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.jstorm.callback.AsyncLoopThread;
-import com.alibaba.jstorm.callback.RunnableCallback;
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.Common;
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.common.metric.AsmHistogram;
-import com.alibaba.jstorm.common.metric.AsmMetric;
-import com.alibaba.jstorm.daemon.nimbus.NimbusData;
-import com.alibaba.jstorm.daemon.supervisor.SupervisorManger;
-import com.alibaba.jstorm.daemon.worker.WorkerData;
-import com.alibaba.jstorm.task.execute.BoltCollector;
-import com.alibaba.jstorm.task.execute.spout.SpoutCollector;
-import com.alibaba.jstorm.utils.JStormServerUtils;
-import com.alibaba.jstorm.utils.TimeUtils;
-import com.google.common.annotations.VisibleForTesting;
 
 import backtype.storm.Config;
 import backtype.storm.generated.MetricInfo;
@@ -54,6 +26,33 @@ import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.OutputCollector;
 import backtype.storm.tuple.Values;
 import backtype.storm.utils.NimbusClientWrapper;
+import com.alibaba.jstorm.callback.AsyncLoopThread;
+import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.Common;
+import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.common.metric.AsmHistogram;
+import com.alibaba.jstorm.common.metric.AsmMetric;
+import com.alibaba.jstorm.config.Refreshable;
+import com.alibaba.jstorm.config.RefreshableComponents;
+import com.alibaba.jstorm.daemon.nimbus.NimbusData;
+import com.alibaba.jstorm.daemon.supervisor.SupervisorManger;
+import com.alibaba.jstorm.daemon.worker.WorkerData;
+import com.alibaba.jstorm.task.execute.BoltCollector;
+import com.alibaba.jstorm.task.execute.spout.SpoutCollector;
+import com.alibaba.jstorm.utils.JStormServerUtils;
+import com.alibaba.jstorm.utils.TimeUtils;
+import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * report metrics from worker to nimbus server. this class serves as an object in Worker/Nimbus/Supervisor.
@@ -259,7 +258,7 @@ public class JStormMetricsReporter implements Refreshable {
             Set<String> enabledMetricSet = toSet(enabledMetrics, ",");
             Set<String> disabledMetricsSet = toSet(disabledMetrics, ",");
 
-            AsmMetricRegistry[] registries = new AsmMetricRegistry[]{
+            AsmMetricRegistry[] registries = new AsmMetricRegistry[] {
                     JStormMetrics.getTopologyMetrics(),
                     JStormMetrics.getComponentMetrics(),
                     JStormMetrics.getTaskMetrics(),
@@ -317,7 +316,6 @@ public class JStormMetricsReporter implements Refreshable {
         updateMetricConfig(conf);
     }
 
-
     /**
      * A thread which flushes metrics data on aligned time, and sends metrics data to:
      * 1. nimbus via nimbus client if this JStormMetricsReporter instance is not in a topology worker
@@ -351,7 +349,6 @@ public class JStormMetricsReporter implements Refreshable {
             return flushMetricThreadCycle;
         }
     }
-
 
     /**
      * A thread which checks metric meta every checkMetaThreadCycle seconds, and tries to:

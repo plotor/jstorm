@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus;
 
 import backtype.storm.Config;
@@ -137,6 +138,7 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings("unchecked")
 public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
+
     private final static Logger LOG = LoggerFactory.getLogger(ServiceHandler.class);
 
     public final static int THREAD_NUM = 64;
@@ -158,8 +160,9 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
         LOG.info("Begin to shutdown master");
         // Timer.cancelTimer(nimbus.getTimer());
         ITopologyActionNotifierPlugin nimbusNotify = data.getNimbusNotify();
-        if (nimbusNotify != null)
+        if (nimbusNotify != null) {
             nimbusNotify.cleanup();
+        }
         LOG.info("Successfully shutdown master");
 
     }
@@ -197,11 +200,11 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
     /**
      * Submit a topology
      *
-     * @param topologyName        String: topology name
+     * @param topologyName String: topology name
      * @param uploadedJarLocation String: already uploaded jar path
-     * @param jsonConf            String: jsonConf serialize all toplogy configuration to
-     *                            Json
-     * @param topology            StormTopology: topology Object
+     * @param jsonConf String: jsonConf serialize all toplogy configuration to
+     * Json
+     * @param topology StormTopology: topology Object
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -455,7 +458,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
      * rebalance a topology
      *
      * @param topologyName topology name
-     * @param options      RebalanceOptions
+     * @param options RebalanceOptions
      */
     @Override
     public void rebalance(String topologyName, RebalanceOptions options) throws TException {
@@ -465,12 +468,15 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
             String jsonConf = null;
             Boolean reassign = false;
             if (options != null) {
-                if (options.is_set_wait_secs())
+                if (options.is_set_wait_secs()) {
                     wait_amt = options.get_wait_secs();
-                if (options.is_set_reassign())
+                }
+                if (options.is_set_reassign()) {
                     reassign = options.is_reassign();
-                if (options.is_set_conf())
+                }
+                if (options.is_set_conf()) {
                     jsonConf = options.get_conf();
+                }
             }
 
             LOG.info("Begin to rebalance " + topologyName + "wait_time:" + wait_amt + ", reassign: " + reassign +
@@ -601,7 +607,6 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
             LOG.warn("can't find conf of topology {}", topologyId);
         }
     }
-
 
     @Override
     public void beginLibUpload(String libName) throws TException {
@@ -740,7 +745,6 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
     public void finishFileDownload(String id) throws TException {
         data.getDownloaders().remove(id);
     }
-
 
     @Override
     public String beginCreateBlob(String blobKey, SettableBlobMeta meta) throws KeyAlreadyExistsException {
@@ -996,7 +1000,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
      * gets supervisor workers by host or supervisor id, note that id priors to host.
      *
      * @param host host
-     * @param id   supervisor id
+     * @param id supervisor id
      * @return supervisor workers
      */
     private SupervisorWorkers getSupervisorWorkersByHostOrId(String host, String id) throws TException {
@@ -1147,13 +1151,13 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
             TopologyTaskHbInfo topologyTaskHbInfo = data.getTasksHeartbeat().get(topologyId);
             Map<Integer, TaskHeartbeat> taskHbMap = null;
-            if (topologyTaskHbInfo != null)
+            if (topologyTaskHbInfo != null) {
                 taskHbMap = topologyTaskHbInfo.get_taskHbs();
+            }
 
             Map<Integer, TaskInfo> taskInfoMap = Cluster.get_all_taskInfo(stormClusterState, topologyId);
             Map<Integer, String> taskToComponent = Cluster.get_all_task_component(stormClusterState, topologyId, taskInfoMap);
             Map<Integer, String> taskToType = Cluster.get_all_task_type(stormClusterState, topologyId, taskInfoMap);
-
 
             String errorString;
             if (Cluster.is_topology_exist_error(stormClusterState, topologyId)) {
@@ -1208,10 +1212,11 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
                         taskSummary.set_uptime(0);
                     } else {
                         boolean isInactive = NimbusUtils.isTaskDead(data, topologyId, taskId);
-                        if (isInactive)
+                        if (isInactive) {
                             taskSummary.set_status("INACTIVE");
-                        else
+                        } else {
                             taskSummary.set_status("ACTIVE");
+                        }
                         taskSummary.set_uptime(hb.get_uptime());
                     }
                 }
@@ -1337,8 +1342,9 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
             Set<ResourceWorkerSlot> workers = assignment.getWorkers();
             for (ResourceWorkerSlot worker : workers) {
                 String supervisorId = worker.getNodeId();
-                if (!ret.containsKey(worker.getHostname()))
+                if (!ret.containsKey(worker.getHostname())) {
                     ret.put(worker.getHostname(), new HashMap<String, String>());
+                }
                 ret.get(worker.getHostname()).put(String.valueOf(worker.getPort()), supervisorId);
             }
         } catch (Exception ex) {
@@ -1484,7 +1490,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
      * whether the topology is active by topology name
      *
      * @param stormClusterState see Cluster_clj
-     * @param topologyName      topology name
+     * @param topologyName topology name
      * @return boolean if the storm is active, return true, otherwise return false
      */
     public boolean isTopologyActive(StormClusterState stormClusterState, String topologyName) throws Exception {
@@ -1981,8 +1987,9 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     private void notifyTopologyActionListener(String topologyName, String action) {
         ITopologyActionNotifierPlugin nimbusNotify = data.getNimbusNotify();
-        if (nimbusNotify != null)
+        if (nimbusNotify != null) {
             nimbusNotify.notify(topologyName, action);
+        }
     }
 
     @Override

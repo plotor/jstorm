@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>com.alibaba.jstorm.cache.JStormCache</OriginalElement>
+  <nodes>
+    <node x="31.0" y="83.0">com.alibaba.jstorm.cache.RocksDBCache</node>
+    <node x="220.5" y="0.0">com.alibaba.jstorm.cache.JStormCache</node>
+    <node x="397.0" y="83.0">com.alibaba.jstorm.cache.RocksTTLDBCache</node>
+    <node x="198.0" y="83.0">com.alibaba.jstorm.cache.TimeoutMemCache</node>
+    <node x="0.0" y="166.0">com.alibaba.jstorm.transactional.RocksDbCacheOperator</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="com.alibaba.jstorm.cache.RocksTTLDBCache" target="com.alibaba.jstorm.cache.JStormCache">
+      <point x="0.0" y="-16.5" />
+      <point x="482.0" y="58.0" />
+      <point x="332.16666666666663" y="58.0" />
+      <point x="44.66666666666663" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.RocksDbCacheOperator" target="com.alibaba.jstorm.cache.RocksDBCache">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.cache.RocksDBCache" target="com.alibaba.jstorm.cache.JStormCache">
+      <point x="0.0" y="-16.5" />
+      <point x="104.5" y="58.0" />
+      <point x="242.83333333333334" y="58.0" />
+      <point x="-44.66666666666666" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.cache.TimeoutMemCache" target="com.alibaba.jstorm.cache.JStormCache">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="283.5" y="99.5" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

@@ -15,16 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus.metric;
-
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.daemon.nimbus.NimbusData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 
 public class ClusterMetricsRunnable extends RunnableCallback {
     private static final Logger LOG = LoggerFactory.getLogger(ClusterMetricsRunnable.class);
@@ -80,7 +80,7 @@ public class ClusterMetricsRunnable extends RunnableCallback {
         if (context != null) {
             context.shutdown();
         }
-        
+
         instance = null;
     }
 

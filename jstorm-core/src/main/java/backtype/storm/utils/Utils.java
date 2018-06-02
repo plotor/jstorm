@@ -366,7 +366,6 @@ public class Utils {
                 DEFAULT_CONF = LoadConf.findAndReadYaml("defaults.yaml", true, false);
             }
         }
-
         return DEFAULT_CONF;
     }
 

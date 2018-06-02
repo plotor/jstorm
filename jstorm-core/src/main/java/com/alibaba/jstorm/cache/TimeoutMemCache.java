@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.cache;
 
 import com.alibaba.jstorm.client.ConfigExtension;
@@ -30,6 +31,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 
 public class TimeoutMemCache implements JStormCache {
+
     private static final long serialVersionUID = 705938812240167583L;
     private static Logger LOG = LoggerFactory.getLogger(TimeoutMemCache.class);
 

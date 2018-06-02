@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.utils;
 
 import backtype.storm.utils.Time;
@@ -52,9 +53,9 @@ public class TimeUtils {
         return System.currentTimeMillis() - time_ms;
     }
 
-    public static final long MS_PER_SEC = 1000l;
-    public static final long NS_PER_US = 1000l;
-    public static final long US_PER_MS = 1000l;
+    public static final long MS_PER_SEC = 1000L;
+    public static final long NS_PER_US = 1000L;
+    public static final long US_PER_MS = 1000L;
 
     public static final int ONE_SEC = 1;
     public static final int SEC_PER_MIN = 60;
@@ -126,7 +127,6 @@ public class TimeUtils {
         SimpleDateFormat df = new SimpleDateFormat(fmt);
         return df.format(time);
     }
-
 
     public static void main(String[] args) throws Exception {
         System.out.println(new Date(alignTimeToWin(System.currentTimeMillis(), AsmWindow.M1_WINDOW)));

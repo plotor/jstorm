@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class TopologyAssignEvent {
 
     // unit is minutes
-    private static final int DEFAULT_WAIT_TIME = 5;
+    private static final int DEFAULT_WAIT_TIME = 5; // 5 分钟
     private String topologyId;
     private String topologyName; // if this field has been set, it is create topology
     private String group;
@@ -88,6 +88,7 @@ public class TopologyAssignEvent {
 
     public boolean waitFinish() {
         try {
+            // 等待 5 分钟
             latch.await(DEFAULT_WAIT_TIME, TimeUnit.MINUTES);
         } catch (InterruptedException ignored) {
         }

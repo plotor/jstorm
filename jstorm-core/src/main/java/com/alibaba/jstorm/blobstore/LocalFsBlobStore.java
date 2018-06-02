@@ -84,9 +84,9 @@ public class LocalFsBlobStore extends BlobStore {
         this.nimbusInfo = nimbusInfo;
 
         if (overrideBase == null) {
-            overrideBase = (String) conf.get(Config.BLOBSTORE_DIR);
+            overrideBase = (String) conf.get(Config.BLOBSTORE_DIR); // blobstore.dir
             if (overrideBase == null) {
-                overrideBase = (String) conf.get(Config.STORM_LOCAL_DIR);
+                overrideBase = (String) conf.get(Config.STORM_LOCAL_DIR); // storm.local.dir
             }
         }
         File baseDir = new File(overrideBase, BASE_BLOBS_DIR_NAME);

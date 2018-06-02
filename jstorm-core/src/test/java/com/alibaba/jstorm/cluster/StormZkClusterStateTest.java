@@ -17,7 +17,6 @@
 
 package com.alibaba.jstorm.cluster;
 
-import backtype.storm.LocalCluster;
 import backtype.storm.LocalClusterMap;
 import backtype.storm.LocalUtils;
 import com.alibaba.jstorm.task.error.ErrorConstants;
@@ -63,7 +62,7 @@ public class StormZkClusterStateTest {
         Map report_time = stormClusterState.topo_lastErr_time(topology_id);
         List<String> err_time = stormClusterState.task_error_time(topology_id, task_id);
         for (String time : err_time) {
-            String errPath = path + Cluster.ZK_SEPERATOR + time;
+            String errPath = path + Cluster.ZK_SEPARATOR + time;
             Object obj = stormClusterState.getObject(errPath, false);
             assertEquals(expected, obj);
         }

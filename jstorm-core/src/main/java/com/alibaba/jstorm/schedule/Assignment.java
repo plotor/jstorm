@@ -60,7 +60,7 @@ public class Assignment implements Serializable {
     private AssignmentType type;
 
     public Assignment() {
-        masterCodeDir = null;
+        this.masterCodeDir = null;
         this.nodeHost = new HashMap<>();
         this.taskStartTimeSecs = new HashMap<>();
         this.workers = new HashSet<>();

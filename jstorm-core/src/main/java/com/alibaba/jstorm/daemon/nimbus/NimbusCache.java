@@ -47,6 +47,13 @@ public class NimbusCache {
     protected JStormCache dbCache;
     protected StormClusterState zkCluster;
 
+    /**
+     * 对于本地以及 linux、mac 以外的平台均采用 TimeoutMemCache，
+     * 此外如果指定了缓存实现则使用自定义缓存，否则使用 rocksdb 作为缓存实现
+     *
+     * @param conf
+     * @return
+     */
     public String getNimbusCacheClass(Map conf) {
         boolean isLinux = OSInfo.isLinux();
         boolean isMac = OSInfo.isMac();
@@ -60,6 +67,7 @@ public class NimbusCache {
             return TIMEOUT_MEM_CACHE_CLASS;
         }
 
+        // 获取 nimbus.cache.class 配置项指定的缓存实现类
         String nimbusCacheClass = ConfigExtension.getNimbusCacheClass(conf);
         if (!StringUtils.isBlank(nimbusCacheClass)) {
             return nimbusCacheClass;
@@ -71,7 +79,8 @@ public class NimbusCache {
     public NimbusCache(Map conf, StormClusterState zkCluster) {
         super();
 
-        String dbCacheClass = getNimbusCacheClass(conf);
+        // 获取本地缓存的具体实现类
+        String dbCacheClass = this.getNimbusCacheClass(conf);
         LOG.info("NimbusCache db cache will use {}", dbCacheClass);
 
         try {
@@ -79,6 +88,7 @@ public class NimbusCache {
 
             String dbDir = StormConfig.masterDbDir(conf);
             conf.put(RocksDBCache.ROCKSDB_ROOT_DIR, dbDir);
+            // 是否在 nimbus 启动时清空数据
             conf.put(RocksDBCache.ROCKSDB_RESET, ConfigExtension.getNimbusCacheReset(conf));
 
             dbCache.init(conf);
@@ -88,7 +98,7 @@ public class NimbusCache {
                 memCache = new TimeoutMemCache();
                 memCache.init(conf);
             }
-        } catch (java.lang.UnsupportedClassVersionError e) {
+        } catch (UnsupportedClassVersionError e) {
             if (e.getMessage().contains("Unsupported major.minor version")) {
                 LOG.error("!!!Please update jdk version to 7 or higher!!!");
             }

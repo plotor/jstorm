@@ -266,7 +266,7 @@ public class ZkTool {
     }
 
     public static String assignment_bak_path(String id) {
-        return Cluster.ASSIGNMENTS_BAK_SUBTREE + Cluster.ZK_SEPERATOR + id;
+        return Cluster.ASSIGNMENTS_BAK_SUBTREE + Cluster.ZK_SEPARATOR + id;
     }
 
     @SuppressWarnings("rawtypes")
@@ -286,7 +286,7 @@ public class ZkTool {
         for (String follower : followers) {
             if (follower != null) {
                 String uptime = new String(cluster_state.get_data(
-                        Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPERATOR + follower, false));
+                        Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPARATOR + follower, false));
                 ret.put(follower, uptime);
             }
         }

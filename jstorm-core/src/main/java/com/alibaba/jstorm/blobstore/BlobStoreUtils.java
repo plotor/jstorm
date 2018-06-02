@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.blobstore;
 
 import backtype.storm.Config;
@@ -60,6 +61,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class BlobStoreUtils {
+
     private static final String BLOBSTORE_SUBTREE = "/blobstore";
     private static final Logger LOG = LoggerFactory.getLogger(BlobStoreUtils.class);
 
@@ -179,7 +181,7 @@ public class BlobStoreUtils {
     }
 
     public static boolean updateBlob(BlobStore blobStore, String key, byte[] data) throws IOException,
-            KeyNotFoundException {
+                                                                                          KeyNotFoundException {
         boolean isSuccess = false;
         AtomicOutputStream out = null;
         try {
@@ -320,6 +322,14 @@ public class BlobStoreUtils {
         return getNimbusBlobStore(conf, null, nimbusInfo);
     }
 
+    /**
+     * 创建对应的 blobstore 对象：LocalFsBlobStore or HdfsBlobStore
+     *
+     * @param conf
+     * @param baseDir
+     * @param nimbusInfo
+     * @return
+     */
     public static BlobStore getNimbusBlobStore(Map conf, String baseDir, NimbusInfo nimbusInfo) {
         String type = (String) conf.get(Config.NIMBUS_BLOBSTORE); // nimbus.blobstore.class:
         if (type == null) {
@@ -451,7 +461,7 @@ public class BlobStoreUtils {
      * passed as the argument.
      *
      * @param filter KeyFilter
-     * @param <R>    Type
+     * @param <R> Type
      * @return Set of filtered keys
      */
     public static <R> Set<R> filterAndListKeys(Iterator<R> keys, KeyFilter<R> filter) {
@@ -465,7 +475,6 @@ public class BlobStoreUtils {
         }
         return ret;
     }
-
 
     /**
      * topology ids in blobstore
@@ -558,8 +567,9 @@ public class BlobStoreUtils {
                 String filterName = topologyId + "-lib-";
                 List<String> blobKeys = data.getStormClusterState().blobstoreInfo(null);
                 for (String blobkey : blobKeys) {
-                    if (blobkey.startsWith(filterName))
+                    if (blobkey.startsWith(filterName)) {
                         keys.add(blobkey);
+                    }
                 }
             } catch (Exception e) {
                 LOG.warn("error!!!", e);
@@ -607,7 +617,7 @@ public class BlobStoreUtils {
     }
 
     public static void downloadLocalStormCode(Map conf, String topologyId, String masterCodeDir) throws IOException,
-            TException {
+                                                                                                        TException {
         // STORM_LOCAL_DIR/supervisor/tmp/(UUID)
         String tmpRoot = StormConfig.supervisorTmpDir(conf) + File.separator + UUID.randomUUID().toString();
 
@@ -623,8 +633,9 @@ public class BlobStoreUtils {
             blobStore.readBlobTo(StormConfig.master_stormconf_key(topologyId),
                     new FileOutputStream(StormConfig.stormconf_path(tmpRoot)));
         } finally {
-            if (blobStore != null)
+            if (blobStore != null) {
                 blobStore.shutdown();
+            }
         }
 
         File srcDir = new File(tmpRoot);
@@ -675,8 +686,9 @@ public class BlobStoreUtils {
             }
         }
 
-        if (rtn.size() == 0)
+        if (rtn.size() == 0) {
             return null;
+        }
 
         return rtn.get(0);
     }

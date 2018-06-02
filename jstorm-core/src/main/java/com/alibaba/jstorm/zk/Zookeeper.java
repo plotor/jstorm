@@ -15,14 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.zk;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.Map;
-
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.callback.DefaultWatcherCallBack;
+import com.alibaba.jstorm.callback.WatcherCallBack;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.PathUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.CuratorEvent;
 import org.apache.curator.framework.api.CuratorEventType;
@@ -36,12 +36,11 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.callback.DefaultWatcherCallBack;
-import com.alibaba.jstorm.callback.WatcherCallBack;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.PathUtils;
+import java.io.File;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Map;
 
 /**
  * a simple ZK wrapper
@@ -190,7 +189,6 @@ public class Zookeeper {
     public void syncPath(CuratorFramework zk, String path) throws Exception {
         zk.sync().forPath(Utils.normalize_path(path));
     }
-
 
     public void deleteRecursive(CuratorFramework zk, String path) throws Exception {
         String normPath = PathUtils.normalize_path(path);

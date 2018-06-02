@@ -32,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * 目前对于 {@link ITopologyScheduler} 的唯一实现
+ */
 public class DefaultTopologyScheduler implements ITopologyScheduler {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultTopologyScheduler.class);

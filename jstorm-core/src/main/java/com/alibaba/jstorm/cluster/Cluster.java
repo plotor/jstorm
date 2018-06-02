@@ -45,7 +45,7 @@ public class Cluster {
 
     private static Logger LOG = LoggerFactory.getLogger(Cluster.class);
 
-    public static final String ZK_SEPERATOR = "/";
+    public static final String ZK_SEPARATOR = "/";
 
     public static final String ASSIGNMENTS_ROOT = "assignments";
     public static final String ASSIGNMENTS_BAK = "assignments_bak";
@@ -87,97 +87,105 @@ public class Cluster {
     public static final String BLACKLIST_SUBTREE;
 
     static {
-        ASSIGNMENTS_SUBTREE = ZK_SEPERATOR + ASSIGNMENTS_ROOT;
-        ASSIGNMENTS_BAK_SUBTREE = ZK_SEPERATOR + ASSIGNMENTS_BAK;
-        TASKS_SUBTREE = ZK_SEPERATOR + TASKS_ROOT;
-        STORMS_SUBTREE = ZK_SEPERATOR + STORMS_ROOT;
-        SUPERVISORS_SUBTREE = ZK_SEPERATOR + SUPERVISORS_ROOT;
-        TASKBEATS_SUBTREE = ZK_SEPERATOR + TASKBEATS_ROOT;
-        TASKERRORS_SUBTREE = ZK_SEPERATOR + TASKERRORS_ROOT;
-        MASTER_SUBTREE = ZK_SEPERATOR + MASTER_ROOT;
-        NIMBUS_SLAVE_SUBTREE = ZK_SEPERATOR + NIMBUS_SLAVE_ROOT;
-        METRIC_SUBTREE = ZK_SEPERATOR + METRIC_ROOT;
-        GRAY_UPGRADE_SUBTREE = ZK_SEPERATOR + GRAY_UPGRADE_ROOT;
-        NIMBUS_SLAVE_DETAIL_SUBTREE = ZK_SEPERATOR + NIMBUS_SLAVE_DETAIL_ROOT;
-        BLOBSTORE_SUBTREE = ZK_SEPERATOR + BLOBSTORE_ROOT;
-        BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE = ZK_SEPERATOR + BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT;
-        BLACKLIST_SUBTREE = ZK_SEPERATOR + BLACKLIST_ROOT;
+        ASSIGNMENTS_SUBTREE = ZK_SEPARATOR + ASSIGNMENTS_ROOT; // assignments
+        ASSIGNMENTS_BAK_SUBTREE = ZK_SEPARATOR + ASSIGNMENTS_BAK; // assignments_bak
+        TASKS_SUBTREE = ZK_SEPARATOR + TASKS_ROOT; // tasks
+        STORMS_SUBTREE = ZK_SEPARATOR + STORMS_ROOT;
+        SUPERVISORS_SUBTREE = ZK_SEPARATOR + SUPERVISORS_ROOT; // supervisors
+        TASKBEATS_SUBTREE = ZK_SEPARATOR + TASKBEATS_ROOT;
+        TASKERRORS_SUBTREE = ZK_SEPARATOR + TASKERRORS_ROOT;
+        MASTER_SUBTREE = ZK_SEPARATOR + MASTER_ROOT;
+        NIMBUS_SLAVE_SUBTREE = ZK_SEPARATOR + NIMBUS_SLAVE_ROOT;
+        METRIC_SUBTREE = ZK_SEPARATOR + METRIC_ROOT;
+        GRAY_UPGRADE_SUBTREE = ZK_SEPARATOR + GRAY_UPGRADE_ROOT;
+        NIMBUS_SLAVE_DETAIL_SUBTREE = ZK_SEPARATOR + NIMBUS_SLAVE_DETAIL_ROOT;
+        BLOBSTORE_SUBTREE = ZK_SEPARATOR + BLOBSTORE_ROOT;
+        BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE = ZK_SEPARATOR + BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT;
+        BLACKLIST_SUBTREE = ZK_SEPARATOR + BLACKLIST_ROOT;
     }
 
     public static String supervisor_path(String id) {
-        return SUPERVISORS_SUBTREE + ZK_SEPERATOR + id;
+        return SUPERVISORS_SUBTREE + ZK_SEPARATOR + id;
     }
 
+    /**
+     * 获取 topology 对应的任务分配信息路径
+     *
+     * @param id
+     * @return
+     */
     public static String assignment_path(String id) {
-        return ASSIGNMENTS_SUBTREE + ZK_SEPERATOR + id;
+        // assignments/{topology_id}
+        return ASSIGNMENTS_SUBTREE + ZK_SEPARATOR + id;
     }
 
     public static String storm_path(String id) {
-        return STORMS_SUBTREE + ZK_SEPERATOR + id;
+        return STORMS_SUBTREE + ZK_SEPARATOR + id;
     }
 
     public static String storm_task_root(String topology_id) {
-        return TASKS_SUBTREE + ZK_SEPERATOR + topology_id;
+        // tasks/{topology_id}
+        return TASKS_SUBTREE + ZK_SEPARATOR + topology_id;
     }
 
     public static String taskbeat_storm_root(String topology_id) {
-        return TASKBEATS_SUBTREE + ZK_SEPERATOR + topology_id;
+        return TASKBEATS_SUBTREE + ZK_SEPARATOR + topology_id;
     }
 
     public static String taskerror_storm_root(String topology_id) {
-        return TASKERRORS_SUBTREE + ZK_SEPERATOR + topology_id;
+        return TASKERRORS_SUBTREE + ZK_SEPARATOR + topology_id;
     }
 
     public static String lasterror_path(String topology_id) {
-        return taskerror_storm_root(topology_id) + ZK_SEPERATOR + LAST_ERROR;
+        return taskerror_storm_root(topology_id) + ZK_SEPARATOR + LAST_ERROR;
     }
 
     public static String taskerror_path(String topology_id, int task_id) {
-        return taskerror_storm_root(topology_id) + ZK_SEPERATOR + task_id;
+        return taskerror_storm_root(topology_id) + ZK_SEPARATOR + task_id;
     }
 
     public static String metric_path(String topology_id) {
-        return METRIC_SUBTREE + ZK_SEPERATOR + topology_id;
+        return METRIC_SUBTREE + ZK_SEPARATOR + topology_id;
     }
 
     public static String gray_upgrade_base_path(String topology_id) {
-        return GRAY_UPGRADE_SUBTREE + ZK_SEPERATOR + topology_id;
+        return GRAY_UPGRADE_SUBTREE + ZK_SEPARATOR + topology_id;
     }
 
     public static String gray_upgrade_conf_path(String topologyId) {
-        return gray_upgrade_base_path(topologyId) + ZK_SEPERATOR + CONF;
+        return gray_upgrade_base_path(topologyId) + ZK_SEPARATOR + CONF;
     }
 
     public static String gray_upgrade_upgrading_workers_path(String topologyId) {
-        return Cluster.gray_upgrade_base_path(topologyId) + ZK_SEPERATOR + UPGRADING_WORKERS;
+        return Cluster.gray_upgrade_base_path(topologyId) + ZK_SEPARATOR + UPGRADING_WORKERS;
     }
 
     public static String gray_upgrade_upgraded_workers_path(String topologyId) {
-        return Cluster.gray_upgrade_base_path(topologyId) + ZK_SEPERATOR + UPGRADED_WORKERS;
+        return Cluster.gray_upgrade_base_path(topologyId) + ZK_SEPARATOR + UPGRADED_WORKERS;
     }
 
     public static String gray_upgrade_upgrading_worker_path(String topologyId, String hostPort) {
-        return Cluster.gray_upgrade_upgrading_workers_path(topologyId) + ZK_SEPERATOR + hostPort;
+        return Cluster.gray_upgrade_upgrading_workers_path(topologyId) + ZK_SEPARATOR + hostPort;
     }
 
     public static String gray_upgrade_upgraded_worker_path(String topologyId, String hostPort) {
-        return Cluster.gray_upgrade_upgraded_workers_path(topologyId) + ZK_SEPERATOR + hostPort;
+        return Cluster.gray_upgrade_upgraded_workers_path(topologyId) + ZK_SEPARATOR + hostPort;
     }
 
     public static String assignment_bak_path(String id) {
-        return ASSIGNMENTS_BAK_SUBTREE + ZK_SEPERATOR + id;
+        return ASSIGNMENTS_BAK_SUBTREE + ZK_SEPARATOR + id;
     }
 
     public static String blobstore_path(String key) {
-        return BLOBSTORE_SUBTREE + ZK_SEPERATOR + key;
+        return BLOBSTORE_SUBTREE + ZK_SEPARATOR + key;
     }
 
     public static String blob_max_key_sequence_number_path(String key) {
-        return BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE + ZK_SEPERATOR + key;
+        return BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE + ZK_SEPARATOR + key;
     }
 
     public static String blacklist_path(String key) {
-        return BLACKLIST_SUBTREE + ZK_SEPERATOR + key;
+        return BLACKLIST_SUBTREE + ZK_SEPARATOR + key;
     }
 
     @SuppressWarnings("rawtypes")
@@ -189,21 +197,36 @@ public class Cluster {
         return new StormZkClusterState(cluster_state_spec);
     }
 
+    /**
+     * 从 ZK 上获取当前 topology 对应的所有 {@link TaskInfo}
+     *
+     * @param zkCluster
+     * @param topologyId
+     * @return
+     * @throws Exception
+     */
     public static Map<Integer, TaskInfo> get_all_taskInfo(StormClusterState zkCluster, String topologyId) throws Exception {
         return zkCluster.task_all_info(topologyId);
     }
 
+    /**
+     * 获取指定 topology 下对应的 <task_id, component_id> 映射列表
+     *
+     * @param zkCluster
+     * @param topologyId
+     * @param taskInfoMap
+     * @return
+     * @throws Exception
+     */
     public static Map<Integer, String> get_all_task_component(
-            StormClusterState zkCluster, String topologyId, Map<Integer, TaskInfo> taskInfoMap)
-            throws Exception {
+            StormClusterState zkCluster, String topologyId, Map<Integer, TaskInfo> taskInfoMap) throws Exception {
         if (taskInfoMap == null) {
+            // 从 ZK 上获取当前 topology 对应的所有 {@link TaskInfo}
             taskInfoMap = get_all_taskInfo(zkCluster, topologyId);
         }
-
         if (taskInfoMap == null) {
             return null;
         }
-
         return Common.getTaskToComponent(taskInfoMap);
     }
 
@@ -263,7 +286,7 @@ public class Cluster {
     }
 
     /**
-     * get all SupervisorInfo of storm cluster
+     * 从 ZK 上获取所有的 supervisor 信息：<id, supervisorInfo>
      *
      * @param stormClusterState storm cluster state
      * @param callback watcher callback
@@ -271,20 +294,24 @@ public class Cluster {
      */
     public static Map<String, SupervisorInfo> get_all_SupervisorInfo(
             StormClusterState stormClusterState, RunnableCallback callback) throws Exception {
+
         Map<String, SupervisorInfo> rtn = new TreeMap<>();
-        // get /ZK/supervisors
+
+        // 获取所有的 supervisor_id, 位于 /zk/supervisors 下面
         List<String> supervisorIds = stormClusterState.supervisors(callback);
+
         // ignore any supervisors in blacklist
         List<String> blacklist = stormClusterState.get_blacklist();
 
         if (supervisorIds != null) {
             for (Iterator<String> iter = supervisorIds.iterator(); iter.hasNext(); ) {
                 String supervisorId = iter.next();
-                // get /supervisors/supervisorid
+                // 获取指定 id 的 supervisor 信息
                 SupervisorInfo supervisorInfo = stormClusterState.supervisor_info(supervisorId);
                 if (supervisorInfo == null) {
                     LOG.warn("Failed to get SupervisorInfo of " + supervisorId);
                 } else if (blacklist.contains(supervisorInfo.getHostName())) {
+                    // 跳过黑名单 supervisor
                     LOG.warn(" hostname:" + supervisorInfo.getHostName() + " is in blacklist");
                 } else {
                     rtn.put(supervisorId, supervisorInfo);

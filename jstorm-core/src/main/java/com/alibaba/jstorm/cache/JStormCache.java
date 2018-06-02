@@ -17,13 +17,14 @@
  */
 package com.alibaba.jstorm.cache;
 
+import com.alibaba.jstorm.client.ConfigExtension;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 
-import com.alibaba.jstorm.client.ConfigExtension;
-
 public interface JStormCache extends Serializable {
+
     String TAG_TIMEOUT_LIST = ConfigExtension.CACHE_TIMEOUT_LIST;
 
     void init(Map<Object, Object> conf) throws Exception;

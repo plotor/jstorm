@@ -33,9 +33,12 @@ public class TopologyAssignContext {
     public static final int ASSIGN_TYPE_REBALANCE = 1; // re-balance a topology
     public static final int ASSIGN_TYPE_MONITOR = 2; // monitor a topology, some tasks are dead
 
+    /** topology_id */
     protected String topologyId;
     protected int assignType;
+    /** topology 的结构信息 */
     protected StormTopology rawTopology;
+    /** 配置信息，包含 nimbus 配置信息和 topology 配置信息 */
     protected Map stormConf;
 
     // if assignType is ASSIGN_TYPE_NEW, oldAssignment is the Assignment last time
@@ -44,11 +47,14 @@ public class TopologyAssignContext {
 
     protected Map<String, SupervisorInfo> cluster;
 
+    /** topology_master_id */
     protected int topoMasterTaskId;
     protected boolean assignSingleWorkerForTM = false;
 
+    /** <task_id, component_id> 之间的映射关系 */
     protected Map<Integer, String> taskToComponent;
 
+    /** 指定 topology 的所有 task_id 列表 */
     protected Set<Integer> allTaskIds; // all tasks
     protected Set<Integer> deadTaskIds; // dead tasks
     protected Set<Integer> unstoppedTaskIds; // the task is alive, but his

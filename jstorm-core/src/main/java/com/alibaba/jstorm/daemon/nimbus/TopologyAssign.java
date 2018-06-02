@@ -128,9 +128,10 @@ public class TopologyAssign implements Runnable {
         LOG.info("TopologyAssign thread has been started");
         runFlag = true;
 
-        while (runFlag) {
+        while (runFlag) { // 始终循环执行
             TopologyAssignEvent event;
             try {
+                // 从阻塞队列中获取一个 TopologyAssignEvent
                 event = queue.take();
             } catch (InterruptedException e1) {
                 continue;
@@ -182,7 +183,7 @@ public class TopologyAssign implements Runnable {
             Assignment oldAssignment = null;
             boolean isReassign = event.isScratch();
             if (isReassign) {
-                // 如果是已存在的拓扑，需要先将之前的信息存储下来
+                // 如果是已存在的拓扑，需要先将之前的信息记录下来
                 oldAssignment = nimbusData.getStormClusterState().assignment_info(event.getTopologyId(), null);
             }
 
@@ -343,18 +344,22 @@ public class TopologyAssign implements Runnable {
     protected TopologyAssignContext prepareTopologyAssign(TopologyAssignEvent event) throws Exception {
         TopologyAssignContext ret = new TopologyAssignContext();
 
+        // 设置 topologyId
         String topologyId = event.getTopologyId();
         ret.setTopologyId(topologyId);
 
+        // 设置 topologyMasterId
         int topoMasterId = nimbusData.getTasksHeartbeat().get(topologyId).get_topologyMasterId();
         ret.setTopologyMasterTaskId(topoMasterId);
         LOG.info("prepareTopologyAssign, topoMasterId={}", topoMasterId);
 
-        Map<Object, Object> nimbusConf = nimbusData.getConf();
-        // 读取拓扑的配置信息
-        Map<Object, Object> topologyConf = StormConfig.read_nimbus_topology_conf(topologyId, nimbusData.getBlobStore());
+        Map<Object, Object> nimbusConf = nimbusData.getConf(); // 获取 nimbus 配置信息
 
-        // 读取拓扑的结构信息
+        // 读取 topology 的配置信息：jstorm-local/nimbus/stormlist/{topology_id}/stormconf.ser
+        Map<Object, Object> topologyConf =
+                StormConfig.read_nimbus_topology_conf(topologyId, nimbusData.getBlobStore());
+
+        // 读取指定 topology 的序列化结构信息：jstorm-local/nimbus/stormlist/{topology_id}/stormcode.ser
         StormTopology rawTopology = StormConfig.read_nimbus_topology_code(topologyId, nimbusData.getBlobStore());
         ret.setRawTopology(rawTopology);
 
@@ -362,16 +367,16 @@ public class TopologyAssign implements Runnable {
         Map stormConf = new HashMap();
         LOG.info("GET RESERVE_WORKERS from = {}", Utils.readDefaultConfig());
         LOG.info("RESERVE_WORKERS = {}", Utils.readDefaultConfig().get(Config.RESERVE_WORKERS));
-        // 设置保留的 worker 数目 ${jstorm.reserve.workers}
         stormConf.put(Config.RESERVE_WORKERS, Utils.readDefaultConfig().get(Config.RESERVE_WORKERS));
-        stormConf.putAll(nimbusConf);
-        stormConf.putAll(topologyConf);
+        stormConf.putAll(nimbusConf); // nimbus 配置信息
+        stormConf.putAll(topologyConf); // topology 配置信息
         ret.setStormConf(stormConf);
 
         StormClusterState stormClusterState = nimbusData.getStormClusterState();
 
-        // get all running supervisor, don't need callback to watch supervisor
+        // 从 ZK 上获取所有的 supervisor 信息：<id, supervisorInfo>
         Map<String, SupervisorInfo> supInfos = Cluster.get_all_SupervisorInfo(stormClusterState, null);
+
         // init all AvailableWorkerPorts
         for (Entry<String, SupervisorInfo> supInfo : supInfos.entrySet()) {
             SupervisorInfo supervisor = supInfo.getValue();
@@ -387,15 +392,14 @@ public class TopologyAssign implements Runnable {
             throw new FailedAssignTopologyException("Failed to make assignment " + topologyId + ", due to no alive supervisor");
         }
 
-        /**
-         * 获取 topology 中的组件信息 <task_id, component_id>
-         * 对于一个拓扑而言，taskid 总是从1开始分配的，并且，相同的组件taskid是相邻的。
-         * 比如你定义了一个SocketSpout（并行度5），一个PrintBolt（并行度4，那么SocketSpout的taskid可能是1-5，PrintBolt的taskid可能是6-9。
+        /*
+         * 获取指定 topology 下对应的 <task_id, component_id> 映射列表
+         * 对于一个拓扑而言，task_id 总是从 1 开始分配的，并且相同组件的 task_id 是相邻的。
          */
         Map<Integer, String> taskToComponent = Cluster.get_all_task_component(stormClusterState, topologyId, null);
         ret.setTaskToComponent(taskToComponent);
 
-        // get taskids /ZK/tasks/topologyId
+        // 获取指定 topology 的所有 task_id 列表
         Set<Integer> allTaskIds = taskToComponent.keySet();
         if (allTaskIds.size() == 0) {
             String errMsg = "Failed to get all task ID list from /ZK-dir/tasks/" + topologyId;
@@ -410,13 +414,16 @@ public class TopologyAssign implements Runnable {
         Set<Integer> deadTasks = new HashSet<>();
         Set<ResourceWorkerSlot> unstoppedWorkers;
 
+        // 获取 topology 对应的任务分配信息
         Assignment existingAssignment = stormClusterState.assignment_info(topologyId, null);
+        // 如果已经存在对应的任务
         if (existingAssignment != null) {
             /*
              * Check if the topology master task is alive first since all task 
              * heartbeat info is reported by topology master. 
              * If master is dead, do reassignment for topology master first.
              */
+            // TODO 2018-06-02 17:52:52 https://blog.csdn.net/benbendy1984/article/details/52665142
             if (NimbusUtils.isTaskDead(nimbusData, topologyId, topoMasterId)) {
                 ResourceWorkerSlot tmWorker = existingAssignment.getWorkerByTaskId(topoMasterId);
                 deadTasks.addAll(tmWorker.getTasks());
@@ -466,7 +473,6 @@ public class TopologyAssign implements Runnable {
 
     /**
      * make assignments for a topology
-     *
      * The nimbus core function, this function has been totally rewrite
      *
      * @throws Exception

@@ -159,7 +159,6 @@ public class StormZkClusterState implements StormClusterState {
 
     public Object getObject(String path, boolean callback) throws Exception {
         byte[] data = cluster_state.get_data(path, callback);
-
         return Utils.maybe_deserialize(data);
     }
 
@@ -239,15 +238,26 @@ public class StormZkClusterState implements StormClusterState {
         remove_storm(topologyId, false);
     }
 
+    /**
+     * 获取 topology 对应的任务分配信息，包括：
+     * 1. 对应的 nimbus 上的代码目录
+     * 2. 所有 task 的启动时间
+     * 3. 每个 task 与节点的映射
+     *
+     * @param topologyId
+     * @param callback
+     * @return
+     * @throws Exception
+     */
     @Override
     public Assignment assignment_info(String topologyId, RunnableCallback callback) throws Exception {
         if (callback != null) {
             assignment_info_callback.put(topologyId, callback);
         }
 
+        // 获取 topology 对应的任务分配信息
         String assignmentPath = Cluster.assignment_path(topologyId);
         return (Assignment) getObject(assignmentPath, callback != null);
-
     }
 
     @Override
@@ -397,11 +407,11 @@ public class StormZkClusterState implements StormClusterState {
         List<Integer> children = new ArrayList<>();
 
         int timeSecs = TimeUtils.current_time_secs();
-        String timestampPath = path + Cluster.ZK_SEPERATOR + timeSecs;
+        String timestampPath = path + Cluster.ZK_SEPARATOR + timeSecs;
         TaskError taskError = new TaskError(error, error_level, error_code, timeSecs, duration_secs);
 
         for (String str : cluster_state.get_children(path, false)) {
-            String errorPath = path + Cluster.ZK_SEPERATOR + str;
+            String errorPath = path + Cluster.ZK_SEPARATOR + str;
             Object obj = getObject(errorPath, false);
             if (obj == null) {
                 deleteObject(errorPath);
@@ -426,7 +436,7 @@ public class StormZkClusterState implements StormClusterState {
         if (!found) {
             Collections.sort(children);
             while (children.size() >= 3) {
-                deleteObject(path + Cluster.ZK_SEPERATOR + children.remove(0));
+                deleteObject(path + Cluster.ZK_SEPARATOR + children.remove(0));
             }
             setObject(timestampPath, taskError);
         }
@@ -540,7 +550,7 @@ public class StormZkClusterState implements StormClusterState {
 
         List<String> children = cluster_state.get_children(path, false);
         for (String str : children) {
-            Object obj = getObject(path + Cluster.ZK_SEPERATOR + str, false);
+            Object obj = getObject(path + Cluster.ZK_SEPARATOR + str, false);
             if (obj != null) {
                 TaskError error = (TaskError) obj;
                 errors.add(error);
@@ -629,11 +639,18 @@ public class StormZkClusterState implements StormClusterState {
         return rtn;
     }
 
+    /**
+     * 从 ZK 上获取当前 topology 对应的所有 {@link TaskInfo}
+     *
+     * @param topologyId
+     * @return
+     * @throws Exception
+     */
     @Override
     public Map<Integer, TaskInfo> task_all_info(String topologyId) throws Exception {
+        // tasks/{topology_id}
         String taskPath = Cluster.storm_task_root(topologyId);
-
-        Object data = getObject(taskPath, false);
+        Object data = this.getObject(taskPath, false);
         if (data == null) {
             return null;
         }
@@ -676,34 +693,34 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     public String get_nimbus_slave_time(String host) throws Exception {
-        String path = Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPERATOR + host;
+        String path = Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPARATOR + host;
         return getString(path, false);
     }
 
     @Override
     public void update_nimbus_slave(String host, int time) throws Exception {
-        setTempObject(Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPERATOR + host, String.valueOf(time));
+        setTempObject(Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPARATOR + host, String.valueOf(time));
     }
 
     @Override
     public void unregister_nimbus_host(String host) throws Exception {
-        deleteObject(Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPERATOR + host);
+        deleteObject(Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPARATOR + host);
     }
 
     @Override
     public void update_nimbus_detail(String hostPort, Map map) throws Exception {
-        cluster_state.set_ephemeral_node(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPERATOR + hostPort, Utils.serialize(map));
+        cluster_state.set_ephemeral_node(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPARATOR + hostPort, Utils.serialize(map));
     }
 
     @Override
     public Map get_nimbus_detail(String hostPort, boolean watch) throws Exception {
-        byte[] data = cluster_state.get_data(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPERATOR + hostPort, watch);
+        byte[] data = cluster_state.get_data(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPARATOR + hostPort, watch);
         return (Map) Utils.maybe_deserialize(data);
     }
 
     @Override
     public void unregister_nimbus_detail(String hostPort) throws Exception {
-        cluster_state.delete_node(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPERATOR + hostPort);
+        cluster_state.delete_node(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPARATOR + hostPort);
     }
 
     @Override

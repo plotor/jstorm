@@ -945,7 +945,7 @@ public class ConfigExtension {
     protected static final String NIMBUS_CACHE_CLASS = "nimbus.cache.class";
 
     public static String getNimbusCacheClass(Map conf) {
-        return (String) conf.get(NIMBUS_CACHE_CLASS);
+        return (String) conf.get(NIMBUS_CACHE_CLASS); // nimbus.cache.class
     }
 
     /**

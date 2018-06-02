@@ -255,18 +255,16 @@ public abstract class BlobStore implements Shutdownable {
     }
 
     /**
-     * Wrapper around readBlobTo which
-     * returns a ByteArray output stream.
+     * Wrapper around readBlobTo which returns a ByteArray output stream.
      *
-     * @param key Key for the blob.
-     * the read privilege for the blob.
+     * @param key Key for the blob, the read privilege for the blob.
      * @return ByteArrayOutputStream
      * @throws IOException
      * @throws KeyNotFoundException
      */
     public byte[] readBlob(String key) throws IOException, KeyNotFoundException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        readBlobTo(key, out);
+        this.readBlobTo(key, out);
         byte[] bytes = out.toByteArray();
         out.close();
         return bytes;
