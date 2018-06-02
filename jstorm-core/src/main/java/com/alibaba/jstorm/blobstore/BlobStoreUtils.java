@@ -32,7 +32,6 @@ import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import java.net.URL;
 import org.apache.commons.io.FileExistsException;
 import org.apache.commons.io.FileUtils;
 import org.apache.curator.framework.CuratorFramework;
@@ -45,9 +44,18 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -313,14 +321,14 @@ public class BlobStoreUtils {
     }
 
     public static BlobStore getNimbusBlobStore(Map conf, String baseDir, NimbusInfo nimbusInfo) {
-        String type = (String) conf.get(Config.NIMBUS_BLOBSTORE);
+        String type = (String) conf.get(Config.NIMBUS_BLOBSTORE); // nimbus.blobstore.class:
         if (type == null) {
-            type = LocalFsBlobStore.class.getName();
+            type = LocalFsBlobStore.class.getName(); // 默认使用 com.alibaba.jstorm.blobstore.LocalFsBlobStore
         }
         BlobStore store = (BlobStore) Utils.newInstance(type);
         HashMap nconf = new HashMap(conf);
         // only enable cleanup of blobstore on nimbus
-        nconf.put(Config.BLOBSTORE_CLEANUP_ENABLE, Boolean.TRUE);
+        nconf.put(Config.BLOBSTORE_CLEANUP_ENABLE, Boolean.TRUE); // blobstore.cleanup.enable=true
         store.prepare(nconf, baseDir, nimbusInfo);
         return store;
     }

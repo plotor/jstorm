@@ -32,7 +32,7 @@ import java.util.Set;
 /**
  * 目前对于 {@link INimbus} 默认且唯一的实现
  */
-public class DefaultInimbus implements INimbus {
+public class DefaultINimbus implements INimbus {
 
     @Override
     public void prepare(Map stormConf, String schedulerLocalDir) {
@@ -52,6 +52,7 @@ public class DefaultInimbus implements INimbus {
     public Collection<WorkerSlot> allSlotsAvailableForScheduling(
             Collection<SupervisorDetails> existingSupervisors, Topologies topologies, Set<String> topologiesMissingAssignments) {
         Collection<WorkerSlot> result = new HashSet<>();
+        // 将所有的 supervisor 封装成 WorkerSlot
         for (SupervisorDetails detail : existingSupervisors) {
             for (Integer port : detail.getAllPorts())
                 result.add(new WorkerSlot(detail.getId(), port));

@@ -119,6 +119,7 @@ public class JStormServerUtils {
 
     /**
      * 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}
+     * 如果存在历史进程目录，则会进行清除
      *
      * @param dir ${storm.local.dir}/nimbus/pids
      * @throws Exception
@@ -131,7 +132,7 @@ public class JStormServerUtils {
             throw new RuntimeException("pid dir:" + dir + " isn't directory");
         }
 
-        String[] existPids = file.list();
+        String[] existPids = file.list(); // 获取历史的 pid
         if (existPids == null) {
             existPids = new String[] {};
         }
@@ -139,7 +140,7 @@ public class JStormServerUtils {
             try {
                 // 杀死对应的进程
                 JStormUtils.kill(Integer.valueOf(existPid));
-                PathUtils.rmpath(dir + File.separator + existPid);
+                PathUtils.rmpath(dir + File.separator + existPid); // 删除对应的 pid 文件
             } catch (Exception e) {
                 LOG.warn(e.getMessage(), e);
             }

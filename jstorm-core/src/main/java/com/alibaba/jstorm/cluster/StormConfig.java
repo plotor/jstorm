@@ -116,7 +116,7 @@ public class StormConfig {
      * @return
      */
     public static boolean local_mode(Map conf) {
-        String mode = (String) conf.get(Config.STORM_CLUSTER_MODE);
+        String mode = (String) conf.get(Config.STORM_CLUSTER_MODE); // storm.cluster.mode: distributed or local
         if (mode != null) {
             if ("local".equals(mode)) {
                 return true;
@@ -138,11 +138,11 @@ public class StormConfig {
     }
 
     /**
-     * validate whether the mode is distributed
-     * 验证是否是分布式运行模式
+     * 验证当前是否是 distributed 运行模式
      */
     public static void validate_distributed_mode(Map<?, ?> conf) {
         if (StormConfig.local_mode(conf)) {
+            // 不允许以 local 模式运行
             throw new IllegalArgumentException("Cannot start server in local mode!");
         }
     }
@@ -331,7 +331,7 @@ public class StormConfig {
      * @throws IOException
      */
     public static String masterLocalDir(Map conf) throws IOException {
-        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "nimbus"; // storm.local.dir
+        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "nimbus"; // storm.local.dir: jstorm-local/nimbus
         try {
             FileUtils.forceMkdir(new File(ret));
         } catch (IOException e) {
@@ -405,7 +405,7 @@ public class StormConfig {
      * 创建并返回 创建 ${storm.local.dir}/nimbus/pids 目录
      */
     public static String masterPids(Map conf) throws IOException {
-        String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "pids";
+        String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "pids"; // jstorm-local/nimbus/pids
         try {
             FileUtils.forceMkdir(new File(ret));
         } catch (IOException e) {

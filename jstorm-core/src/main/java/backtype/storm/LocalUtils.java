@@ -31,7 +31,7 @@ import backtype.storm.messaging.IContext;
 import backtype.storm.utils.Utils;
 
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.daemon.nimbus.DefaultInimbus;
+import com.alibaba.jstorm.daemon.nimbus.DefaultINimbus;
 import com.alibaba.jstorm.daemon.nimbus.NimbusServer;
 import com.alibaba.jstorm.daemon.supervisor.Supervisor;
 import com.alibaba.jstorm.message.netty.NettyContext;
@@ -66,7 +66,7 @@ public class LocalUtils {
             IContext context = getLocalContext(supervisorConf);
 
             state.setNimbusServer(instance);
-            state.setNimbus(instance.launcherLocalServer(nimbusConf, new DefaultInimbus()));
+            state.setNimbus(instance.launcherLocalServer(nimbusConf, new DefaultINimbus()));
             state.setZookeeper(zookeeper);
             state.setConf(conf);
             state.setTmpDir(tmpDirs);

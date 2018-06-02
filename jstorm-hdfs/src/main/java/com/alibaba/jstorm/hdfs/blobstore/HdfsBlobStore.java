@@ -17,7 +17,10 @@
 package com.alibaba.jstorm.hdfs.blobstore;
 
 import backtype.storm.Config;
-import backtype.storm.generated.*;
+import backtype.storm.generated.KeyAlreadyExistsException;
+import backtype.storm.generated.KeyNotFoundException;
+import backtype.storm.generated.ReadableBlobMeta;
+import backtype.storm.generated.SettableBlobMeta;
 import backtype.storm.nimbus.NimbusInfo;
 import com.alibaba.jstorm.blobstore.AtomicOutputStream;
 import com.alibaba.jstorm.blobstore.BlobStore;
@@ -29,13 +32,13 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.Subject;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
+import javax.security.auth.Subject;
 
 
 
@@ -57,9 +60,13 @@ import java.util.Map;
  * 3. The SUPERVISOR interacts with nimbus through HdfsClientBlobStore to download the blobs. Here, unlike local
  * blob store the supervisor interacts with HDFS directly to download the blobs. The call to HdfsBlobStore is made as a "null"
  * subject. The blobstore gets the hadoop user and validates permissions for the supervisor.
+ *
+ * Blobstore 可以使用HDFS模式，这样Nimbus就是无状态的了。HDFS模式会使用HDFS自带的备份、一致性保证，所以不需要zookeeper的介入。
  */
 public class HdfsBlobStore extends BlobStore {
+
     public static final Logger LOG = LoggerFactory.getLogger(HdfsBlobStore.class);
+
     private static final String DATA_PREFIX = "data_";
     private static final String META_PREFIX = "meta_";
     private HdfsBlobStoreImpl _hbs;

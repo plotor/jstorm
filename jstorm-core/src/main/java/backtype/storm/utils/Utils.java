@@ -370,6 +370,11 @@ public class Utils {
         return DEFAULT_CONF;
     }
 
+    /**
+     * 解析命令行参数 storm.options
+     *
+     * @return
+     */
     public static Map readCommandLineOpts() {
         Map ret = new HashMap();
         String commandOptions = System.getProperty("storm.options");
@@ -396,7 +401,7 @@ public class Utils {
         /*
          * Trident and old transaction implementation do not work on batch mode. So, for the relative topology builder
          */
-        String batchOptions = System.getProperty(ConfigExtension.TASK_BATCH_TUPLE);
+        String batchOptions = System.getProperty(ConfigExtension.TASK_BATCH_TUPLE); // task.batch.tuple
         if (StringUtils.isNotBlank(batchOptions)) {
             boolean isBatched = JStormUtils.parseBoolean(batchOptions, true);
             ConfigExtension.setTaskBatchTuple(ret, isBatched);
@@ -466,6 +471,15 @@ public class Utils {
         return new HashMap(ret);
     }
 
+    /**
+     * 解析配置文件：
+     * 1. 解析 default.yaml
+     * 2. 解析 storm.yaml
+     * 3. 解析 -Dstorm.options 指定的命令行参数
+     * 4. 替换所有配置项中的 JSTORM_HOME 占位符
+     *
+     * @return
+     */
     public static Map readStormConfig() {
         // 加载 defaults.yaml 文件
         Map ret = readDefaultConfig();
@@ -482,7 +496,7 @@ public class Utils {
         // 解析命令行参数
         ret.putAll(readCommandLineOpts());
 
-        // 替换 JSTORM_HOME 占位符
+        // 替换所有配置项中的 JSTORM_HOME 占位符
         replaceLocalDir(ret);
         return ret;
     }
@@ -1150,8 +1164,13 @@ public class Utils {
         return delegate;
     }
 
+    /**
+     * 针对 OutOfMemoryError 进行处理，打印异常信息，并强行关闭 JVM
+     *
+     * @param t
+     */
     public static void handleUncaughtException(Throwable t) {
-        if (t != null && t instanceof Error) {
+        if (t != null && t instanceof Error) { // 针对 Error 进行处理
             if (t instanceof OutOfMemoryError) {
                 try {
                     System.err.println("Halting due to Out Of Memory Error..." + Thread.currentThread().getName());

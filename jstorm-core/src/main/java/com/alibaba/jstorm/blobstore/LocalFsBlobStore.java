@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.blobstore;
 
 import backtype.storm.Config;
@@ -27,11 +28,19 @@ import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
-
 
 /**
  * Provides a local file system backed blob store implementation for Nimbus.
@@ -50,9 +59,15 @@ import java.util.concurrent.locks.ReentrantLock;
  * 3. The SUPERVISOR interacts with nimbus through the NimbusBlobStore Client API to download the blobs.
  * The supervisors principal should match the set of users configured into SUPERVISOR_ADMINS.
  * Here, the PrincipalToLocalPlugin takes care of mapping the principal to user name before the ACL validation.
+ *
+ * Blobstore 可以是用nimbus本地存储，但是需要 zookeeper 的介入来保证一致性。
+ * 要使用nimbus local 模式的blobstore，默认的集群配置就可以了。
+ * 本地模式blobstore会存放到 storm.local.dir/blobs/ 目录下，如果想要自定义存放目录可以通过blobstore.dir强制指定一个绝对路径。
  */
 public class LocalFsBlobStore extends BlobStore {
+
     public static final Logger LOG = LoggerFactory.getLogger(LocalFsBlobStore.class);
+
     private static final String DATA_PREFIX = "data_";
     private static final String META_PREFIX = "meta_";
     private final String BLOBSTORE_SUBTREE = "/blobstore/";
@@ -228,7 +243,6 @@ public class LocalFsBlobStore extends BlobStore {
             throw new RuntimeException(e);
         }
     }
-
 
     @Override
     public Iterator<String> listKeys() {

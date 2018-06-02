@@ -163,8 +163,8 @@
         <module>jstorm-utility/performance-test/strom</module>
         <module>jstorm-utility/performance-test/heron</module>
         <module>jstorm-utility/performance-test/flink</module>
-        <module>example/sequence-split-merge</module>
         <module>jstorm-demo</module>
+        <module>example/sequence-split-merge</module>
     </modules>
 
     <profiles>

@@ -96,6 +96,9 @@ public interface ISpout extends Serializable {
      * has no tuples to emit, this method should return. nextTuple, ack, and fail are all called in a tight loop in a single thread in the spout task. When
      * there are no tuples to emit, it is courteous to have nextTuple sleep for a short amount of time (like a single millisecond) so as not to waste too much
      * CPU.
+     *
+     * 顾名思义，就是获取下一条消息。
+     * 执行时，可以理解成JStorm框架会不停地调这个接口，以从数据源拉取数据并往bolt发送数据。
      */
     void nextTuple();
 

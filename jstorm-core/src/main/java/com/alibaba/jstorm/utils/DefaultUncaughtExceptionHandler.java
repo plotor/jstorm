@@ -23,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * 默认线程异常处理器
+ *
  * @author xiaojian.fxj
  */
 public class DefaultUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {

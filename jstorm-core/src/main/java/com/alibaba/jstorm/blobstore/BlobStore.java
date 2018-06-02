@@ -38,7 +38,7 @@ import java.util.regex.Pattern;
 
 /**
  * Provides a way to store blobs that can be downloaded.
- * Blobs must be able to be uploaded and listed from Nimbus,
+ * Blobs must be able to be uploaded and listed from Nimbus ,
  * and downloaded from the Supervisors. It is a key value based
  * store. Key being a string and value being the blob data.
  *
@@ -54,8 +54,11 @@ import java.util.regex.Pattern;
  * the number of Nimbodes available.
  */
 public abstract class BlobStore implements Shutdownable {
+
     private static final Logger LOG = LoggerFactory.getLogger(BlobStore.class);
+
     private static final Pattern KEY_PATTERN = Pattern.compile("^[\\w \\t\\.:_-]+$");
+
     protected static final String BASE_BLOBS_DIR_NAME = "blobs";
 
     /**

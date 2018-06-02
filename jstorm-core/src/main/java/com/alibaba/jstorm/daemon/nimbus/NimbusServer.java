@@ -104,7 +104,7 @@ public class NimbusServer {
         NimbusServer instance = new NimbusServer();
 
         // 创建一个默认的 nimbus 启动类
-        INimbus iNimbus = new DefaultInimbus();
+        INimbus iNimbus = new DefaultINimbus();
 
         // 启动 nimbus 服务
         instance.launchServer(config, iNimbus);
@@ -112,6 +112,7 @@ public class NimbusServer {
 
     /**
      * 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}
+     * 一般是：jstorm-local/nimbus/pids/${pid}
      *
      * @param conf
      * @throws Exception
@@ -137,7 +138,10 @@ public class NimbusServer {
             // 1. 验证当前为分布式运行模式
             StormConfig.validate_distributed_mode(conf);
 
-            // 2. 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}
+            /*
+             * 2. 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}
+             *    如果存在历史运行记录，则会进行清除
+             */
             this.createPid(conf);
 
             // 3. 注册 shutdown hook 方法，用于执行在 JVM 进程终止时的清理逻辑
