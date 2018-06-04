@@ -15,16 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule;
+
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
-
 public class AssignmentBak implements Serializable {
+
     private static final long serialVersionUID = 7633746649144483965L;
 
     private final Map<String, List<Integer>> componentTasks;

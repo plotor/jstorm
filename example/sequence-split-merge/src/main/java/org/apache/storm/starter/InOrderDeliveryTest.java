@@ -17,14 +17,6 @@
  */
 package org.apache.storm.starter;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.starter.utils.Assert;
-import com.alibaba.starter.utils.JStormHelper;
-import com.alibaba.jstorm.utils.JStormUtils;
-
 import backtype.storm.Config;
 import backtype.storm.spout.SpoutOutputCollector;
 import backtype.storm.task.TopologyContext;
@@ -37,6 +29,12 @@ import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.starter.utils.Assert;
+import com.alibaba.starter.utils.JStormHelper;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class InOrderDeliveryTest {
     public static class InOrderSpout extends BaseRichSpout {
@@ -115,7 +113,6 @@ public class InOrderDeliveryTest {
             JStormHelper.runTopology(builder.createTopology(), topologyName, conf, 60,
                     new JStormHelper.CheckAckedFail(conf), isLocal);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             Assert.fail("Failed");
         }

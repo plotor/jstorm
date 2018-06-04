@@ -67,7 +67,6 @@ public class BasicDRPCTopology {
         try {
             Thread.sleep(30000);
         } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
         }
         try {
             for (String word : new String[] { "hello", "goodbye" }) {

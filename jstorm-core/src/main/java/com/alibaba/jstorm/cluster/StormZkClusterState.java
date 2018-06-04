@@ -284,8 +284,8 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public AssignmentBak assignment_bak(String topologyName) throws Exception {
+        // assignments_bak/{topology_name}
         String assignmentBakPath = Cluster.assignment_bak_path(topologyName);
-
         return (AssignmentBak) getObject(assignmentBakPath, false);
     }
 

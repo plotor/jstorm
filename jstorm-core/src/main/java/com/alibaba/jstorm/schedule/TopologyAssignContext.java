@@ -27,11 +27,17 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * topology assign context
+ */
 public class TopologyAssignContext {
 
-    public static final int ASSIGN_TYPE_NEW = 0; // assign a new topology
-    public static final int ASSIGN_TYPE_REBALANCE = 1; // re-balance a topology
-    public static final int ASSIGN_TYPE_MONITOR = 2; // monitor a topology, some tasks are dead
+    /** assign a new topology */
+    public static final int ASSIGN_TYPE_NEW = 0;
+    /** re-balance a topology */
+    public static final int ASSIGN_TYPE_REBALANCE = 1;
+    /** monitor a topology, some tasks are dead */
+    public static final int ASSIGN_TYPE_MONITOR = 2;
 
     /** topology_id */
     protected String topologyId;
@@ -41,8 +47,10 @@ public class TopologyAssignContext {
     /** 配置信息，包含 nimbus 配置信息和 topology 配置信息 */
     protected Map stormConf;
 
-    // if assignType is ASSIGN_TYPE_NEW, oldAssignment is the Assignment last time
-    // otherwise it is the old assignment before assignment.
+    /**
+     * if assignType is <code>ASSIGN_TYPE_NEW</code>, oldAssignment is the Assignment last time
+     * otherwise it is the old assignment before assignment.
+     */
     protected Assignment oldAssignment;
 
     protected Map<String, SupervisorInfo> cluster;
@@ -55,10 +63,11 @@ public class TopologyAssignContext {
     protected Map<Integer, String> taskToComponent;
 
     /** 指定 topology 的所有 task_id 列表 */
-    protected Set<Integer> allTaskIds; // all tasks
-    protected Set<Integer> deadTaskIds; // dead tasks
-    protected Set<Integer> unstoppedTaskIds; // the task is alive, but his
-    // supervisor is dead
+    protected Set<Integer> allTaskIds;
+    /** 指定 topology 的所有已经死亡的 task_id 列表 */
+    protected Set<Integer> deadTaskIds;
+    /** the task is alive, but his supervisor is dead */
+    protected Set<Integer> unstoppedTaskIds;
     protected Set<ResourceWorkerSlot> unstoppedWorkers;
 
     protected boolean isReassign;

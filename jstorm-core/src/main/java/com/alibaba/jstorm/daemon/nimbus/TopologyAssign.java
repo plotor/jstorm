@@ -335,7 +335,7 @@ public class TopologyAssign implements Runnable {
 
     /**
      * 初始化拓扑分配的上下文信息，生成 {@link TopologyAssignContext} 对象
-     *
+     * TODO by zhenchao 2018-6-4 22:54:22 https://blog.csdn.net/benbendy1984/article/details/52665142
      * @param event
      * @return
      * @throws Exception
@@ -408,10 +408,10 @@ public class TopologyAssign implements Runnable {
         }
         ret.setAllTaskIds(allTaskIds);
 
-        Set<Integer> aliveTasks = new HashSet<>();
+        Set<Integer> aliveTasks = new HashSet<>(); // 存放存活的 task id
         // unstoppedTasks are tasks which are alive on no supervisor's(dead) machine
         Set<Integer> unstoppedTasks = new HashSet<>();
-        Set<Integer> deadTasks = new HashSet<>();
+        Set<Integer> deadTasks = new HashSet<>(); // 存放已经死亡的 task id
         Set<ResourceWorkerSlot> unstoppedWorkers;
 
         // 获取 topology 对应的任务分配信息
@@ -422,18 +422,22 @@ public class TopologyAssign implements Runnable {
              * Check if the topology master task is alive first since all task 
              * heartbeat info is reported by topology master. 
              * If master is dead, do reassignment for topology master first.
+             *
+             * 首先检查当前拓扑的 master task 是否活着（用于收集当前拓扑所有的心跳信息）
+             * 如果 master task 死了，就先对 master 执行分配
              */
-            // TODO 2018-06-02 17:52:52 https://blog.csdn.net/benbendy1984/article/details/52665142
             if (NimbusUtils.isTaskDead(nimbusData, topologyId, topoMasterId)) {
+                // master task is dead
                 ResourceWorkerSlot tmWorker = existingAssignment.getWorkerByTaskId(topoMasterId);
                 deadTasks.addAll(tmWorker.getTasks());
             } else {
-                deadTasks = getDeadTasks(topologyId, allTaskIds, existingAssignment.getWorkers());
+                // 获取所有死亡的 task 的 ID 集合
+                deadTasks = this.getDeadTasks(topologyId, allTaskIds, existingAssignment.getWorkers());
             }
             aliveTasks.addAll(allTaskIds);
             aliveTasks.removeAll(deadTasks);
 
-            unstoppedTasks = getUnstoppedSlots(aliveTasks, supInfos, existingAssignment);
+            unstoppedTasks = this.getUnstoppedSlots(aliveTasks, supInfos, existingAssignment);
         }
 
         ret.setDeadTaskIds(deadTasks);
@@ -444,9 +448,9 @@ public class TopologyAssign implements Runnable {
         ret.setCluster(supInfos);
 
         if (existingAssignment == null) {
-            // 没有旧的分配信息
             ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_NEW);
             try {
+                // 从 ZK：assignments_bak/{topology_name} 获取 AssignmentBak
                 AssignmentBak lastAssignment = stormClusterState.assignment_bak(event.getTopologyName());
                 if (lastAssignment != null) {
                     ret.setOldAssignment(lastAssignment.getAssignment());
@@ -459,11 +463,11 @@ public class TopologyAssign implements Runnable {
             if (event.isScratch()) {
                 ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_REBALANCE);
                 ret.setIsReassign(event.isReassign());
-                unstoppedWorkers = getUnstoppedWorkers(unstoppedTasks, existingAssignment);
+                unstoppedWorkers = this.getUnstoppedWorkers(unstoppedTasks, existingAssignment);
                 ret.setUnstoppedWorkers(unstoppedWorkers);
             } else {
                 ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_MONITOR);
-                unstoppedWorkers = getUnstoppedWorkers(aliveTasks, existingAssignment);
+                unstoppedWorkers = this.getUnstoppedWorkers(aliveTasks, existingAssignment);
                 ret.setUnstoppedWorkers(unstoppedWorkers);
             }
         }
@@ -745,9 +749,13 @@ public class TopologyAssign implements Runnable {
 
     /**
      * Get unstopped slots from alive task list
+     *
+     * @param aliveTasks
+     * @param supInfos
+     * @param existAssignment
+     * @return
      */
-    public Set<Integer> getUnstoppedSlots(Set<Integer> aliveTasks, Map<String, SupervisorInfo> supInfos,
-                                          Assignment existAssignment) {
+    public Set<Integer> getUnstoppedSlots(Set<Integer> aliveTasks, Map<String, SupervisorInfo> supInfos, Assignment existAssignment) {
         Set<Integer> ret = new HashSet<>();
 
         Set<ResourceWorkerSlot> oldWorkers = existAssignment.getWorkers();
@@ -829,6 +837,15 @@ public class TopologyAssign implements Runnable {
         return aliveTasks;
     }
 
+    /**
+     * 获取所有死亡的 task 的 id
+     *
+     * @param topologyId
+     * @param allTaskIds
+     * @param allWorkers
+     * @return
+     * @throws Exception
+     */
     public Set<Integer> getDeadTasks(String topologyId, Set<Integer> allTaskIds, Set<ResourceWorkerSlot> allWorkers) throws Exception {
         Set<Integer> deadTasks = new HashSet<>();
         // Get all tasks whose heartbeat timeout
@@ -842,6 +859,7 @@ public class TopologyAssign implements Runnable {
         for (ResourceWorkerSlot worker : allWorkers) {
             Set<Integer> tasks = worker.getTasks();
             for (Integer task : tasks) {
+                // 如果某个 worker 的某个 task 已经死亡，那么将该 worker 下的所有 task 加入死亡集合
                 if (deadTasks.contains(task)) {
                     deadTasks.addAll(tasks);
                     break;

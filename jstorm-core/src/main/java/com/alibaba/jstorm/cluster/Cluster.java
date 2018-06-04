@@ -172,8 +172,14 @@ public class Cluster {
         return Cluster.gray_upgrade_upgraded_workers_path(topologyId) + ZK_SEPARATOR + hostPort;
     }
 
+    /**
+     * 获取 assignments_bak/{topology_name}
+     *
+     * @param id
+     * @return
+     */
     public static String assignment_bak_path(String id) {
-        return ASSIGNMENTS_BAK_SUBTREE + ZK_SEPARATOR + id;
+        return ASSIGNMENTS_BAK_SUBTREE + ZK_SEPARATOR + id; // assignments_bak/{topology_name}
     }
 
     public static String blobstore_path(String key) {
