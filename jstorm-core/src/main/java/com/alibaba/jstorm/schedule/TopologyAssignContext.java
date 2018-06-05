@@ -53,18 +53,22 @@ public class TopologyAssignContext {
      */
     protected Assignment oldAssignment;
 
+    /** <node_id, SupervisorInfo> */
     protected Map<String, SupervisorInfo> cluster;
 
-    /** topology_master_id */
+    /**
+     * topology_master_id
+     * FIXME 代表一个 topology 心跳检测 task 的 ID？
+     */
     protected int topoMasterTaskId;
     protected boolean assignSingleWorkerForTM = false;
 
-    /** <task_id, component_id> 之间的映射关系 */
+    /** 拓扑下 <task_id, component_id> 之间的映射关系 */
     protected Map<Integer, String> taskToComponent;
 
-    /** 指定 topology 的所有 task_id 列表 */
+    /** 拓扑下所有的 task_id 列表 */
     protected Set<Integer> allTaskIds;
-    /** 指定 topology 的所有已经死亡的 task_id 列表 */
+    /** 拓扑下所有已经死亡的 task_id 列表 */
     protected Set<Integer> deadTaskIds;
     /** the task is alive, but his supervisor is dead */
     protected Set<Integer> unstoppedTaskIds;

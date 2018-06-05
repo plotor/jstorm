@@ -43,6 +43,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 public class WorkerScheduler {
+
     public static Logger LOG = LoggerFactory.getLogger(WorkerScheduler.class);
 
     private static WorkerScheduler instance;
@@ -59,9 +60,10 @@ public class WorkerScheduler {
 
     public List<ResourceWorkerSlot> getAvailableWorkers(
             DefaultTopologyAssignContext context, Set<Integer> needAssign, int allocWorkerNum) {
-        int reserveWorkers = context.getReserveWorkerNum();
+        int reserveWorkers = context.getReserveWorkerNum(); // 保留的 worker 数目
         int workersNum = this.getAvailableWorkersNum(context);
         if ((workersNum - reserveWorkers) < allocWorkerNum) {
+            // 可用 worker 数目 - 保留的 worker 数目 < 需要分配的数目
             throw new FailedAssignTopologyException("there's no enough worker. allocWorkerNum="
                     + allocWorkerNum + ", availableWorkerNum=" + workersNum + ",reserveWorkerNum=" + reserveWorkers);
         }
@@ -249,7 +251,6 @@ public class WorkerScheduler {
     }
 
     /**
-     *
      * @param context 之前准备的拓扑上下文信息
      * @param needAssign 该拓扑需要分配的各个taskid
      * @param assignedWorkers 存储那些在这个方法内分配到的worker资源
@@ -321,13 +322,13 @@ public class WorkerScheduler {
         Map<String, List<Integer>> componentToTask =
                 (HashMap<String, List<Integer>>) ((HashMap<String, List<Integer>>) context.getComponentTasks()).clone();
         if (context.getAssignType() != TopologyAssignContext.ASSIGN_TYPE_NEW) {
-            // 如果分配类型不是NEW，则还是从workers资源分配信息列表中去除unstopworker。
-            // 这里是用户有指定某些worker资源属于unstopworker才能去掉。
+            // 如果分配类型不是NEW，则还是从workers资源分配信息列表中去除 unstopworker。
+            // 这里是用户有指定某些 worker 资源属于 unstopworker 才能去掉。
             this.checkUserDefineWorkers(context, workers, context.getTaskToComponent());
         }
 
-        // 遍历用户定义的worker，去除那些没有分配task的worker
-        // 用户定义的worker中已经指定哪些task该分配到哪个worker中
+        // 遍历用户定义的worker，去除那些没有分配 task 的worker
+        // 用户定义的 worker 中已经指定哪些 task 该分配到哪个 worker 中
         for (WorkerAssignment worker : workers) {
             ResourceWorkerSlot workerSlot = new ResourceWorkerSlot(worker, componentToTask);
             if (workerSlot.getTasks().size() != 0) {

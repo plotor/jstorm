@@ -335,7 +335,7 @@ public class TopologyAssign implements Runnable {
 
     /**
      * 初始化拓扑分配的上下文信息，生成 {@link TopologyAssignContext} 对象
-     * TODO by zhenchao 2018-6-4 22:54:22 https://blog.csdn.net/benbendy1984/article/details/52665142
+     *
      * @param event
      * @return
      * @throws Exception
@@ -386,7 +386,7 @@ public class TopologyAssign implements Runnable {
             }
         }
 
-        // 基于超时机制从 supervisorInfos 中剔除已经死亡的 supervisor
+        // 基于超时机制从 supInfos 中剔除已经死亡的 supervisor，之后 supInfos 中均为存活的 supervisor
         this.getAliveSupervsByHb(supInfos, nimbusConf);
         if (supInfos.size() == 0) {
             throw new FailedAssignTopologyException("Failed to make assignment " + topologyId + ", due to no alive supervisor");
@@ -410,13 +410,12 @@ public class TopologyAssign implements Runnable {
 
         Set<Integer> aliveTasks = new HashSet<>(); // 存放存活的 task id
         // unstoppedTasks are tasks which are alive on no supervisor's(dead) machine
-        Set<Integer> unstoppedTasks = new HashSet<>();
+        Set<Integer> unstoppedTasks = new HashSet<>(); // 仍然存活的 task，但是对应的 supervisor 已经死亡
         Set<Integer> deadTasks = new HashSet<>(); // 存放已经死亡的 task id
         Set<ResourceWorkerSlot> unstoppedWorkers;
 
         // 获取 topology 对应的任务分配信息
         Assignment existingAssignment = stormClusterState.assignment_info(topologyId, null);
-        // 如果已经存在对应的任务
         if (existingAssignment != null) {
             /*
              * Check if the topology master task is alive first since all task 
@@ -436,7 +435,6 @@ public class TopologyAssign implements Runnable {
             }
             aliveTasks.addAll(allTaskIds);
             aliveTasks.removeAll(deadTasks);
-
             unstoppedTasks = this.getUnstoppedSlots(aliveTasks, supInfos, existingAssignment);
         }
 
@@ -484,12 +482,13 @@ public class TopologyAssign implements Runnable {
     public Assignment mkAssignment(TopologyAssignEvent event) throws Exception {
         String topologyId = event.getTopologyId();
         LOG.info("Determining assignment for " + topologyId);
+        // 基于配置和当前集群运行状态构建 TopologyAssignContext 对象
         TopologyAssignContext context = this.prepareTopologyAssign(event);
         Set<ResourceWorkerSlot> assignments;
         if (!StormConfig.local_mode(nimbusData.getConf())) {
             // 集群模式
             // 获取模式的调度器
-            ITopologyScheduler scheduler = schedulers.get(DEFAULT_SCHEDULER_NAME);
+            ITopologyScheduler scheduler = schedulers.get(DEFAULT_SCHEDULER_NAME); // DefaultTopologyScheduler
             // 为 topology 分配 worker
             assignments = scheduler.assignTasks(context);
         } else {
@@ -497,6 +496,7 @@ public class TopologyAssign implements Runnable {
             assignments = mkLocalAssignment(context);
         }
 
+        // TODO by zhenchao 2018-06-05 18:49:06
         Assignment assignment = null;
         if (assignments != null && assignments.size() > 0) {
             Map<String, String> nodeHost = getTopologyNodeHost(
@@ -750,6 +750,8 @@ public class TopologyAssign implements Runnable {
     /**
      * Get unstopped slots from alive task list
      *
+     * task is still alive but supervisor is dead
+     *
      * @param aliveTasks
      * @param supInfos
      * @param existAssignment
@@ -905,6 +907,7 @@ public class TopologyAssign implements Runnable {
      */
     private void getAliveSupervsByHb(Map<String, SupervisorInfo> supervisorInfos, Map conf) {
         int currentTime = TimeUtils.current_time_secs();
+        // ${nimbus.supervisor.timeout.secs}，supervisor 存活时间，默认为 3 分钟
         int hbTimeout = JStormUtils.parseInt(conf.get(Config.NIMBUS_SUPERVISOR_TIMEOUT_SECS), (JStormUtils.MIN_1 * 3));
         Set<String> supervisorTobeRemoved = new HashSet<>();
 
@@ -912,13 +915,13 @@ public class TopologyAssign implements Runnable {
             SupervisorInfo supInfo = entry.getValue();
             int lastReportTime = supInfo.getTimeSecs(); // 最近一次上报时间
             if ((currentTime - lastReportTime) > hbTimeout) {
-                // 上报时间距离当前已经超期则认为结点已经死亡，加入剔除集合中
+                // 上报时间距离当前已经超期则认为节点已经死亡，加入剔除集合中
                 LOG.warn("Supervisor-" + supInfo.getHostName() + " is dead. lastReportTime=" + lastReportTime);
                 supervisorTobeRemoved.add(entry.getKey());
             }
         }
 
-        // 从 supervisorInfos 提出已经死亡的 supervisor
+        // 从 supervisorInfos 剔除已经死亡的 supervisor
         for (String name : supervisorTobeRemoved) {
             supervisorInfos.remove(name);
         }

@@ -36,7 +36,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- * allocation unit for a worker
+ * allocation unit（分配单元） for a worker
  */
 public class ResourceWorkerSlot extends WorkerSlot implements Serializable {
 

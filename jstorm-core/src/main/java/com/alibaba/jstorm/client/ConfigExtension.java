@@ -486,7 +486,7 @@ public class ConfigExtension {
 
     public static List<WorkerAssignment> getUserDefineAssignment(Map conf) {
         List<WorkerAssignment> ret = new ArrayList<>();
-        if (conf.get(USE_USERDEFINE_ASSIGNMENT) == null)
+        if (conf.get(USE_USERDEFINE_ASSIGNMENT) == null) // ${use.userdefine.assignment}
             return ret;
         for (String worker : (List<String>) conf.get(USE_USERDEFINE_ASSIGNMENT)) {
             ret.add(WorkerAssignment.parseFromObj(Utils.from_json(worker)));

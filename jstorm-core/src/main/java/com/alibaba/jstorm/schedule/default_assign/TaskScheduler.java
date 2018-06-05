@@ -15,18 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule.default_assign;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
@@ -36,8 +26,19 @@ import com.alibaba.jstorm.schedule.default_assign.Selector.InputComponentNumSele
 import com.alibaba.jstorm.schedule.default_assign.Selector.Selector;
 import com.alibaba.jstorm.schedule.default_assign.Selector.TotalTaskNumSelector;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 public class TaskScheduler {
+
     public static Logger LOG = LoggerFactory.getLogger(TaskScheduler.class);
 
     private final TaskAssignContext taskContext;
@@ -68,8 +69,9 @@ public class TaskScheduler {
         this.componentSelector = new ComponentNumSelector(taskContext);
         this.inputComponentSelector = new InputComponentNumSelector(taskContext);
         this.totalTaskNumSelector = new TotalTaskNumSelector(taskContext);
-        if (tasks.size() == 0)
+        if (tasks.size() == 0) {
             return;
+        }
         if (context.getAssignType() != TopologyAssignContext.ASSIGN_TYPE_REBALANCE || context.isReassign()) {
             // warning ! it doesn't consider HA TM now!!
             if (context.getAssignSingleWorkerForTM() && tasks.contains(context.getTopologyMasterTaskId())) {
@@ -114,8 +116,9 @@ public class TaskScheduler {
         Set<Integer> keepTasks = new HashSet<>();
         ResourceWorkerSlot tmWorker = null;
         for (ResourceWorkerSlot worker : keepAssignments) {
-            if (worker.getTasks().contains(context.getTopologyMasterTaskId()))
+            if (worker.getTasks().contains(context.getTopologyMasterTaskId())) {
                 tmWorker = worker;
+            }
             for (Integer taskId : worker.getTasks()) {
                 if (tasks.contains(taskId)) {
                     ResourceWorkerSlot contextWorker = taskContext.getWorker(worker);
@@ -275,8 +278,9 @@ public class TaskScheduler {
         Set<Integer> ret = new HashSet<>();
         for (Integer task : tasks) {
             Map conf = Common.getComponentMap(context, task);
-            if (ConfigExtension.isTaskOnDifferentNode(conf))
+            if (ConfigExtension.isTaskOnDifferentNode(conf)) {
                 ret.add(task);
+            }
         }
         for (Integer task : ret) {
             String name = context.getTaskToComponent().get(task);
@@ -304,8 +308,9 @@ public class TaskScheduler {
     private ResourceWorkerSlot chooseWorker(String name, List<ResourceWorkerSlot> workers) {
         List<ResourceWorkerSlot> result = componentSelector.select(workers, name);
         result = totalTaskNumSelector.select(result, name);
-        if (Common.isSystemComponent(name))
+        if (Common.isSystemComponent(name)) {
             return result.iterator().next();
+        }
         result = inputComponentSelector.select(result, name);
         return result.iterator().next();
     }
@@ -353,8 +358,9 @@ public class TaskScheduler {
             if (leftTaskNum <= 0) {
                 List<ResourceWorkerSlot> needDelete = new ArrayList<>();
                 for (Entry<ResourceWorkerSlot, Integer> entry : taskContext.getWorkerToTaskNum().entrySet()) {
-                    if (avgTaskNum != 0 && entry.getValue() == avgTaskNum)
+                    if (avgTaskNum != 0 && entry.getValue() == avgTaskNum) {
                         needDelete.add(entry.getKey());
+                    }
                 }
                 for (ResourceWorkerSlot workerToDelete : needDelete) {
                     taskContext.getWorkerToTaskNum().remove(workerToDelete);
@@ -395,8 +401,9 @@ public class TaskScheduler {
         workers.addAll(taskContext.getWorkerToTaskNum().keySet());
 
         for (Entry<String, List<ResourceWorkerSlot>> entry : taskContext.getSupervisorToWorker().entrySet()) {
-            if (taskContext.getComponentNumOnSupervisor(entry.getKey(), name) != 0)
+            if (taskContext.getComponentNumOnSupervisor(entry.getKey(), name) != 0) {
                 workers.removeAll(entry.getValue());
+            }
         }
         if (workers.size() == 0) {
             throw new FailedAssignTopologyException("there's no enough supervisor for making component: " +

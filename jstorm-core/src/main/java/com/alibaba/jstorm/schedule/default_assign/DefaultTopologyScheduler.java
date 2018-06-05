@@ -74,6 +74,12 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
         }
     }
 
+    /**
+     * 基于当前的分配类型获取需要分配的 task id 列表
+     *
+     * @param context
+     * @return
+     */
     private Set<Integer> getNeedAssignTasks(DefaultTopologyAssignContext context) {
         Set<Integer> needAssign = new HashSet<>();
 
@@ -128,6 +134,7 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
     public Set<ResourceWorkerSlot> assignTasks(TopologyAssignContext context) throws FailedAssignTopologyException {
         int assignType = context.getAssignType();
         if (!TopologyAssignContext.isAssignTypeValid(assignType)) {
+            // 检查 assignType 的有效性
             throw new FailedAssignTopologyException("Invalid assign type " + assignType);
         }
 
@@ -140,10 +147,9 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
         LOG.info("Dead tasks:" + defaultContext.getDeadTaskIds());
         LOG.info("Unstopped tasks:" + defaultContext.getUnstoppedTaskIds());
 
-        // 获取需要分配的 task 集合
-        Set<Integer> needAssignTasks = getNeedAssignTasks(defaultContext);
-
-        Set<ResourceWorkerSlot> keepAssigns = getKeepAssign(defaultContext, needAssignTasks);
+        // 基于当前的分配类型获取需要分配的 task id 列表
+        Set<Integer> needAssignTasks = this.getNeedAssignTasks(defaultContext);
+        Set<ResourceWorkerSlot> keepAssigns = this.getKeepAssign(defaultContext, needAssignTasks);
 
         // todo: use tree map to sort tasks
         Set<ResourceWorkerSlot> ret = new HashSet<>();
@@ -165,6 +171,7 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
 
         //setting worker's memory for TM
         int topologyMasterId = defaultContext.getTopologyMasterTaskId();
+        // ${topology.master.worker.memory.size}
         Long tmWorkerMem = ConfigExtension.getMemSizePerTopologyMasterWorker(defaultContext.getStormConf());
         if (tmWorkerMem != null) {
             for (ResourceWorkerSlot resourceWorkerSlot : assignment) {

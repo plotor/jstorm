@@ -645,7 +645,6 @@ public class NimbusUtils {
     public static void updateTopologyTaskHb(NimbusData data, String topologyId) {
         StormClusterState clusterState = data.getStormClusterState();
         TopologyTaskHbInfo topologyTaskHb = null;
-
         try {
             topologyTaskHb = clusterState.topology_heartbeat(topologyId);
         } catch (Exception e) {

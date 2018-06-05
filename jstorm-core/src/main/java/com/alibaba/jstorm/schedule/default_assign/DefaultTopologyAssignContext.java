@@ -52,6 +52,7 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
     private final Set<ResourceWorkerSlot> unstoppedWorkers = new HashSet<>();
     private final int totalWorkerNum;
     private final int unstoppedWorkerNum;
+    /** 保留的 worker 数 */
     private final int reserveWorkerNum;
 
     /**
