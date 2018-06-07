@@ -15,16 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.generated.GlobalStreamId;
@@ -49,14 +41,27 @@ import backtype.storm.windowing.WatermarkTimeEvictionPolicy;
 import backtype.storm.windowing.WatermarkTimeTriggerPolicy;
 import backtype.storm.windowing.WindowLifecycleListener;
 import backtype.storm.windowing.WindowManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * An {@link IWindowedBolt} wrapper that does the windowing of tuples.
  */
 public class WindowedBoltExecutor implements IRichBolt {
+
+    private static final long serialVersionUID = 1707025848987441802L;
+
     private static final Logger LOG = LoggerFactory.getLogger(WindowedBoltExecutor.class);
+
     private static final int DEFAULT_WATERMARK_EVENT_INTERVAL_MS = 1000; // 1s
     private static final int DEFAULT_MAX_LAG_MS = 0; // no lag
+
     private final IWindowedBolt bolt;
     private transient WindowedOutputCollector windowedOutputCollector;
     private transient WindowLifecycleListener<Tuple> listener;

@@ -26,6 +26,7 @@ import com.alibaba.jstorm.transactional.state.ITransactionStateOperator;
  * @since 16/12/15
  */
 public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt<T> {
+
     private static final long serialVersionUID = 1L;
     public static final long DEFAULT_SLIDE = -1L;
     public static final long DEFAULT_STATE_SIZE = -1L;
@@ -47,28 +48,30 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
     /**
      * define a tumbling count window
      *
+     * 定义一个计算 count 的滚动窗口
+     *
      * @param size count size
      */
     public BaseWindowedBolt<T> countWindow(long size) {
-        ensurePositiveTime(size);
-
-        setSizeAndSlide(size, DEFAULT_SLIDE);
-        this.windowAssigner = TumblingCountWindows.create(size);
+        this.ensurePositiveTime(size); // 保证入参都是正数
+        this.setSizeAndSlide(size, DEFAULT_SLIDE);
+        this.windowAssigner = TumblingCountWindows.create(size); // 创建一个 TumblingCountWindows
         return this;
     }
 
     /**
      * define a sliding count window
      *
+     * 构造一个计算 count 的滑动窗口
+     *
      * @param size count size
      * @param slide slide size
      */
     public BaseWindowedBolt<T> countWindow(long size, long slide) {
-        ensurePositiveTime(size, slide);
-        ensureSizeGreaterThanSlide(size, slide);
-
-        setSizeAndSlide(size, slide);
-        this.windowAssigner = SlidingCountWindows.create(size, slide);
+        this.ensurePositiveTime(size, slide);
+        this.ensureSizeGreaterThanSlide(size, slide); // size must greater than slide
+        this.setSizeAndSlide(size, slide);
+        this.windowAssigner = SlidingCountWindows.create(size, slide); // 创建一个 SlidingCountWindows
         return this;
     }
 
@@ -79,16 +82,15 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
      */
     public BaseWindowedBolt<T> timeWindow(Time size) {
         long s = size.toMilliseconds();
-        ensurePositiveTime(s);
-
-        setSizeAndSlide(s, DEFAULT_SLIDE);
+        this.ensurePositiveTime(s);
+        this.setSizeAndSlide(s, DEFAULT_SLIDE);
         this.windowAssigner = TumblingProcessingTimeWindows.of(s);
         return this;
     }
 
     /**
      * add state window to tumbling windows.
-     * If set, jstorm will use state window size to accumulate user states instead of
+     * If set, jstorm will use state window size to accumulate（累积） user states instead of
      * deleting the states right after purging a window.
      *
      * e.g., if a user defines a window of 10 sec as well as a state window of 60 sec,
@@ -99,8 +101,8 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
      */
     public BaseWindowedBolt<T> withStateSize(Time size) {
         long s = size.toMilliseconds();
-        ensurePositiveTime(s);
-        ensureStateSizeGreaterThanWindowSize(this.size, s);
+        this.ensurePositiveTime(s);
+        this.ensureStateSizeGreaterThanWindowSize(this.size, s); // state size must be grater than window size
 
         this.stateSize = s;
         if (WindowAssigner.isEventTime(this.windowAssigner)) {
@@ -123,10 +125,9 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
     public BaseWindowedBolt<T> timeWindow(Time size, Time slide) {
         long s = size.toMilliseconds();
         long l = slide.toMilliseconds();
-        ensurePositiveTime(s, l);
-        ensureSizeGreaterThanSlide(s, l);
-
-        setSizeAndSlide(s, l);
+        this.ensurePositiveTime(s, l);
+        this.ensureSizeGreaterThanSlide(s, l);
+        this.setSizeAndSlide(s, l);
         this.windowAssigner = SlidingProcessingTimeWindows.of(s, l);
         return this;
     }
@@ -138,9 +139,8 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
      */
     public BaseWindowedBolt<T> ingestionTimeWindow(Time size) {
         long s = size.toMilliseconds();
-        ensurePositiveTime(s);
-
-        setSizeAndSlide(s, DEFAULT_SLIDE);
+        this.ensurePositiveTime(s);
+        this.setSizeAndSlide(s, DEFAULT_SLIDE);
         this.windowAssigner = TumblingIngestionTimeWindows.of(s);
         return this;
     }
@@ -154,10 +154,9 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
     public BaseWindowedBolt<T> ingestionTimeWindow(Time size, Time slide) {
         long s = size.toMilliseconds();
         long l = slide.toMilliseconds();
-        ensurePositiveTime(s, l);
-        ensureSizeGreaterThanSlide(s, l);
-
-        setSizeAndSlide(s, l);
+        this.ensurePositiveTime(s, l);
+        this.ensureSizeGreaterThanSlide(s, l);
+        this.setSizeAndSlide(s, l);
         this.windowAssigner = SlidingIngestionTimeWindows.of(s, l);
         return this;
     }
@@ -169,9 +168,8 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
      */
     public BaseWindowedBolt<T> eventTimeWindow(Time size) {
         long s = size.toMilliseconds();
-        ensurePositiveTime(s);
-
-        setSizeAndSlide(s, DEFAULT_SLIDE);
+        this.ensurePositiveTime(s);
+        this.setSizeAndSlide(s, DEFAULT_SLIDE);
         this.windowAssigner = TumblingEventTimeWindows.of(s);
         return this;
     }
@@ -185,10 +183,9 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
     public BaseWindowedBolt<T> eventTimeWindow(Time size, Time slide) {
         long s = size.toMilliseconds();
         long l = slide.toMilliseconds();
-        ensurePositiveTime(s, l);
-        ensureSizeGreaterThanSlide(s, l);
-
-        setSizeAndSlide(s, l);
+        this.ensurePositiveTime(s, l);
+        this.ensureSizeGreaterThanSlide(s, l);
+        this.setSizeAndSlide(s, l);
         this.windowAssigner = SlidingEventTimeWindows.of(s, l);
         return this;
     }
@@ -200,9 +197,8 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
      */
     public BaseWindowedBolt<T> sessionTimeWindow(Time size) {
         long s = size.toMilliseconds();
-        ensurePositiveTime(s);
-
-        setSizeAndSlide(s, DEFAULT_SLIDE);
+        this.ensurePositiveTime(s);
+        this.setSizeAndSlide(s, DEFAULT_SLIDE);
         this.windowAssigner = ProcessingTimeSessionWindows.withGap(s);
         return this;
     }
@@ -214,9 +210,8 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
      */
     public BaseWindowedBolt<T> sessionEventTimeWindow(Time size) {
         long s = size.toMilliseconds();
-        ensurePositiveTime(s);
-
-        setSizeAndSlide(s, DEFAULT_SLIDE);
+        this.ensurePositiveTime(s);
+        this.setSizeAndSlide(s, DEFAULT_SLIDE);
         this.windowAssigner = EventTimeSessionWindows.withGap(s);
         return this;
     }
@@ -260,13 +255,13 @@ public abstract class BaseWindowedBolt<T extends Tuple> implements IWindowedBolt
     }
 
     /**
-     * define max lag in ms, only for event time windows
+     * define max lag（延迟） in ms, only for event time windows
      *
      * @param maxLag max lag time
      */
     public BaseWindowedBolt<T> withMaxLagMs(Time maxLag) {
         this.maxLagMs = maxLag.toMilliseconds();
-        ensureNonNegativeTime(maxLagMs);
+        this.ensureNonNegativeTime(maxLagMs);
         return this;
     }
 

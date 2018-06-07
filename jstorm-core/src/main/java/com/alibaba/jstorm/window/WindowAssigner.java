@@ -15,9 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.window;
 
 import backtype.storm.task.TopologyContext;
+
 import java.io.Serializable;
 import java.util.Collection;
 
@@ -26,12 +28,13 @@ import java.util.Collection;
  * @since 16/12/8
  */
 public abstract class WindowAssigner<T> implements Serializable {
+
     private static final long serialVersionUID = 1L;
 
     /**
      * Returns a {@code Collection} of windows that should be assigned to the element.
      *
-     * @param element   The element to which windows should be assigned.
+     * @param element The element to which windows should be assigned.
      * @param timestamp The timestamp of the element.
      */
     public abstract Collection<TimeWindow> assignWindows(T element, long timestamp);

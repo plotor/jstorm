@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.window;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.TupleImpl;
 import com.google.common.collect.Lists;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -28,6 +30,7 @@ import java.util.List;
  * A {@link WindowAssigner} that assigns elements to windows based on the global offset of elements.
  */
 public class SlidingCountWindows<T> extends WindowAssigner<T> {
+
     private static final long serialVersionUID = 1L;
 
     private final long size;

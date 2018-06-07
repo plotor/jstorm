@@ -15,18 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backtype.storm.topology;
 
-import java.util.Map;
+package backtype.storm.topology;
 
 import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.windowing.TupleWindow;
 
+import java.util.Map;
+
 /**
  * A bolt abstraction for supporting time and count based sliding & tumbling windows.
  */
 public interface IWindowedBolt extends IComponent {
+
     /**
      * This is similar to the {@link org.apache.storm.task.IBolt#prepare(Map, TopologyContext, OutputCollector)} except
      * that while emitting, the tuples are automatically anchored to the tuples in the inputWindow.

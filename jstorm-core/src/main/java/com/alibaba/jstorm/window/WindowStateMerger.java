@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.window;
 
 import java.io.Serializable;
@@ -26,5 +27,7 @@ import java.io.Serializable;
  * @since 16/12/19
  */
 public interface WindowStateMerger extends Serializable {
+
     Object reduceState(Object state1, Object state2);
+
 }

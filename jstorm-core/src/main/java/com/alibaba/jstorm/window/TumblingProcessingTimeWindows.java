@@ -15,9 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.window;
 
 import backtype.storm.task.TopologyContext;
+
 import java.util.Collection;
 import java.util.Collections;
 
@@ -26,6 +28,7 @@ import java.util.Collections;
  * system time of the machine the operation is running on. Windows cannot overlap.
  */
 public class TumblingProcessingTimeWindows<T> extends WindowAssigner<T> {
+
     private static final long serialVersionUID = 1L;
 
     private long size;

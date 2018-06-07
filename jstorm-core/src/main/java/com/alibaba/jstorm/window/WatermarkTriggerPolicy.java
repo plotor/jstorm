@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.window;
 
 /**
@@ -22,6 +23,7 @@ package com.alibaba.jstorm.window;
  * @since 01/01/2017
  */
 public enum WatermarkTriggerPolicy {
+
     /**
      * global max timestamp, window will be fired as long as a watermark from one task > window end
      */
@@ -36,4 +38,5 @@ public enum WatermarkTriggerPolicy {
      * received watermarks from all upstream tasks and all watermarks > window end
      */
     TASK_MAX_GLOBAL_MIN_TIMESTAMP
+
 }

@@ -46,6 +46,7 @@ import java.util.Map;
  * @since 16/12/16
  */
 public interface WatermarkGenerator extends Serializable {
+
     void init(Map conf, TopologyContext context);
 
     long getCurrentWatermark();
@@ -53,4 +54,5 @@ public interface WatermarkGenerator extends Serializable {
     void onElement(long timestamp);
 
     long getWatermarkInterval();
+
 }

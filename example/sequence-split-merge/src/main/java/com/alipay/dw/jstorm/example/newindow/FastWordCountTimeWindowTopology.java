@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alipay.dw.jstorm.example.newindow;
 
 import backtype.storm.Config;
@@ -33,24 +34,25 @@ import com.alibaba.jstorm.window.BaseWindowedBolt;
 import com.alibaba.jstorm.window.Time;
 import com.alibaba.jstorm.window.TimeWindow;
 import com.alibaba.starter.utils.JStormHelper;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * WordCount but teh spout does not stop, and the bolts are implemented in java.
  * This can show how fast the word count can run.
  */
 public class FastWordCountTimeWindowTopology {
-    private static Logger LOG = LoggerFactory.getLogger(FastWordCountTimeWindowTopology.class);
 
     public final static String TOPOLOGY_SPOUT_PARALLELISM_HINT = "spout.parallel";
     public final static String TOPOLOGY_SPLIT_PARALLELISM_HINT = "split.parallel";
     public final static String TOPOLOGY_COUNT_PARALLELISM_HINT = "count.parallel";
 
     public static class FastRandomSentenceSpout implements IRichSpout {
+
+        private static final long serialVersionUID = 694019922171997785L;
+
         SpoutOutputCollector _collector;
         Random _rand;
         long startTime;
@@ -136,6 +138,9 @@ public class FastWordCountTimeWindowTopology {
     }
 
     public static class SplitSentence implements IRichBolt {
+
+        private static final long serialVersionUID = -7864295691348857972L;
+
         OutputCollector collector;
 
         @Override
@@ -167,6 +172,9 @@ public class FastWordCountTimeWindowTopology {
     }
 
     public static class WordCount extends BaseWindowedBolt<Tuple> {
+
+        private static final long serialVersionUID = -531819050676921236L;
+
         OutputCollector collector;
 
         @Override
@@ -192,8 +200,9 @@ public class FastWordCountTimeWindowTopology {
             Map<String, Integer> counts = (Map<String, Integer>) state;
             String word = tuple.getString(0);
             Integer count = counts.get(word);
-            if (count == null)
+            if (count == null) {
                 count = 0;
+            }
             counts.put(word, ++count);
         }
 

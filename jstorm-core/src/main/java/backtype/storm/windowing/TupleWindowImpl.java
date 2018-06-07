@@ -17,14 +17,15 @@
  */
 package backtype.storm.windowing;
 
-import java.util.List;
-
 import backtype.storm.tuple.Tuple;
+
+import java.util.List;
 
 /**
  * Holds the expired, new and current tuples in a window.
  */
 public class TupleWindowImpl implements TupleWindow {
+
     private final List<Tuple> tuples;
     private final List<Tuple> newTuples;
     private final List<Tuple> expiredTuples;

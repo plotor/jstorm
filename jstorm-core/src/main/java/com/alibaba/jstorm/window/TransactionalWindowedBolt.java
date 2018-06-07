@@ -15,29 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.window;
-
-import static org.slf4j.LoggerFactory.getLogger;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import org.slf4j.Logger;
-
-import com.alibaba.jstorm.transactional.state.IKvState;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.transactional.state.IKvState;
+import org.slf4j.Logger;
+import static org.slf4j.LoggerFactory.getLogger;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class TransactionalWindowedBolt<T extends Tuple, K, V> extends TransactionalBaseWindowBolt<T, K, V> {
+
     private static final long serialVersionUID = 8310112984058774752L;
 
     private static final Logger LOG = getLogger(TransactionalWindowedBolt.class);
@@ -57,6 +53,7 @@ public abstract class TransactionalWindowedBolt<T extends Tuple, K, V> extends T
     }
 
     public abstract void execute(T tuple, IKvState<K, V> state, TimeWindow window);
+
     public abstract void purgeWindow(IKvState<K, V> state, TimeWindow window);
 
     @Override
@@ -156,5 +153,4 @@ public abstract class TransactionalWindowedBolt<T extends Tuple, K, V> extends T
         windowedStateManager.restore(checkpointPath);
     }
 
-    
 }

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>com.alibaba.jstorm.window.WindowAssigner</OriginalElement>
+  <nodes>
+    <node x="848.0" y="113.0">com.alibaba.jstorm.window.SlidingEventTimeWindows</node>
+    <node x="1418.5" y="0.0">com.alibaba.jstorm.window.WindowAssigner</node>
+    <node x="2534.0" y="113.0">com.alibaba.jstorm.window.TumblingIngestionTimeWindows</node>
+    <node x="1094.0" y="113.0">com.alibaba.jstorm.window.ProcessingTimeSessionWindows</node>
+    <node x="1809.0" y="113.0">com.alibaba.jstorm.window.SlidingCountWindows</node>
+    <node x="2299.0" y="113.0">com.alibaba.jstorm.window.TumblingCountWindows</node>
+    <node x="1635.0" y="113.0">com.alibaba.jstorm.window.GlobalWindows</node>
+    <node x="1383.0" y="113.0">com.alibaba.jstorm.window.EventTimeSessionWindows</node>
+    <node x="0.0" y="113.0">com.alibaba.jstorm.window.TumblingProcessingTimeWindows</node>
+    <node x="565.0" y="113.0">com.alibaba.jstorm.window.SlidingProcessingTimeWindows</node>
+    <node x="2026.0" y="113.0">com.alibaba.jstorm.window.SlidingIngestionTimeWindows</node>
+    <node x="301.0" y="113.0">com.alibaba.jstorm.window.TumblingEventTimeWindows</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="com.alibaba.jstorm.window.TumblingProcessingTimeWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="140.5" y="53.0" />
+      <point x="1425.8181818181818" y="53.0" />
+      <point x="-73.18181818181824" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.TumblingCountWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="2406.5" y="63.0" />
+      <point x="1557.5454545454545" y="63.0" />
+      <point x="58.545454545454504" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.SlidingEventTimeWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="961.0" y="83.0" />
+      <point x="1469.7272727272727" y="83.0" />
+      <point x="-29.272727272727252" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.TumblingIngestionTimeWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="2669.5" y="53.0" />
+      <point x="1572.1818181818182" y="53.0" />
+      <point x="73.18181818181824" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.EventTimeSessionWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.ProcessingTimeSessionWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="1228.5" y="93.0" />
+      <point x="1484.3636363636363" y="93.0" />
+      <point x="-14.63636363636374" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.SlidingCountWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="1907.5" y="83.0" />
+      <point x="1528.2727272727273" y="83.0" />
+      <point x="29.272727272727252" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.SlidingProcessingTimeWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="696.5" y="73.0" />
+      <point x="1455.090909090909" y="73.0" />
+      <point x="-43.90909090909099" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.SlidingIngestionTimeWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="2152.5" y="73.0" />
+      <point x="1542.909090909091" y="73.0" />
+      <point x="43.90909090909099" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.TumblingEventTimeWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="423.0" y="63.0" />
+      <point x="1440.4545454545455" y="63.0" />
+      <point x="-58.545454545454504" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.GlobalWindows" target="com.alibaba.jstorm.window.WindowAssigner">
+      <point x="0.0" y="-16.5" />
+      <point x="1712.0" y="93.0" />
+      <point x="1513.6363636363637" y="93.0" />
+      <point x="14.63636363636374" y="16.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="1366.0" y="58.0" />
+  <SelectedNodes>
+    <node>com.alibaba.jstorm.window.TumblingProcessingTimeWindows</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

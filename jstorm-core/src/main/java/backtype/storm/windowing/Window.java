@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.windowing;
 
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.List;
  * @param <T> the type of event that this window contains. E.g. {@link org.apache.storm.tuple.Tuple}
  */
 public interface Window<T> {
+
     /**
      * Gets the list of events in the window.
      *

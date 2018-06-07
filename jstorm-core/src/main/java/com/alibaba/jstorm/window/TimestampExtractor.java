@@ -30,5 +30,7 @@ import java.io.Serializable;
  * @since 16/12/16
  */
 public interface TimestampExtractor extends Serializable {
+
     long extractTimestamp(Tuple element);
+
 }

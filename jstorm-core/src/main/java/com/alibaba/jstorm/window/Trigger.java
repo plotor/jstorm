@@ -36,10 +36,10 @@ public abstract class Trigger<T> implements Serializable {
      * Called for every element that gets added to a pane. The result of this will determine
      * whether the pane is evaluated to emit results.
      *
-     * @param element   The element that arrived.
+     * @param element The element that arrived.
      * @param timestamp The timestamp of the element that arrived.
-     * @param window    The window to which the element is being added.
-     * @param ctx       A context object that can be used to register timer callbacks.
+     * @param window The window to which the element is being added.
+     * @param ctx A context object that can be used to register timer callbacks.
      */
     public abstract TriggerResult onElement(T element, long timestamp, TimeWindow window, TriggerContext ctx);
 
@@ -69,7 +69,7 @@ public abstract class Trigger<T> implements Serializable {
         /**
          * Register a system time callback.
          *
-         * @param time   the timestamp at which to trigger the timer
+         * @param time the timestamp at which to trigger the timer
          * @param window the window to which current input belongs
          */
         void registerProcessingTimeTimer(long time, TimeWindow window);
@@ -77,7 +77,7 @@ public abstract class Trigger<T> implements Serializable {
         /**
          * Register an event-time callback.
          *
-         * @param time   the timestamp at which to trigger the timer
+         * @param time the timestamp at which to trigger the timer
          * @param window the window to which current input belongs
          */
         void registerEventTimeTimer(long time, TimeWindow window);

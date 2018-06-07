@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>com.alibaba.jstorm.window.IWindowedBolt</OriginalElement>
+  <nodes>
+    <node x="51.0" y="83.0">com.alibaba.jstorm.window.IWindowedBolt</node>
+    <node x="0.0" y="249.0">com.alibaba.jstorm.window.TransactionalBaseWindowBolt</node>
+    <node x="37.5" y="166.0">com.alibaba.jstorm.window.BaseWindowedBolt</node>
+    <node x="60.5" y="0.0">backtype.storm.topology.IComponent</node>
+    <node x="7.5" y="332.0">com.alibaba.jstorm.window.TransactionalWindowedBolt</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="com.alibaba.jstorm.window.BaseWindowedBolt" target="com.alibaba.jstorm.window.IWindowedBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.IWindowedBolt" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.TransactionalBaseWindowBolt" target="com.alibaba.jstorm.window.BaseWindowedBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.TransactionalWindowedBolt" target="com.alibaba.jstorm.window.TransactionalBaseWindowBolt">
+      <point x="0.0" y="-16.5" />
+      <point x="0.0" y="16.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="76.0" y="99.5" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

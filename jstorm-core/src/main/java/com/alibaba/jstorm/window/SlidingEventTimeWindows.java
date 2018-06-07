@@ -19,6 +19,7 @@
 package com.alibaba.jstorm.window;
 
 import backtype.storm.task.TopologyContext;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.List;
  * elements. Windows can possibly overlap.
  */
 public class SlidingEventTimeWindows<T> extends WindowAssigner<T> {
+
     private static final long serialVersionUID = 1L;
 
     private final long size;
@@ -78,7 +80,7 @@ public class SlidingEventTimeWindows<T> extends WindowAssigner<T> {
      * Creates a new {@code SlidingEventTimeWindows} {@link WindowAssigner} that assigns
      * elements to sliding time windows based on the element timestamp.
      *
-     * @param size  The size of the generated windows.
+     * @param size The size of the generated windows.
      * @param slide The slide interval of the generated windows.
      * @return The time policy.
      */
