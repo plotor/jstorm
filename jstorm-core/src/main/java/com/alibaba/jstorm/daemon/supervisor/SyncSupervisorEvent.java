@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
 
 import backtype.storm.utils.LocalState;
@@ -214,7 +215,6 @@ class SyncSupervisorEvent extends RunnableCallback {
         }
     }
 
-
     /**
      * a port must be assigned to a topology
      *
@@ -374,8 +374,9 @@ class SyncSupervisorEvent extends RunnableCallback {
                 Integer port = entry.getKey();
                 LocalAssignment localAssignment = entry.getValue();
                 LocalAssignment zkAssignment = zkAssignments.get(port);
-                if (localAssignment == null || zkAssignment == null)
+                if (localAssignment == null || zkAssignment == null) {
                     continue;
+                }
 
                 Assignment assignment = assignments.get(localAssignment.getTopologyId());
                 if (localAssignment.getTopologyId().equals(zkAssignment.getTopologyId()) && assignment != null
@@ -429,19 +430,22 @@ class SyncSupervisorEvent extends RunnableCallback {
     @SuppressWarnings("unchecked")
     private Set<String> getNeedReDownloadTopologies(Map<Integer, LocalAssignment> localAssignment) {
         Set<String> reDownloadTopologies = syncProcesses.getTopologyIdNeedDownload().getAndSet(null);
-        if (reDownloadTopologies == null || reDownloadTopologies.size() == 0)
+        if (reDownloadTopologies == null || reDownloadTopologies.size() == 0) {
             return null;
+        }
         Set<String> needRemoveTopologies = new HashSet<>();
         Map<Integer, String> portToStartWorkerId = syncProcesses.getPortToWorkerId();
         for (Entry<Integer, LocalAssignment> entry : localAssignment.entrySet()) {
-            if (portToStartWorkerId.containsKey(entry.getKey()))
+            if (portToStartWorkerId.containsKey(entry.getKey())) {
                 needRemoveTopologies.add(entry.getValue().getTopologyId());
+            }
         }
         LOG.debug("workers are starting on these topologies, delay downloading topology binary: " +
                 needRemoveTopologies);
         reDownloadTopologies.removeAll(needRemoveTopologies);
-        if (reDownloadTopologies.size() > 0)
+        if (reDownloadTopologies.size() > 0) {
             LOG.info("Following topologies are going to re-download the jars, " + reDownloadTopologies);
+        }
         return reDownloadTopologies;
     }
 
@@ -475,10 +479,11 @@ class SyncSupervisorEvent extends RunnableCallback {
             LOG.error("Failed to read local task cleanup timeout map", e);
         }
 
-        if (localTaskCleanupTimeouts == null)
+        if (localTaskCleanupTimeouts == null) {
             localTaskCleanupTimeouts = taskCleanupTimeouts;
-        else
+        } else {
             localTaskCleanupTimeouts.putAll(taskCleanupTimeouts);
+        }
 
         try {
             localState.put(Common.LS_TASK_CLEANUP_TIMEOUT, localTaskCleanupTimeouts);

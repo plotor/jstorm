@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus.metric.uploader;
 
 import backtype.storm.generated.TopologyMetric;
@@ -125,8 +126,9 @@ public class AlimonitorClient extends DefaultMetricUploader {
     private boolean sendRequest(int collection_flag, String error_message, Map<String, Object> msg) throws Exception {
         boolean ret = false;
 
-        if (msg.size() == 0)
+        if (msg.size() == 0) {
             return ret;
+        }
 
         Map jsonObj = buildAliMonitorMsg(collection_flag, error_message);
         addMsgData(jsonObj, msg);
@@ -167,8 +169,9 @@ public class AlimonitorClient extends DefaultMetricUploader {
             LOG.error("Exception when sending http request to ali monitor", e);
         } finally {
             try {
-                if (response != null)
+                if (response != null) {
                     response.close();
+                }
                 httpClient.close();
             } catch (Exception e) {
                 LOG.error("Exception when closing httpclient", e);
@@ -200,8 +203,9 @@ public class AlimonitorClient extends DefaultMetricUploader {
             LOG.error("Exception when sending http request to ali monitor", e);
         } finally {
             try {
-                if (response != null)
+                if (response != null) {
                     response.close();
+                }
                 httpClient.close();
             } catch (Exception e) {
                 LOG.error("Exception when closing httpclient", e);

@@ -15,16 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
 
+import com.alibaba.jstorm.callback.AsyncLoopRunnable;
+import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.DaemonCommon;
+import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.common.metric.AsmGauge;
+import com.alibaba.jstorm.event.EventManager;
 import com.alibaba.jstorm.metric.JStormMetrics;
 import com.alibaba.jstorm.metric.JStormMetricsReporter;
 import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.metric.MetricType;
+import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.LinuxResource;
+import com.alibaba.jstorm.utils.PathUtils;
 import com.codahale.metrics.Gauge;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -32,18 +44,6 @@ import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.jstorm.callback.AsyncLoopRunnable;
-import com.alibaba.jstorm.callback.AsyncLoopThread;
-import com.alibaba.jstorm.cluster.DaemonCommon;
-import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.event.EventManager;
-import com.alibaba.jstorm.utils.JStormUtils;
-import com.alibaba.jstorm.utils.PathUtils;
 
 /**
  * supervisor shutdown manager which can shutdown supervisor
@@ -257,8 +257,9 @@ public class SupervisorManger extends ShutdownWork implements SupervisorDaemon, 
         return !eventManager.waiting();
     }
 
+    @Override
     public void run() {
-        shutdown();
+        this.shutdown();
     }
 
     public boolean isFinishShutdown() {

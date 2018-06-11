@@ -15,28 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus.metric.uploader;
 
+import backtype.storm.generated.TopologyMetric;
+import backtype.storm.utils.Utils;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.config.Refreshable;
 import com.alibaba.jstorm.config.RefreshableComponents;
+import com.alibaba.jstorm.daemon.nimbus.NimbusData;
+import com.alibaba.jstorm.daemon.nimbus.metric.MetricEvent;
 import com.alibaba.jstorm.metric.MetaType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
-
-import com.alibaba.jstorm.daemon.nimbus.NimbusData;
-import com.alibaba.jstorm.daemon.nimbus.metric.MetricEvent;
-
-import backtype.storm.generated.TopologyMetric;
-import backtype.storm.utils.Utils;
-
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public interface MetricUploader {
     /**
@@ -52,13 +49,12 @@ public interface MetricUploader {
     boolean registerMetrics(String clusterName, String topologyId, Map<String, Long> metrics) throws Exception;
 
     String METRIC_TYPE = "metric.type";
-    String METRIC_TYPE_TOPLOGY = "TP";
+    String METRIC_TYPE_TOPOLOGY = "TP";
     String METRIC_TYPE_TASK = "TASK";
     String METRIC_TYPE_ALL = "ALL";
     String METRIC_TIME = "metric.timestamp";
     String NIMBUS_CONF_PREFIX = "nimbus.metrics.plugin.";
     String INSERT_FILTER_SUFFIX = ".insert.filters";
-
 
     /**
      * upload topologyMetric to external metric plugin (such as database plugin)

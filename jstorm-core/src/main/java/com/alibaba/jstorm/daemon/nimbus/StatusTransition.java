@@ -54,8 +54,7 @@ public class StatusTransition {
         this.data = data;
     }
 
-    public <T> void transition(String topologyId, boolean errorOnNoTransition, StatusType changeStatus, T... args)
-            throws Exception {
+    public <T> void transition(String topologyId, boolean errorOnNoTransition, StatusType changeStatus, T... args) throws Exception {
         // lock outside
         Object lock = topologyLocks.get(topologyId);
         if (lock == null) {

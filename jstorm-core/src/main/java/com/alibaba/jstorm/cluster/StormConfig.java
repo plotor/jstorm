@@ -196,7 +196,7 @@ public class StormConfig {
     }
 
     private static String supervisor_local_dir(Map conf) throws IOException {
-        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "supervisor";
+        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "supervisor"; // ${storm.local.dir}/supervisor
         FileUtils.forceMkdir(new File(ret));
         return ret;
     }
@@ -213,9 +213,11 @@ public class StormConfig {
 
     /**
      * Return supervisor's pid dir
+     *
+     * 创建并返回 ${storm.local.dir}/supervisor/pids
      */
     public static String supervisorPids(Map conf) throws IOException {
-        String ret = supervisor_local_dir(conf) + FILE_SEPERATEOR + "pids";
+        String ret = supervisor_local_dir(conf) + FILE_SEPERATEOR + "pids"; // ${storm.local.dir}/supervisor/pids
         try {
             FileUtils.forceMkdir(new File(ret));
         } catch (IOException e) {
@@ -438,17 +440,23 @@ public class StormConfig {
         return metricLocalDir(conf) + FILE_SEPERATEOR + "rocksdb";
     }
 
+    /**
+     * 创建 ${storm.local.dir}/supervisor/tmp
+     *
+     * @param conf
+     * @return
+     * @throws IOException
+     */
     public static String supervisorTmpDir(Map conf) throws IOException {
         String ret = null;
         try {
-            ret = supervisor_local_dir(conf) + FILE_SEPERATEOR + "tmp";
+            ret = supervisor_local_dir(conf) + FILE_SEPERATEOR + "tmp"; // ${storm.local.dir}/supervisor/tmp
             FileUtils.forceMkdir(new File(ret));
         } catch (IOException e) {
             LOG.error("Failed to create dir " + ret, e);
             throw e;
 
         }
-
         return ret;
     }
 

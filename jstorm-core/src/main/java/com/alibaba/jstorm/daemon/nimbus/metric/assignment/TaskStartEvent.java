@@ -15,19 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.jstorm.daemon.nimbus.metric.assignment;
 
-import java.util.Map;
+package com.alibaba.jstorm.daemon.nimbus.metric.assignment;
 
 import com.alibaba.jstorm.daemon.nimbus.metric.MetricEvent;
 import com.alibaba.jstorm.metric.TopologyMetricContext;
 import com.alibaba.jstorm.schedule.Assignment;
 
+import java.util.Map;
+
 public class TaskStartEvent extends MetricEvent {
-    private Assignment           oldAssignment;
-    private Assignment           newAssignment;
+    private Assignment oldAssignment;
+    private Assignment newAssignment;
     private Map<Integer, String> task2Component;
-    
+
     @Override
     public void run() {
         Assignment assignment = newAssignment;

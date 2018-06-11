@@ -24,6 +24,7 @@ import com.alibaba.jstorm.daemon.nimbus.metric.ClusterMetricsRunnable;
 import com.alibaba.jstorm.daemon.nimbus.metric.MetricEvent;
 
 public class RemoveTopologyEvent extends MetricEvent {
+
     private static final Logger LOG = LoggerFactory.getLogger(RemoveTopologyEvent.class);
     
     public void removeTopology(String topologyId) {
@@ -35,7 +36,7 @@ public class RemoveTopologyEvent extends MetricEvent {
     @Override
     public void run() {
         if (topologyId != null) {
-            removeTopology(topologyId);
+           this.removeTopology(topologyId);
         }
         LOG.info("remove topology:{}.", topologyId);
     }

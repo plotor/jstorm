@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.metric;
 
 /**
@@ -22,5 +23,7 @@ package com.alibaba.jstorm.metric;
  * @since 2.0.5
  */
 public interface MetricIDGenerator {
+
     long genMetricId(String metricName);
+
 }

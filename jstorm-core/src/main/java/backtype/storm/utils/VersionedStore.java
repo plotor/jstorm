@@ -15,16 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.utils;
 
+import org.apache.commons.io.FileUtils;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.io.File;
-
-import org.apache.commons.io.FileUtils;
 
 public class VersionedStore {
     private static final String FINISHED_VERSION_SUFFIX = ".version";
@@ -46,30 +47,34 @@ public class VersionedStore {
 
     public String mostRecentVersionPath() throws IOException {
         Long v = mostRecentVersion();
-        if (v == null)
+        if (v == null) {
             return null;
+        }
         return versionPath(v);
     }
 
     public String mostRecentVersionPath(long maxVersion) throws IOException {
         Long v = mostRecentVersion(maxVersion);
-        if (v == null)
+        if (v == null) {
             return null;
+        }
         return versionPath(v);
     }
 
     public Long mostRecentVersion() throws IOException {
         List<Long> all = getAllVersions();
-        if (all.size() == 0)
+        if (all.size() == 0) {
             return null;
+        }
         return all.get(0);
     }
 
     public Long mostRecentVersion(long maxVersion) throws IOException {
         List<Long> all = getAllVersions();
         for (Long v : all) {
-            if (v <= maxVersion)
+            if (v <= maxVersion) {
                 return v;
+            }
         }
         return null;
     }
@@ -85,10 +90,11 @@ public class VersionedStore {
 
     public String createVersion(long version) throws IOException {
         String ret = versionPath(version);
-        if (getAllVersions().contains(version))
+        if (getAllVersions().contains(version)) {
             throw new RuntimeException("Version already exists or data already exists");
-        else
+        } else {
             return ret;
+        }
     }
 
     public void failVersion(String path) throws IOException {
@@ -154,8 +160,9 @@ public class VersionedStore {
 
     private long validateAndGetVersion(String path) {
         Long v = parseVersion(path);
-        if (v == null)
+        if (v == null) {
             throw new RuntimeException(path + " is not a valid version");
+        }
         return v;
     }
 

@@ -15,27 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.nimbus.metric;
 
-import com.alibaba.jstorm.common.metric.MetricMeta;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicIntegerArray;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import backtype.storm.generated.MetricInfo;
+import backtype.storm.generated.TopologyMetric;
+import backtype.storm.utils.Utils;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.common.metric.AsmGauge;
+import com.alibaba.jstorm.common.metric.MetricMeta;
 import com.alibaba.jstorm.daemon.nimbus.NimbusData;
 import com.alibaba.jstorm.daemon.nimbus.metric.flush.FlushEvent;
 import com.alibaba.jstorm.daemon.nimbus.metric.merge.MergeEvent;
@@ -59,12 +48,23 @@ import com.alibaba.jstorm.metric.TopologyMetricContext;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
 import com.codahale.metrics.Gauge;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import backtype.storm.generated.MetricInfo;
-import backtype.storm.generated.TopologyMetric;
-import backtype.storm.utils.Utils;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 public class ClusterMetricsContext {
+
     private static final Logger LOG = LoggerFactory.getLogger(ClusterMetricsContext.class);
 
     protected JStormMetricCache metricCache;
@@ -467,7 +467,6 @@ public class ClusterMetricsContext {
         return clusterName;
     }
 
-
     public class MetricUploaderDelegate {
 
         public boolean isUnderFlowControl() {
@@ -485,7 +484,7 @@ public class ClusterMetricsContext {
          * register metrics to external metric plugin
          */
         public boolean registerMetrics(String clusterName, String topologyId, Map<String, Long> metrics) throws
-                Exception {
+                                                                                                         Exception {
             boolean ret = true;
             for (MetricUploader metricUploader : metricUploaders) {
                 ret &= metricUploader.registerMetrics(clusterName, topologyId, metrics);

@@ -15,19 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.utils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * @author longda
  */
 public class TimeFormat {
+
     public static Logger log = LoggerFactory.getLogger(TimeFormat.class);
 
     public static final long ONE_SECOND_MILLISECONDS = 1000;

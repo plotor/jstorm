@@ -15,9 +15,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
 
+import backtype.storm.Config;
+import backtype.storm.GenericOptionsParser;
+import backtype.storm.messaging.IContext;
+import backtype.storm.utils.LocalState;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.daemon.worker.LocalAssignment;
+import com.alibaba.jstorm.daemon.worker.ProcessSimulator;
+import com.alibaba.jstorm.daemon.worker.State;
+import com.alibaba.jstorm.daemon.worker.Worker;
+import com.alibaba.jstorm.daemon.worker.WorkerHeartbeat;
+import com.alibaba.jstorm.daemon.worker.WorkerReportError;
+import com.alibaba.jstorm.daemon.worker.WorkerShutdown;
+import com.alibaba.jstorm.oversold.GcStrategy;
+import com.alibaba.jstorm.oversold.GcStrategyManager;
+import com.alibaba.jstorm.task.error.ErrorConstants;
+import com.alibaba.jstorm.utils.JDKInfo;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.Pair;
+import com.alibaba.jstorm.utils.PathUtils;
+import com.alibaba.jstorm.utils.ProcessLauncher;
+import com.alibaba.jstorm.utils.TimeFormat;
+import com.alibaba.jstorm.utils.TimeUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
@@ -33,25 +63,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import com.alibaba.jstorm.daemon.worker.*;
-import com.alibaba.jstorm.oversold.GcStrategy;
-import com.alibaba.jstorm.oversold.GcStrategyManager;
-import com.alibaba.jstorm.task.error.ErrorConstants;
-import com.alibaba.jstorm.utils.*;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
-import backtype.storm.GenericOptionsParser;
-import backtype.storm.messaging.IContext;
-import backtype.storm.utils.LocalState;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.Common;
-import com.alibaba.jstorm.cluster.StormConfig;
 
 /**
  * SyncProcessesEvent:
@@ -413,9 +424,10 @@ class SyncProcessEvent extends ShutdownWork {
             }
 
             if (state != State.valid) {
-                if (!killingWorkers.containsKey(workerId))
+                if (!killingWorkers.containsKey(workerId)) {
                     LOG.info("Worker:" + workerId + " state:" + state + " WorkerHeartbeat:" + whb +
                             " assignedTasks:" + assignedTasks + " at supervisor time-secs " + now);
+                }
             } else {
                 LOG.debug("Worker:" + workerId + " state:" + state + " WorkerHeartbeat: " + whb
                         + " at supervisor time-secs " + now);
@@ -430,7 +442,7 @@ class SyncProcessEvent extends ShutdownWork {
     /**
      * check whether the worker heartbeat is allowed in the assignedTasks
      *
-     * @param whb           WorkerHeartbeat
+     * @param whb WorkerHeartbeat
      * @param assignedTasks assigned tasks
      * @return if true, the assignments(LS-LOCAL-ASSIGNMENTS) match with worker heartbeat, false otherwise
      */
@@ -482,7 +494,7 @@ class SyncProcessEvent extends ShutdownWork {
     /**
      * get worker heartbeat by workerId
      *
-     * @param conf     conf
+     * @param conf conf
      * @param workerId worker id
      * @return WorkerHeartbeat
      */
@@ -576,8 +588,9 @@ class SyncProcessEvent extends ShutdownWork {
             if (StringUtils.isBlank(classJar)) {
                 continue;
             }
-            if (!classJar.contains("/lib/ext/"))
+            if (!classJar.contains("/lib/ext/")) {
                 classSet.add(classJar);
+            }
         }
 
         if (stormHome != null) {
@@ -659,7 +672,6 @@ class SyncProcessEvent extends ShutdownWork {
 
         String logFileName = JStormUtils.genLogName(topologyName, port);
         // String logFileName = topologyId + "-worker-" + port + ".log";
-
 
         StringBuilder commandSB = new StringBuilder();
         String logDir = System.getProperty("jstorm.log.dir");
@@ -833,8 +845,9 @@ class SyncProcessEvent extends ShutdownWork {
         commandSB.append(" -cp ");
         // commandSB.append(workerClassPath + ":");
         commandSB.append(classpath);
-        if (!ConfigExtension.isEnableTopologyClassLoader(totalConf))
+        if (!ConfigExtension.isEnableTopologyClassLoader(totalConf)) {
             commandSB.append(":").append(workerClassPath);
+        }
         if (!StringUtils.isBlank(externalClassPath)) {
             commandSB.append(":").append(externalClassPath);
         }
@@ -956,8 +969,9 @@ class SyncProcessEvent extends ShutdownWork {
 
             String workerId = entry.getKey();
             StateHeartbeat hbState = entry.getValue();
-            if (workerIdToStartTimeAndPort.containsKey(workerId) && hbState.getState().equals(State.notStarted))
+            if (workerIdToStartTimeAndPort.containsKey(workerId) && hbState.getState().equals(State.notStarted)) {
                 continue;
+            }
 
             if (hbState.getState().equals(State.valid)) {
                 // hbstate.getHeartbeat() won't be null
@@ -1002,10 +1016,11 @@ class SyncProcessEvent extends ShutdownWork {
         for (Entry<String, Pair<Integer, Integer>> entry : workerIdToStartTimeAndPort.entrySet()) {
             String workerId = entry.getKey();
             StateHeartbeat hbState = localWorkerStats.get(workerId);
-            if (hbState != null)
+            if (hbState != null) {
                 if (hbState.getState().equals(State.notStarted)) {
                     keepPorts.add(entry.getValue().getSecond());
                 }
+            }
         }
         return keepPorts;
     }

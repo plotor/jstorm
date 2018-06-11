@@ -232,7 +232,7 @@ public class HBaseMetricSendClient extends AbstractHBaseClient implements Metric
                         }
                     }
                 });
-            } else if (MetricUploader.METRIC_TYPE_TOPLOGY.equals(type)) {
+            } else if (MetricUploader.METRIC_TYPE_TOPOLOGY.equals(type)) {
                 hbaseInsertThreadPool.submit(new Runnable() {
                     @Override
                     public void run() {

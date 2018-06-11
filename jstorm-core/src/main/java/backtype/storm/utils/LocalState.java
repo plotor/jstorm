@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.utils;
 
 import org.apache.commons.io.FileUtils;
@@ -27,12 +28,14 @@ import java.util.HashMap;
 import java.io.IOException;
 
 /**
+ * 简单、低效的 KV 数据库
  * A simple, durable, atomic K/V database. *Very inefficient*, should only be used for occasional reads/writes.
  * Every read/write hits disk.
  * Right now, This class hasn't upgrade to storm's LocalState
  * It needs to define every type in thrift, which is too complicated.
  */
 public class LocalState {
+
     public static final Logger LOG = LoggerFactory.getLogger(LocalState.class);
 
     private VersionedStore _vs;
@@ -106,7 +109,8 @@ public class LocalState {
         String newPath = _vs.createVersion();
         FileUtils.writeByteArrayToFile(new File(newPath), toWrite);
         _vs.succeedVersion(newPath);
-        if (cleanup)
+        if (cleanup) {
             _vs.cleanup(4);
+        }
     }
 }

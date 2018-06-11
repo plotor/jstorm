@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
 
 import backtype.storm.Config;
@@ -35,14 +36,15 @@ import com.alibaba.jstorm.event.EventManagerPusher;
 import com.alibaba.jstorm.utils.DefaultUncaughtExceptionHandler;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.util.Map;
 import java.util.UUID;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Supervisor workflow
@@ -72,7 +74,7 @@ public class Supervisor {
     /**
      * create and start a supervisor
      *
-     * @param conf          : configuration (default.yaml & storm.yaml)
+     * @param conf : configuration (default.yaml & storm.yaml)
      * @param sharedContext : null (right now)
      * @return SupervisorManger: which is used to shutdown all workers and supervisor
      */
@@ -81,13 +83,13 @@ public class Supervisor {
 
         LOG.info("Starting Supervisor with conf " + conf);
 
-        /**
-         * Step 1: cleanup all files in /storm-local-dir/supervisor/tmp
+        /*
+         * Step 1: cleanup all files in ${storm.local.dir}/supervisor/tmp
          */
         String path = StormConfig.supervisorTmpDir(conf);
         FileUtils.cleanDirectory(new File(path));
 
-        /**
+        /*
          * Step 2: create ZK operation instance StormClusterState
          */
 
@@ -96,15 +98,15 @@ public class Supervisor {
         String hostName = JStormServerUtils.getHostName(conf);
         WorkerReportError workerReportError = new WorkerReportError(stormClusterState, hostName);
 
-        /**
-         * Step 3, create LocalStat (a simple KV store)
+        /*
+         * Step 3: create LocalState (a simple KV store)
          * 3.1 create LocalState instance;
          * 3.2 get supervisorId, if there's no supervisorId, create one
          */
 
         LocalState localState = StormConfig.supervisorState(conf);
 
-        String supervisorId = (String) localState.get(Common.LS_ID);
+        String supervisorId = (String) localState.get(Common.LS_ID); // supervisor-id
         if (supervisorId == null) {
             supervisorId = UUID.randomUUID().toString();
             localState.put(Common.LS_ID, supervisorId);
@@ -115,9 +117,11 @@ public class Supervisor {
 
         Vector<AsyncLoopThread> threads = new Vector<>();
 
-        // Step 4 create HeartBeat
-        // every supervisor.heartbeat.frequency.secs, write SupervisorInfo to ZK
-        // sync heartbeat to nimbus
+        /*
+         * Step 4: create HeartBeat
+         * every supervisor.heartbeat.frequency.secs, write SupervisorInfo to ZK sync heartbeat to nimbus
+         */
+
         Heartbeat hb = new Heartbeat(conf, stormClusterState, supervisorId, localState);
         hb.update();
 
@@ -130,8 +134,11 @@ public class Supervisor {
             threads.add(syncContainerHbThread);
         }
 
-        // Step 5 create and start sync Supervisor thread
-        // every supervisor.monitor.frequency.secs second run SyncSupervisor
+        /*
+         * Step 5: create and start sync Supervisor thread every
+         * supervisor.monitor.frequency.secs second run SyncSupervisor
+         */
+
         ConcurrentHashMap<String, String> workerThreadPids = new ConcurrentHashMap<>();
         SyncProcessEvent syncProcessEvent = new SyncProcessEvent(
                 supervisorId, conf, localState, workerThreadPids, sharedContext, workerReportError, stormClusterState);
@@ -144,12 +151,13 @@ public class Supervisor {
                 supervisorId, conf, syncSupEventManager, stormClusterState, localState, syncProcessEvent, hb);
 
         int syncFrequency = JStormUtils.parseInt(conf.get(Config.SUPERVISOR_MONITOR_FREQUENCY_SECS));
-        EventManagerPusher syncSupervisorPusher = new EventManagerPusher(
-                syncSupEventManager, syncSupervisorEvent, syncFrequency);
+        EventManagerPusher syncSupervisorPusher = new EventManagerPusher(syncSupEventManager, syncSupervisorEvent, syncFrequency);
         AsyncLoopThread syncSupervisorThread = new AsyncLoopThread(syncSupervisorPusher);
         threads.add(syncSupervisorThread);
 
-        // Step 6 start httpserver
+        /*
+         * Step 6: start httpserver
+         */
         Httpserver httpserver = null;
         if (!StormConfig.local_mode(conf)) {
             int port = ConfigExtension.getSupervisorDeamonHttpserverPort(conf);
@@ -157,7 +165,9 @@ public class Supervisor {
             httpserver.start();
         }
 
-        //Step 7 check supervisor
+        /*
+         * Step 7: check supervisor
+         */
         if (!StormConfig.local_mode(conf)) {
             if (ConfigExtension.isEnableCheckSupervisor(conf)) {
                 SupervisorHealth supervisorHealth = new SupervisorHealth(conf, hb, supervisorId);
@@ -182,14 +192,25 @@ public class Supervisor {
         supervisor.shutdown();
     }
 
+    /**
+     * 添加一个 hook 方法
+     *
+     * @param supervisor
+     */
     private void initShutdownHook(SupervisorManger supervisor) {
         Runtime.getRuntime().addShutdownHook(new Thread(supervisor));
-        //JStormUtils.registerJStormSignalHandler();
     }
 
+    /**
+     * 创建 ${storm.local.dir}/supervisor/pids/${pid}
+     *
+     * @param conf
+     * @throws Exception
+     */
     private void createPid(Map conf) throws Exception {
+        // ${storm.local.dir}/supervisor/pids
         String pidDir = StormConfig.supervisorPids(conf);
-
+        // ${storm.local.dir}/supervisor/pids/${pid}
         JStormServerUtils.createPid(pidDir);
     }
 
@@ -197,19 +218,22 @@ public class Supervisor {
      * start supervisor
      */
     public void run() {
-        SupervisorManger supervisorManager;
+        SupervisorManger supervisorManager; // supervisor shutdown manager
         try {
+            // 解析配置文件
             Map<Object, Object> conf = Utils.readStormConfig();
 
+            // 确保当前为分布式模式
             StormConfig.validate_distributed_mode(conf);
 
-            createPid(conf);
+            // 创建 ${storm.local.dir}/supervisor/pids/${pid}
+            this.createPid(conf);
 
-            supervisorManager = mkSupervisor(conf, null);
+            supervisorManager = this.mkSupervisor(conf, null);
 
             JStormUtils.redirectOutput("/dev/null");
 
-            initShutdownHook(supervisorManager);
+            this.initShutdownHook(supervisorManager);
 
             while (!supervisorManager.isFinishShutdown()) {
                 try {

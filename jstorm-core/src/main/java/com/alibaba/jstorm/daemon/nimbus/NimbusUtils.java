@@ -67,6 +67,7 @@ import java.util.Set;
 
 @SuppressWarnings("unchecked")
 public class NimbusUtils {
+
     private static final Logger LOG = LoggerFactory.getLogger(NimbusUtils.class);
 
     /**

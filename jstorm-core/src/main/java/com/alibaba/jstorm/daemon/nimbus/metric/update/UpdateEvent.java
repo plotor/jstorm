@@ -17,14 +17,9 @@
  */
 package com.alibaba.jstorm.daemon.nimbus.metric.update;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import backtype.storm.generated.MetricInfo;
+import backtype.storm.generated.MetricSnapshot;
+import backtype.storm.generated.TopologyMetric;
 import com.alibaba.jstorm.daemon.nimbus.metric.ClusterMetricsContext;
 import com.alibaba.jstorm.daemon.nimbus.metric.ClusterMetricsRunnable;
 import com.alibaba.jstorm.daemon.nimbus.metric.MetricEvent;
@@ -34,13 +29,17 @@ import com.alibaba.jstorm.metric.JStormMetrics;
 import com.alibaba.jstorm.metric.MetricType;
 import com.alibaba.jstorm.metric.MetricUtils;
 import com.alibaba.jstorm.metric.TopologyMetricContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import backtype.storm.generated.MetricInfo;
-import backtype.storm.generated.MetricSnapshot;
-import backtype.storm.generated.TopologyMetric;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 
 public class UpdateEvent extends MetricEvent {
+
     private static final Logger LOG = LoggerFactory.getLogger(UpdateEvent.class);
 
     private TopologyMetric topologyMetrics;
@@ -83,7 +82,7 @@ public class UpdateEvent extends MetricEvent {
             summary.topologyId = topologyId;
             summary.timestamp = timestamp;
             if (topologyId.equals(JStormMetrics.NIMBUS_METRIC_KEY) || topologyId.equals(JStormMetrics.CLUSTER_METRIC_KEY)) {
-                summary.type = MetricUploader.METRIC_TYPE_TOPLOGY;
+                summary.type = MetricUploader.METRIC_TYPE_TOPOLOGY;
             } else {
                 total += topologyMetrics.get_topologyMetric().get_metrics_size()
                         + topologyMetrics.get_componentMetric().get_metrics_size();
@@ -102,7 +101,7 @@ public class UpdateEvent extends MetricEvent {
                         total += sub;
                         summary.type = MetricUploader.METRIC_TYPE_ALL;
                     } else {
-                        summary.type = MetricUploader.METRIC_TYPE_TOPLOGY;
+                        summary.type = MetricUploader.METRIC_TYPE_TOPOLOGY;
                     }
 
                     LOG.debug("tp:{}, comp:{}, comp_stream:{}, task:{}, worker:{}, netty:{}, stream:{}",

@@ -15,28 +15,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import backtype.storm.Config;
 import backtype.storm.utils.LocalState;
 import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
-import com.alibaba.jstorm.daemon.worker.LocalAssignment;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
-
-import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.daemon.worker.LocalAssignment;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * supervisor heartbeat, just write SupervisorInfo to ZK
@@ -44,6 +48,7 @@ import com.alibaba.jstorm.utils.TimeUtils;
  * @author Johnfang (xiaojian.fxj@alibaba-inc.com)
  */
 class Heartbeat extends RunnableCallback {
+
     private static final Logger LOG = LoggerFactory.getLogger(Heartbeat.class);
 
     private Map<Object, Object> conf;
@@ -60,8 +65,7 @@ class Heartbeat extends RunnableCallback {
     private LocalState localState;
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public Heartbeat(Map conf, StormClusterState stormClusterState, String supervisorId,
-                     LocalState localState) {
+    public Heartbeat(Map conf, StormClusterState stormClusterState, String supervisorId, LocalState localState) {
         String myHostName = JStormServerUtils.getHostName(conf);
         this.stormClusterState = stormClusterState;
         this.supervisorId = supervisorId;
@@ -179,8 +183,8 @@ class Heartbeat extends RunnableCallback {
                 portList.add(freePortList.get(i));
             }
             supervisorInfo.setErrorMessage("Supervisor is lack of resources, " +
-                                          "reduce the number of workers from " + defaultPortList.size() +
-                                          " to " + (usedList.size() + availablePortNum));
+                    "reduce the number of workers from " + defaultPortList.size() +
+                    " to " + (usedList.size() + availablePortNum));
             return portList;
         }
     }
@@ -197,8 +201,8 @@ class Heartbeat extends RunnableCallback {
 
         // do not adjust port list if match the following conditions
         if (cpuUsage <= 0.0  // non-linux,
-            || vcores <= 4   // machine configuration is too low
-            || !ConfigExtension.isSupervisorEnableAutoAdjustSlots(conf) // auto adjust is disabled
+                || vcores <= 4   // machine configuration is too low
+                || !ConfigExtension.isSupervisorEnableAutoAdjustSlots(conf) // auto adjust is disabled
                 ) {
             return defaultList.size() - usedList.size();
         }

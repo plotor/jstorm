@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
 
 import com.alibaba.jstorm.cluster.StormClusterState;
@@ -30,7 +31,9 @@ import java.util.Set;
  * @author xiaojian.fxj
  */
 public class WorkerReportError {
+
     private static Logger LOG = LoggerFactory.getLogger(WorkerReportError.class);
+
     private StormClusterState zkCluster;
     private String hostName;
 
@@ -39,8 +42,7 @@ public class WorkerReportError {
         this.hostName = hostName;
     }
 
-    public void report(String topologyId, Integer workerPort,
-                       Set<Integer> tasks, String error, int errorCode) {
+    public void report(String topologyId, Integer workerPort, Set<Integer> tasks, String error, int errorCode) {
         // Report worker's error to zk
         try {
             Date now = new Date();
