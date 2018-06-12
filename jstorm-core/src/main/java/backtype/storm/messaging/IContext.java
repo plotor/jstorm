@@ -15,9 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.messaging;
 
 import backtype.storm.utils.DisruptorQueue;
+
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * enable context to be configured according to storm configuration.
  */
 public interface IContext {
+
     /**
      * invoked at the startup of messaging plugin
      *
@@ -48,7 +51,7 @@ public interface IContext {
      * establishes a server side connection
      *
      * @param topology_id topology ID
-     * @param port        port #
+     * @param port port #
      * @return server side connection
      */
     IConnection bind(String topology_id, int port, ConcurrentHashMap<Integer, DisruptorQueue> deserializedQueue,
@@ -57,14 +60,15 @@ public interface IContext {
     /**
      * establish a client side connection to a remote server
      *
+     * This interface was just for testing
+     *
      * @param topology_id topology ID
-     * @param host        remote host
-     * @param port        remote port
+     * @param host remote host
+     * @param port remote port
      * @return client side connection
      */
     @Deprecated
-    // This interface was just for testing
     IConnection connect(String topology_id, String host, int port);
-    
+
     IConnection connect(String topology_id, String host, int port, Set<Integer> sourceTasks, Set<Integer> targetTasks);
 }

@@ -16,6 +16,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
 
 import backtype.storm.Config;
@@ -39,15 +40,25 @@ import backtype.storm.utils.WorkerClassLoader;
 import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.*;
+import com.alibaba.jstorm.cluster.Cluster;
+import com.alibaba.jstorm.cluster.ClusterState;
+import com.alibaba.jstorm.cluster.Common;
+import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.common.metric.AsmGauge;
 import com.alibaba.jstorm.common.metric.AsmMetric;
 import com.alibaba.jstorm.common.metric.FullGcGauge;
 import com.alibaba.jstorm.common.metric.QueueGauge;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import com.alibaba.jstorm.daemon.worker.timer.TimerTrigger;
-import com.alibaba.jstorm.metric.*;
+import com.alibaba.jstorm.metric.JStormHealthReporter;
+import com.alibaba.jstorm.metric.JStormMetrics;
+import com.alibaba.jstorm.metric.JStormMetricsReporter;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.MetricType;
+import com.alibaba.jstorm.metric.MetricUtils;
 import com.alibaba.jstorm.schedule.Assignment;
+import static com.alibaba.jstorm.schedule.Assignment.AssignmentType;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormServerUtils;
@@ -58,34 +69,41 @@ import com.codahale.metrics.Gauge;
 import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
-import java.lang.management.GarbageCollectorMXBean;
-import java.lang.management.ManagementFactory;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import java.net.URL;
 import java.security.InvalidParameterException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.alibaba.jstorm.schedule.Assignment.AssignmentType;
-
 public class WorkerData {
+
     private static Logger LOG = LoggerFactory.getLogger(WorkerData.class);
 
     public static final int THREAD_POOL_NUM = 4;
     private ScheduledExecutorService threadPool;
 
     // system configuration
-
     private Map<Object, Object> conf;
     // worker configuration
-
     private Map<Object, Object> stormConf;
 
     // message queue
@@ -250,7 +268,6 @@ public class WorkerData {
                     }
                 }));
 
-
         JStormMetrics.registerWorkerTopologyMetric(JStormMetrics.workerMetricName(MetricDef.FULL_GC, MetricType.GAUGE),
                 new AsmGauge(new FullGcGauge()) {
                     @Override
@@ -324,8 +341,9 @@ public class WorkerData {
                 String[] paths = jarPath.split(":");
                 Set<URL> urls = new HashSet<>();
                 for (String path : paths) {
-                    if (StringUtils.isBlank(path))
+                    if (StringUtils.isBlank(path)) {
                         continue;
+                    }
                     URL url = new URL("File:" + path);
                     urls.add(url);
                 }
@@ -475,7 +493,6 @@ public class WorkerData {
         atomKryoDeserializer.getAndSet(kryoTupleDeserializer);
         atomKryoSerializer.getAndSet(kryoTupleSerializer);
     }
-
 
     /**
      * private ConcurrentHashMap<Integer, WorkerSlot> taskToNodePort;
@@ -641,8 +658,9 @@ public class WorkerData {
     public List<TaskShutdownDameon> getShutdownDaemonbyTaskIds(Set<Integer> taskIds) {
         List<TaskShutdownDameon> ret = new ArrayList<>();
         for (TaskShutdownDameon shutdown : shutdownTasks) {
-            if (taskIds.contains(shutdown.getTaskId()))
+            if (taskIds.contains(shutdown.getTaskId())) {
                 ret.add(shutdown);
+            }
         }
         return ret;
     }

@@ -31,6 +31,7 @@ import java.util.Map;
  * @author Jark (wuchong.wc@alibaba-inc.com)
  */
 public class UpdateListener {
+
     private static final Logger LOG = LoggerFactory.getLogger(UpdateListener.class);
 
     interface IUpdater {

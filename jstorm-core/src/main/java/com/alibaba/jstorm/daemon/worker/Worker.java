@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
 
 import backtype.storm.Config;
@@ -55,6 +56,7 @@ import java.util.concurrent.TimeUnit;
  * @author yannian/Longda
  */
 public class Worker {
+
     private static final Logger LOG = LoggerFactory.getLogger(Worker.class);
 
     /**
@@ -216,11 +218,11 @@ public class Worker {
     /**
      * create worker instance and run it
      *
-     * @param conf         storm conf
-     * @param topologyId   topology id
+     * @param conf storm conf
+     * @param topologyId topology id
      * @param supervisorId supervisor iid
-     * @param port         worker port
-     * @param workerId     worker id
+     * @param port worker port
+     * @param workerId worker id
      * @return WorkerShutDown
      * @throws Exception
      */

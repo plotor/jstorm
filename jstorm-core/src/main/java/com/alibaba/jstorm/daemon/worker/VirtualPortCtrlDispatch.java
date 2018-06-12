@@ -15,24 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-
+import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.serialization.KryoTupleDeserializer;
 import backtype.storm.tuple.Tuple;
+import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.utils.DisruptorRunable;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.esotericsoftware.kryo.KryoException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.messaging.IConnection;
-import backtype.storm.utils.DisruptorQueue;
-
-import com.alibaba.jstorm.utils.DisruptorRunable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * control message dispatcher
@@ -46,8 +45,7 @@ public class VirtualPortCtrlDispatch extends DisruptorRunable {
     protected IConnection recvConnection;
     protected AtomicReference<KryoTupleDeserializer> atomKryoDeserializer;
 
-    public VirtualPortCtrlDispatch(WorkerData workerData, IConnection recvConnection,
-                                   DisruptorQueue recvQueue, String idStr) {
+    public VirtualPortCtrlDispatch(WorkerData workerData, IConnection recvConnection, DisruptorQueue recvQueue, String idStr) {
         super(recvQueue, idStr);
 
         this.recvConnection = recvConnection;
@@ -101,8 +99,9 @@ public class VirtualPortCtrlDispatch extends DisruptorRunable {
             }
             return tuple;
         } catch (Throwable e) {
-            if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e))
+            if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e)) {
                 throw new RuntimeException(e);
+            }
             LOG.error(idStr + " recv thread error " + JStormUtils.toPrintableString(serMsg) + "\n", e);
         }
         return null;
@@ -118,8 +117,9 @@ public class VirtualPortCtrlDispatch extends DisruptorRunable {
             //there might be errors when calling update_topology
             tuple = deserialize(message.message(), task);
         } catch (Throwable e) {
-            if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e))
+            if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e)) {
                 throw new RuntimeException(e);
+            }
             LOG.warn("serialize msg error", e);
         }
 
