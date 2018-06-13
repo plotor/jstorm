@@ -6,4 +6,13 @@ package com.alibaba.jstorm.callback;
  */
 public class AsyncLoopThreadTest {
 
+    /*@Test
+    public void async() throws Exception {
+
+        TimeUnit.SECONDS.sleep(5);
+    }*/
+
+    public static void main(String[] args) {
+        AsyncLoopThread loop = new AsyncLoopThread(new MyRunnableCallback());
+    }
 }

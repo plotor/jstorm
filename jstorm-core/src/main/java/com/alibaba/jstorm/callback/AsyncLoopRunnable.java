@@ -95,6 +95,7 @@ public class AsyncLoopRunnable implements Runnable {
             throw new RuntimeException("AsyncLoopRunnable no core function ");
         }
 
+        // 模板方法
         fn.preRun();
 
         try {
@@ -102,7 +103,7 @@ public class AsyncLoopRunnable implements Runnable {
                 fn.run();
 
                 if (shutdown.get()) {
-                    shutdown();
+                    this.shutdown();
                     return;
                 }
 
@@ -112,13 +113,14 @@ public class AsyncLoopRunnable implements Runnable {
                 }
                 Object rtn = fn.getResult();
                 if (this.needQuit(rtn)) {
-                    shutdown();
+                    System.out.println("quit : " + rtn);
+                    this.shutdown();
                     return;
                 }
             }
         } catch (Throwable e) {
             if (shutdown.get()) {
-                shutdown();
+                this.shutdown();
             } else {
                 LOG.error("Async loop died!!!" + e.getMessage(), e);
                 killFn.execute(e);

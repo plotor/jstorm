@@ -15,26 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.callback;
 
-import java.util.Map;
-import java.util.Set;
-
-import org.jboss.netty.channel.Channel;
+import backtype.storm.utils.DisruptorQueue;
+import com.alibaba.jstorm.message.netty.NettyServerFlowCtrlHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.utils.DisruptorQueue;
-
-import com.alibaba.jstorm.message.netty.NettyServerFlowCtrlHandler;
-
-public class BackpressureCallback implements Callback {
-    private static final Logger LOG = LoggerFactory.getLogger(BackpressureCallback.class);
+public class BackPressureCallback implements Callback {
+    private static final Logger LOG = LoggerFactory.getLogger(BackPressureCallback.class);
 
     private NettyServerFlowCtrlHandler handler;
     private int taskId;
 
-    public BackpressureCallback(NettyServerFlowCtrlHandler handler, int taskId) {
+    public BackPressureCallback(NettyServerFlowCtrlHandler handler, int taskId) {
         this.taskId = taskId;
         this.handler = handler;
     }

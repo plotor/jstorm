@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import backtype.storm.utils.DisruptorQueue;
 
-import com.alibaba.jstorm.callback.BackpressureCallback;
+import com.alibaba.jstorm.callback.BackPressureCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.utils.JStormUtils;
 
@@ -109,7 +109,7 @@ public class NettyServerFlowCtrlHandler {
         }
 
         if (initFlowCtrl)
-            queue.publishCallback(new BackpressureCallback(this, taskId));
+            queue.publishCallback(new BackPressureCallback(this, taskId));
     }
 
     public boolean checkIfUnderFlowCtrl(DisruptorQueue queue) {

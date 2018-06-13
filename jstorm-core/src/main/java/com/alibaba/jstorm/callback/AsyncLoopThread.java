@@ -79,6 +79,7 @@ public class AsyncLoopThread implements SmartThread {
             // 以 afn 的 simpleName 作为线程名称
             threadName = afn.getClass().getSimpleName();
         }
+        // 配置线程
         thread.setName(threadName);
         thread.setDaemon(daemon);
         thread.setPriority(priority);
