@@ -48,10 +48,20 @@ public class RunnableCallback implements Runnable, Callback, Shutdownable {
     public void postRun() {
     }
 
+    /**
+     * 返回当前执行出现的异常信息，如果发生异常，会中断执行
+     *
+     * @return
+     */
     public Exception error() {
         return null;
     }
 
+    /**
+     * 线程睡眠时间（单位：秒），为啥不直接返回 Integer?
+     *
+     * @return
+     */
     public Object getResult() {
         return null;
     }

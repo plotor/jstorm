@@ -54,6 +54,7 @@ public class AsyncLoopThread implements SmartThread {
     }
 
     public void init(RunnableCallback afn, boolean daemon, int priority, boolean start) {
+        // 使用默认的 kill fn
         RunnableCallback kill_fn = new AsyncLoopDefaultKill();
         this.init(afn, daemon, kill_fn, priority, start);
     }

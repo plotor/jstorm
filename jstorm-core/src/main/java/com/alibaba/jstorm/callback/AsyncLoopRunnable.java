@@ -29,13 +29,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * The class wraps RunnableCallback fn, if an exception is thrown, will run killFn
  *
+ * 对于 {@link RunnableCallback} 的包装
+ *
  * @author yannian
  */
 public class AsyncLoopRunnable implements Runnable {
 
     private static Logger LOG = LoggerFactory.getLogger(AsyncLoopRunnable.class);
 
-    // set shutdown as false is to
+    // 标记是否 shutdown
     private static AtomicBoolean shutdown = new AtomicBoolean(false);
     private AtomicBoolean shutdowned = new AtomicBoolean(false);
 
@@ -59,35 +61,6 @@ public class AsyncLoopRunnable implements Runnable {
         this.killFn = killFn;
     }
 
-    private boolean needQuit(Object rtn) {
-        if (rtn != null) {
-            long sleepTime = Long.parseLong(String.valueOf(rtn));
-            if (sleepTime < 0) {
-                return true;
-            } else if (sleepTime > 0) {
-                long now = System.currentTimeMillis();
-                long cost = now - lastTime;
-                long sleepMs = sleepTime * 1000 - cost;
-                if (sleepMs > 0) {
-                    JStormUtils.sleepMs(sleepMs);
-                    lastTime = System.currentTimeMillis();
-                } else {
-                    lastTime = now;
-                }
-
-            }
-        }
-        return false;
-    }
-
-    private void shutdown() {
-        if (!shutdowned.getAndSet(true)) {
-            fn.postRun();
-            fn.shutdown();
-            LOG.info("Successfully shutdown");
-        }
-    }
-
     @Override
     public void run() {
         if (fn == null) {
@@ -100,6 +73,7 @@ public class AsyncLoopRunnable implements Runnable {
 
         try {
             while (!shutdown.get()) {
+                // 执行自定义 callback 逻辑
                 fn.run();
 
                 if (shutdown.get()) {
@@ -111,9 +85,10 @@ public class AsyncLoopRunnable implements Runnable {
                 if (e != null) {
                     throw e;
                 }
+
+                // 获取睡眠时间（单位：秒）
                 Object rtn = fn.getResult();
                 if (this.needQuit(rtn)) {
-                    System.out.println("quit : " + rtn);
                     this.shutdown();
                     return;
                 }
@@ -127,4 +102,43 @@ public class AsyncLoopRunnable implements Runnable {
             }
         }
     }
+
+    /**
+     * 基于指定的间隔时间判定是否终止当前线程，
+     * 如果设置了睡眠时间则不会终止，并执行睡眠
+     *
+     * @param rtn
+     * @return
+     */
+    private boolean needQuit(Object rtn) {
+        if (rtn != null) {
+            long sleepTime = Long.parseLong(String.valueOf(rtn));
+            if (sleepTime < 0) {
+                // 位设置睡眠时间
+                return true;
+            } else if (sleepTime > 0) {
+                long now = System.currentTimeMillis();
+                long cost = now - lastTime;
+                long sleepMs = sleepTime * 1000 - cost; // 期望睡眠时间 - 中间消耗的时间
+                if (sleepMs > 0) {
+                    // 还没有达到期望睡眠时间，继续睡眠
+                    JStormUtils.sleepMs(sleepMs);
+                    lastTime = System.currentTimeMillis();
+                } else {
+                    lastTime = now;
+                }
+
+            }
+        }
+        return false;
+    }
+
+    private void shutdown() {
+        if (!shutdowned.getAndSet(true)) { // 如果之前是 false，则执行 shutdown 逻辑，并标记 shutdowned = true
+            fn.postRun();
+            fn.shutdown();
+            LOG.info("Successfully shutdown");
+        }
+    }
+
 }

@@ -21,8 +21,7 @@ package com.alibaba.jstorm.callback;
 import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
- * Killer callback
- * 当进程被 kill 时回调
+ * Killer callback, 当进程被 kill 时默认的回调函数
  *
  * @author yannian
  */

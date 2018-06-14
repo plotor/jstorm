@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.callback.impl;
 
 import backtype.storm.Config;
@@ -25,10 +26,11 @@ import com.alibaba.jstorm.daemon.nimbus.NimbusData;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import com.alibaba.jstorm.schedule.DelayEventRunnable;
 import com.alibaba.jstorm.utils.JStormUtils;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * The action when nimbus receive kill command
