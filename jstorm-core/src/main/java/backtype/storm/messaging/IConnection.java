@@ -26,6 +26,8 @@ import java.util.List;
 public interface IConnection {
 
     /**
+     * 用于接收消息，flags 表示是否为阻塞的方式（1 表示非阻塞，其他值表示阻塞）
+     *
      * (flags != 1) synchronously (flags==1) asynchronously
      */
     Object recv(Integer taskId, int flags);
@@ -37,6 +39,11 @@ public interface IConnection {
 
     void enqueue(TaskMessage message, Channel channel);
 
+    /**
+     * 向某一个 Task 发送消息
+     *
+     * @param messages
+     */
     void send(List<TaskMessage> messages);
 
     void send(TaskMessage message);
@@ -46,7 +53,7 @@ public interface IConnection {
     boolean available(int taskId);
 
     /**
-     * close this connection
+     * 关闭当前连接
      */
     void close();
 

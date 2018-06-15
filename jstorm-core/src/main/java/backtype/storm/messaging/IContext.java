@@ -32,6 +32,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * A messaging plugin should have a default constructor and implements IContext interface.
  * Upon construction, we will invoke IContext::prepare(storm_conf) to
  * enable context to be configured according to storm configuration.
+ *
+ * 定义了创建和关闭 Socket 连接的方法
  */
 public interface IContext {
 
@@ -48,7 +50,7 @@ public interface IContext {
     void term();
 
     /**
-     * establishes a server side connection
+     * 创建并返回一个 Socket 连接（主要用于接收消息）
      *
      * @param topology_id topology ID
      * @param port port #
@@ -56,6 +58,18 @@ public interface IContext {
      */
     IConnection bind(String topology_id, int port, ConcurrentHashMap<Integer, DisruptorQueue> deserializedQueue,
                      DisruptorQueue recvControlQueue, boolean bstartRec, Set<Integer> workerTasks);
+
+    /**
+     * 创建到指定 host 和 port 的连接（主要用于发送消息）
+     *
+     * @param topology_id
+     * @param host
+     * @param port
+     * @param sourceTasks
+     * @param targetTasks
+     * @return
+     */
+    IConnection connect(String topology_id, String host, int port, Set<Integer> sourceTasks, Set<Integer> targetTasks);
 
     /**
      * establish a client side connection to a remote server
@@ -69,6 +83,4 @@ public interface IContext {
      */
     @Deprecated
     IConnection connect(String topology_id, String host, int port);
-
-    IConnection connect(String topology_id, String host, int port, Set<Integer> sourceTasks, Set<Integer> targetTasks);
 }

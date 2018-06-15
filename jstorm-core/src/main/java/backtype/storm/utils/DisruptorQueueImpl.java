@@ -15,18 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package backtype.storm.utils;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+package backtype.storm.utils;
 
 import com.alibaba.jstorm.callback.Callback;
 import com.alibaba.jstorm.daemon.worker.Flusher;
 import com.alibaba.jstorm.utils.JStormUtils;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.lmax.disruptor.AlertException;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
@@ -37,20 +31,32 @@ import com.lmax.disruptor.SequenceBarrier;
 import com.lmax.disruptor.TimeoutException;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * 
- * A single consumer queue that uses the LMAX Disruptor. They key to the performance is the ability to catch up to the producer by processing tuples in batches.
+ * A single consumer queue that uses the LMAX Disruptor.
+ * They key to the performance is the ability to catch up to the producer by processing tuples in batches.
  */
 public class DisruptorQueueImpl extends DisruptorQueue {
     private static final Logger LOG = LoggerFactory.getLogger(DisruptorQueueImpl.class);
 
+    /** 信号对象，收到该对象时消息的接收循环将被结束 */
     private static final Object INTERRUPT = new Object();
     private static final String PREFIX = "disruptor-";
 
     private final String _queueName;
+    /** 对应 Disruptor 队列的存储 */
     private final RingBuffer<MutableObject> _buffer;
+    /** 对应 Disruptor 队列的接收端 */
     private final Sequence _consumer;
+    /** 等待并获取可读数据 */
     private final SequenceBarrier _barrier;
 
     private boolean _isBatch;
@@ -68,13 +74,15 @@ public class DisruptorQueueImpl extends DisruptorQueue {
     // volatile boolean consumerStartedFlag = false;
     private final HashMap<String, Object> state = new HashMap<>(4);
 
-    public DisruptorQueueImpl(String queueName, ProducerType producerType, int bufferSize, WaitStrategy wait, boolean isBatch, int batchSize, long flushMs) {
+    public DisruptorQueueImpl(String queueName, ProducerType producerType, int bufferSize,
+                              WaitStrategy wait, boolean isBatch, int batchSize, long flushMs) {
         _queueName = PREFIX + queueName;
         _buffer = RingBuffer.create(producerType, new ObjectEventFactory(), bufferSize, wait);
         _consumer = new Sequence();
         _barrier = _buffer.newBarrier();
         _buffer.addGatingSequences(_consumer);
         _isBatch = isBatch;
+        /* 如果队列还未启动就已经有消息进来，就先用 _cache 进行缓存 */
         _cache = new ArrayList<>();
         _inputBatchSize = batchSize;
         if (_isBatch) {
@@ -93,8 +101,9 @@ public class DisruptorQueueImpl extends DisruptorQueue {
     public void consumeBatch(EventHandler<Object> handler) {
         // write pos > read pos
         // Asynchronous release the queue, but still is single thread
-        if (_buffer.getCursor() > _consumer.get())
+        if (_buffer.getCursor() > _consumer.get()) {
             consumeBatchWhenAvailable(handler);
+        }
     }
 
     public void haltWithInterrupt() {
@@ -201,10 +210,11 @@ public class DisruptorQueueImpl extends DisruptorQueue {
             }
         } else {
             try {
-                if (isSync)
+                if (isSync) {
                     consumeBatchToCursor(handler);
-                else
+                } else {
                     asyncConsumeBatchToCursor(handler);
+                }
             } catch (AlertException e) {
                 LOG.error(e.getMessage(), e);
                 throw new RuntimeException(e);
@@ -221,9 +231,17 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         return _barrier.waitFor(nextSequence);
     }
 
+    /**
+     * 访问 buffer 对象获取可读数据
+     *
+     * @param handler
+     * @throws AlertException
+     * @throws InterruptedException
+     * @throws TimeoutException
+     */
     public void consumeBatchToCursor(EventHandler<Object> handler) throws AlertException, InterruptedException, TimeoutException {
         long endCursor = getAvailableConsumeCursor();
-        long curr = _consumer.get() + 1;     
+        long curr = _consumer.get() + 1;
         for (; curr <= endCursor; curr++) {
             try {
                 MutableObject mo = _buffer.get(curr);
@@ -244,8 +262,9 @@ public class DisruptorQueueImpl extends DisruptorQueue {
 
     public void asyncConsumeBatchToCursor(EventHandler<Object> handler) throws AlertException, InterruptedException, TimeoutException {
         List<Object> batch = getConsumeBatch();
-        if (batch == null)
+        if (batch == null) {
             return;
+        }
 
         for (int i = 0; i < batch.size(); i++) {
             try {
@@ -290,9 +309,9 @@ public class DisruptorQueueImpl extends DisruptorQueue {
     public void publish(Object obj) {
         try {
             if (_isBatch) {
-                publishBatch(obj);
+                this.publishBatch(obj);
             } else {
-                publish(obj, true);
+                this.publish(obj, true);
             }
         } catch (InsufficientCapacityException ex) {
             throw new RuntimeException("This code should be unreachable!");
@@ -345,19 +364,29 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         publish(obj, false);
     }
 
+    /**
+     * 用于向 _buffer 中存储数据
+     *
+     * @param obj
+     * @param block 取消息是否阻塞
+     * @throws InsufficientCapacityException
+     */
     public void publish(Object obj, boolean block) throws InsufficientCapacityException {
-        publishDirect(obj, block);
+        this.publishDirect(obj, block);
     }
 
     protected void publishDirect(Object obj, boolean block) throws InsufficientCapacityException {
         final long id;
+        // 获取下一个存储位置的 ID
         if (block) {
             id = _buffer.next();
         } else {
             id = _buffer.tryNext(1);
         }
+        // 获取制定 ID 的消息
         final MutableObject m = _buffer.get(id);
         m.setObject(obj);
+        // 将要发送的消息对象存储到 buffer 中
         _buffer.publish(id);
     }
 

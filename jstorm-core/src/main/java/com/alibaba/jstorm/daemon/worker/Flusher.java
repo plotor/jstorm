@@ -15,13 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
 
 /**
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public abstract class Flusher implements Runnable {
+
     protected long flushIntervalMs;
+
     private static FlusherPool FLUSHER;
 
     public static void setFlusherPool(FlusherPool flusherPool) {
@@ -37,4 +40,5 @@ public abstract class Flusher implements Runnable {
     public void close() {
         FLUSHER.stop(this, flushIntervalMs);
     }
+
 }

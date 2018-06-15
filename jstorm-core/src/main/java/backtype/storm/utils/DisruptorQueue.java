@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.utils;
 
 import backtype.storm.metric.api.IStatefulObject;
@@ -26,10 +27,11 @@ import com.lmax.disruptor.dsl.ProducerType;
 import java.util.List;
 
 /**
- * A single consumer queue that uses the LMAX Disruptor.
+ * A single consumer queue that uses the LMAX Disruptor（线程间通信的高效通信队列）.
  * The key to the performance is the ability to catch up to the producer by processing tuples in batches.
  */
 public abstract class DisruptorQueue implements IStatefulObject {
+
     public static DisruptorQueue mkInstance(String queueName, ProducerType producerType, int bufferSize,
                                             WaitStrategy wait, boolean isBatch, int batchSize, long flushMs) {
         return new DisruptorQueueImpl(queueName, producerType, bufferSize, wait, isBatch, batchSize, flushMs);

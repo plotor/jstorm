@@ -15,9 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.utils;
 
 public class MutableObject {
+
     Object o = null;
 
     public MutableObject() {
@@ -34,4 +36,5 @@ public class MutableObject {
     public Object getObject() {
         return o;
     }
+
 }

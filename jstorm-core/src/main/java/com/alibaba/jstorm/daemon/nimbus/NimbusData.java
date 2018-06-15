@@ -71,14 +71,20 @@ public class NimbusData {
     private final Map<Object, Object> conf;
 
     /**
-     * 储整个集群的状态，从ZK上获取
+     * 储整个集群的状态（写入 ZK，已经从 ZK 上读取）
      */
     private StormClusterState stormClusterState;
 
     // Map<topologyId, Map<taskid, TkHbCacheTime>>
     private ConcurrentHashMap<String, Map<Integer, TkHbCacheTime>> taskHeartbeatsCache;
 
-    // TODO two kind of value:Channel/BufferFileInputStream
+    /**
+     * 定义了downloades和uploaders缓存：
+     *
+     * 当用户提交 topology 的时候，系统会创建一个上传流放入 uploaders 缓存中,
+     * 当 supervisor 从 nimbus 下载 topology 的 jar 包时，系统则会创建一个下载流并将其放入 downloaders 缓存中。
+     * 任何一种操作完成时，其所对应的上传或下载流就会被关闭，且流所传递的内容也会被从缓存中移除。
+     */
     private TimeCacheMap<Object, Object> downloaders;
     private TimeCacheMap<Object, Object> uploaders;
 
@@ -106,6 +112,7 @@ public class NimbusData {
 
     private final ScheduledExecutorService scheduExec;
 
+    /** 当前集群已经提交的 topology 数目 */
     private AtomicInteger submittedCount;
 
     private StatusTransition statusTransition;
@@ -288,6 +295,7 @@ public class NimbusData {
         return clusterName;
     }
 
+    /** 当前 topology 已运行的时间 */
     public int uptime() {
         return (TimeUtils.current_time_secs() - startTime);
     }
