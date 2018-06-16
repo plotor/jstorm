@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.common.metric.old.window;
 
 import com.alibaba.jstorm.callback.Callback;
@@ -44,7 +45,7 @@ public class Metric<T, V> implements Sampling<Map<Integer, T>> {
     protected List<RollingWindow<V>> rollingWindows;
     protected AllWindow<V> allWindow;
 
-    protected int[] windowSeconds = { StatBuckets.MINUTE_WINDOW, StatBuckets.HOUR_WINDOW, StatBuckets.DAY_WINDOW };
+    protected int[] windowSeconds = {StatBuckets.MINUTE_WINDOW, StatBuckets.HOUR_WINDOW, StatBuckets.DAY_WINDOW};
     protected int bucketSize = StatBuckets.NUM_STAT_BUCKETS;
     protected V defaultValue;
     protected Updater<V> updater;

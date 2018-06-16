@@ -22,6 +22,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * 记录当前 Supervisor 的状态
+ */
 public class SupervisorDetails {
 
     String id;

@@ -26,15 +26,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * 集群当前的状态信息，是任务调度器进行任务分配、调度的基础
+ */
 public class Cluster {
     /**
      * key: supervisor id, value: supervisor details
      */
-    private Map<String, SupervisorDetails> supervisors;
+    private Map<String, SupervisorDetails> supervisors; // 所有的 supervisor 信息
     /**
      * key: topologyId, value: topology's current assignments.
      */
-    private Map<String, SchedulerAssignmentImpl> assignments;
+    private Map<String, SchedulerAssignmentImpl> assignments; // 当前所有 topology 的分配信息
     /**
      * key topologyId, Value: scheduler's status.
      */

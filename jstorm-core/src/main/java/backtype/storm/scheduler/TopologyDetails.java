@@ -15,20 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.scheduler;
+
+import backtype.storm.Config;
+import backtype.storm.generated.StormTopology;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import backtype.storm.Config;
-import backtype.storm.generated.StormTopology;
-
+/**
+ * 记录每个 topology 的信息
+ */
 public class TopologyDetails {
-    String topologyId;
-    Map topologyConf;
-    StormTopology topology;
-    Map<ExecutorDetails, String> executorToComponent;
+    String topologyId; // topology id
+    Map topologyConf; // topology 使用过的配置项
+    StormTopology topology; // topology 对象
+    Map<ExecutorDetails, String> executorToComponent; // executor 到所属组件
     int numWorkers;
 
     public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology, int numWorkers) {

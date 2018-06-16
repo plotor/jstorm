@@ -38,11 +38,11 @@ public class SupervisorInfo implements Serializable {
 
     private static final long serialVersionUID = -8384417078907518922L;
 
-    private final String hostName;
+    private final String hostName; // Supervisor 所在机器的主机名称
     private final String supervisorId;
 
-    private Integer timeSecs;
-    private Integer uptimeSecs;
+    private Integer timeSecs; // 最新一次更新 SupervisorInfo 数据的时间
+    private Integer uptimeSecs; // 截止上次心跳更新时的启动时间
     private String version;
     private String buildTs;
     private Integer port;

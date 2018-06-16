@@ -15,9 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.scheduler;
 
+/**
+ * 记录每个 Executor 对应的 startTask 和 endTask，从而保证在计算时每个 Executor 都是一个连续的任务集合
+ */
 public class ExecutorDetails {
+
     int startTask;
     int endTask;
 

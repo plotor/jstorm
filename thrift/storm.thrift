@@ -399,12 +399,22 @@ struct BeginDownloadResult {
 }
 
 service Nimbus {
+
+  // 提交 topology
   string submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: TopologyAssignException tae);
   string submitTopologyWithOpts(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology, 5: SubmitOptions options) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3:TopologyAssignException tae);
+
+  // 杀死 topology
   void killTopology(1: string name) throws (1: NotAliveException e);
   void killTopologyWithOpts(1: string name, 2: KillOptions options) throws (1: NotAliveException e);
+
+  // 激活指定 topology
   void activate(1: string name) throws (1: NotAliveException e);
+
+  // 暂停指定 topology
   void deactivate(1: string name) throws (1: NotAliveException e);
+
+  // 重新调度
   void rebalance(1: string name, 2: RebalanceOptions options) throws (1: NotAliveException e, 2: InvalidTopologyException ite);
   void metricMonitor(1: string name, 2: MonitorOptions options) throws (1: NotAliveException e);
   void restart(1: string name, 2: string jsonConf) throws (1: NotAliveException e, 2: InvalidTopologyException ite, 3: TopologyAssignException tae);
@@ -428,26 +438,29 @@ service Nimbus {
 
   //@deprecated blobstore does these
   void beginLibUpload(1: string libName);
+
+  // 上传文件
   string beginFileUpload();
   void uploadChunk(1: string location, 2: binary chunk);
   void finishFileUpload(1: string location);
 
+  // 下载文件
   string beginFileDownload(1: string file);
   //can stop downloading chunks when receive 0-length byte array back
   binary downloadChunk(1: string id);
   void finishFileDownload(1: string id);
 
   // returns json
-  string getNimbusConf();
+  string getNimbusConf(); // 获取配置项，json 字符串
   string getStormRawConf();
   string getSupervisorConf(1: string id);
 
   //returns json
-  string getTopologyConf(1: string id) throws (1: NotAliveException e);
+  string getTopologyConf(1: string id) throws (1: NotAliveException e); // 获取指定 topology 配置项，json 字符串
   string getTopologyId(1: string topologyName) throws (1: NotAliveException e);
 
   // stats functions
-  ClusterSummary getClusterInfo();
+  ClusterSummary getClusterInfo();  // 获取当前集群总体统计信息
   SupervisorWorkers getSupervisorWorkers(1: string host) throws (1: NotAliveException e);
   SupervisorWorkers getSupervisorWorkersById(1: string id) throws (1: NotAliveException e);
 
@@ -456,7 +469,9 @@ service Nimbus {
   map<i32, string> getTopologyTasksToSupervisorIds(1: string topologyName) throws (1: NotAliveException e);
   map<string, map<string,string>> getTopologyWorkersToSupervisorIds(1: string topologyName) throws (1: NotAliveException e);
 
+  // 获取系统 topology（在用户提交的 topology 基础上添加 acker、metric 等系统定义 bolt 后形成的 topology）
   StormTopology getTopology(1: string id) throws (1: NotAliveException e);
+  // 获取用户提交的 topology
   StormTopology getUserTopology(1: string id) throws (1: NotAliveException e);
   void notifyThisTopologyTasksIsDead(1: string topologyId);
 

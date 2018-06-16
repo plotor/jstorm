@@ -35,6 +35,8 @@ import java.util.Set;
  * masterCodeDir: topology source code's dir in Nimbus
  * taskToResource: {taskId, ResourceAssignment}
  *
+ * 定义了当前 topology 的任务分配情况
+ *
  * @author Lixin/Longda
  */
 public class Assignment implements Serializable {
@@ -47,11 +49,22 @@ public class Assignment implements Serializable {
 
     private static final long serialVersionUID = 6087667851333314069L;
 
+    /**
+     * nimbus 在本地保存该 topology 信息的路径，
+     * 主要包含三个文件：stormjar.jar、stormcode.ser、stormconf.ser
+     */
     private final String masterCodeDir;
+
     /**
      * nodeHost which will be stored in zk
+     *
+     * 定义了当前 topology 被分配到的 <supervisor_id, hostname>
      */
     private final Map<String, String> nodeHost;
+
+    /**
+     * 定义当前 topology 对应的 supervisor 启动时间
+     */
     private final Map<Integer, Integer> taskStartTimeSecs;
     private final Set<ResourceWorkerSlot> workers;
 

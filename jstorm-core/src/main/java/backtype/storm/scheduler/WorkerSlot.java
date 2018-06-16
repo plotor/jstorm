@@ -21,14 +21,14 @@ package backtype.storm.scheduler;
 import java.io.Serializable;
 
 /**
- * slot
+ * 定义一个可用资源，表示某个 supervisor 上的某个端口号
  */
 public class WorkerSlot implements Comparable<WorkerSlot>, Serializable {
 
     private static final long serialVersionUID = -4451854497340313268L;
 
-    String nodeId;
-    int port;
+    String nodeId; // supervisor id
+    int port; // supervisor 上的某个端口号
 
     public WorkerSlot(String nodeId, Number port) {
         this.nodeId = nodeId;

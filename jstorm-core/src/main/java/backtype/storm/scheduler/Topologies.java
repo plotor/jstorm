@@ -15,19 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.scheduler;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 包含一组 topology
+ */
 public class Topologies {
-    Map<String, TopologyDetails> topologies;
-    Map<String, String> nameToId;
+    Map<String, TopologyDetails> topologies; // <topology_id, topology>
+    Map<String, String> nameToId; // <topology_name, topology_id>
 
     public Topologies(Map<String, TopologyDetails> topologies) {
-        if (topologies == null)
+        if (topologies == null) {
             topologies = new HashMap<>();
+        }
         this.topologies = new HashMap<>(topologies.size());
         this.topologies.putAll(topologies);
         this.nameToId = new HashMap<>(topologies.size());

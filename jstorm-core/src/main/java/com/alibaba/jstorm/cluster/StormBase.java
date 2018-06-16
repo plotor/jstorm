@@ -15,25 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.cluster;
 
-import java.io.Serializable;
-
+import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
-import com.alibaba.jstorm.daemon.nimbus.StatusType;
+import java.io.Serializable;
 
 /**
  * Topology base info stored in ZK
+ *
+ * 定义了 topology 的基本信息
  */
-
 public class StormBase implements Serializable {
+
     private static final long serialVersionUID = -3013095336395395213L;
 
-    private String stormName;
-    private int lanchTimeSecs;
-    private StormStatus status;
+    private String stormName; // topology 名称
+    private int lanchTimeSecs; // 启动时间
+    private StormStatus status; // topology 当前状态
     private boolean enableMonitor = true;
     private String group;
 
@@ -103,32 +105,43 @@ public class StormBase implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         StormBase other = (StormBase) obj;
-        if (enableMonitor != other.enableMonitor)
+        if (enableMonitor != other.enableMonitor) {
             return false;
+        }
         if (group == null) {
-            if (other.group != null)
+            if (other.group != null) {
                 return false;
-        } else if (!group.equals(other.group))
+            }
+        } else if (!group.equals(other.group)) {
             return false;
-        if (lanchTimeSecs != other.lanchTimeSecs)
+        }
+        if (lanchTimeSecs != other.lanchTimeSecs) {
             return false;
+        }
         if (status == null) {
-            if (other.status != null)
+            if (other.status != null) {
                 return false;
-        } else if (!status.equals(other.status))
+            }
+        } else if (!status.equals(other.status)) {
             return false;
+        }
         if (stormName == null) {
-            if (other.stormName != null)
+            if (other.stormName != null) {
                 return false;
-        } else if (!stormName.equals(other.stormName))
+            }
+        } else if (!stormName.equals(other.stormName)) {
             return false;
+        }
         return true;
     }
 

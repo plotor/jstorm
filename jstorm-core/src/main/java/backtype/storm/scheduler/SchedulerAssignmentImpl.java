@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.scheduler;
 
 import java.util.ArrayList;
@@ -25,7 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-//TODO: improve this by maintaining slot -> executors as well for more efficient operations
+/**
+ * 定义了当前 topology 的任务分配情况
+ *
+ * TODO: improve this by maintaining slot -> executors as well for more efficient operations
+ */
 public class SchedulerAssignmentImpl implements SchedulerAssignment {
     /**
      * topology-id this assignment is for.

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.common.metric.old;
 
 import java.io.Closeable;
@@ -23,16 +24,16 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Use com.codahale.metrics's interface
- * 
+ *
  * @author zhongyan.feng
- * 
  */
 public class Timer extends Histogram {
+
     private static final long serialVersionUID = 5915881891513771108L;
 
     /**
      * A timing context.
-     * 
+     *
      * @see Timer#time()
      */
     public static class Context implements Closeable {
@@ -65,7 +66,7 @@ public class Timer extends Histogram {
 
     /**
      * Adds a recorded duration.
-     * 
+     *
      * @param duration the length of the duration
      * @param unit the scale unit of {@code duration}
      */
@@ -75,7 +76,7 @@ public class Timer extends Histogram {
 
     /**
      * Times and records the duration of event.
-     * 
+     *
      * @param event a {@link Callable} whose {@link Callable#call()} method implements a process whose duration should be timed
      * @param <T> the type of the value returned by {@code event}
      * @return the value returned by {@code event}
@@ -92,7 +93,7 @@ public class Timer extends Histogram {
 
     /**
      * Returns a new {@link Context}.
-     * 
+     *
      * @return a new {@link Context}
      * @see Context
      */
