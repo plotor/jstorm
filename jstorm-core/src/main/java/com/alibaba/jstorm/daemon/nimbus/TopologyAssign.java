@@ -85,7 +85,7 @@ public class TopologyAssign implements Runnable {
     }
 
     protected NimbusData nimbusData;
-    protected Map<String, ITopologyScheduler> schedulers;
+    protected Map<String, ITopologyScheduler> schedulers; // 调度器
     private Thread thread;
     public static final String DEFAULT_SCHEDULER_NAME = "default";
 

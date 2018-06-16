@@ -257,7 +257,6 @@ public class Cluster {
         String rtn = null;
         if (active_storms != null) {
             for (String topology_id : active_storms) {
-
                 if (!topology_id.contains(storm_name)) {
                     continue;
                 }

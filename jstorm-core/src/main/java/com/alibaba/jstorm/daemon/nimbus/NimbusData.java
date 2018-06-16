@@ -85,8 +85,8 @@ public class NimbusData {
      * 当 supervisor 从 nimbus 下载 topology 的 jar 包时，系统则会创建一个下载流并将其放入 downloaders 缓存中。
      * 任何一种操作完成时，其所对应的上传或下载流就会被关闭，且流所传递的内容也会被从缓存中移除。
      */
-    private TimeCacheMap<Object, Object> downloaders;
-    private TimeCacheMap<Object, Object> uploaders;
+    private TimeCacheMap<Object, Object> downloaders; // <全局唯一标识, InputStream>
+    private TimeCacheMap<Object, Object> uploaders; // <文件路径, Channel>
 
     private TimeCacheMap<Object, Object> blobDownloaders;
     private TimeCacheMap<Object, Object> blobUploaders;

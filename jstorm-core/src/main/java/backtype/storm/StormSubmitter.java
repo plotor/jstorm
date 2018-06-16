@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm;
 
 import backtype.storm.generated.*;
@@ -54,9 +55,9 @@ public class StormSubmitter {
     /**
      * Submits a topology to run on the cluster. A topology runs forever or until explicitly killed.
      *
-     * @param name      the name of the storm.
+     * @param name the name of the storm.
      * @param stormConf the topology-specific configuration. See {@link Config}.
-     * @param topology  the processing to execute.
+     * @param topology the processing to execute.
      * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
@@ -95,15 +96,15 @@ public class StormSubmitter {
     /**
      * Submits a topology to run on the cluster. A topology runs forever or until explicitly killed.
      *
-     * @param name      the name of the storm.
+     * @param name the name of the storm.
      * @param stormConf the topology-specific configuration. See {@link Config}.
-     * @param topology  the processing to execute.
+     * @param topology the processing to execute.
      * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
     public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts)
             throws AlreadyAliveException,
-            InvalidTopologyException {
+                   InvalidTopologyException {
         if (!Utils.isValidConf(stormConf)) {
             throw new IllegalArgumentException("Storm conf is not valid. Must be json-serializable");
         }
@@ -168,9 +169,9 @@ public class StormSubmitter {
     /**
      * Submits a topology to run on the cluster with a progress bar. A topology runs forever or until explicitly killed.
      *
-     * @param name      the name of the storm.
+     * @param name the name of the storm.
      * @param stormConf the topology-specific configuration. See {@link Config}.
-     * @param topology  the processing to execute.
+     * @param topology the processing to execute.
      * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
@@ -183,10 +184,10 @@ public class StormSubmitter {
     /**
      * Submits a topology to run on the cluster with a progress bar. A topology runs forever or until explicitly killed.
      *
-     * @param name      the name of the storm.
+     * @param name the name of the storm.
      * @param stormConf the topology-specific configuration. See {@link Config}.
-     * @param topology  the processing to execute.
-     * @param opts      to manipulate the starting of the topology
+     * @param topology the processing to execute.
+     * @param opts to manipulate the starting of the topology
      * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
@@ -266,8 +267,9 @@ public class StormSubmitter {
             BufferFileInputStream is = new BufferFileInputStream(localJar, bufferSize);
             while (true) {
                 byte[] toSubmit = is.read();
-                if (toSubmit.length == 0)
+                if (toSubmit.length == 0) {
                     break;
+                }
                 client.getClient().uploadChunk(uploadLocation, ByteBuffer.wrap(toSubmit));
             }
             client.getClient().finishFileUpload(uploadLocation);
@@ -291,7 +293,7 @@ public class StormSubmitter {
         /**
          * called before file is uploaded
          *
-         * @param srcFile    - jar file to be uploaded
+         * @param srcFile - jar file to be uploaded
          * @param targetFile - destination file
          * @param totalBytes - total number of bytes of the file
          */
@@ -300,17 +302,17 @@ public class StormSubmitter {
         /**
          * called whenever a chunk of bytes is uploaded
          *
-         * @param srcFile       - jar file to be uploaded
-         * @param targetFile    - destination file
+         * @param srcFile - jar file to be uploaded
+         * @param targetFile - destination file
          * @param bytesUploaded - number of bytes transferred so far
-         * @param totalBytes    - total number of bytes of the file
+         * @param totalBytes - total number of bytes of the file
          */
         void onProgress(String srcFile, String targetFile, long bytesUploaded, long totalBytes);
 
         /**
          * called when the file is uploaded
          *
-         * @param srcFile    - jar file to be uploaded
+         * @param srcFile - jar file to be uploaded
          * @param targetFile - destination file
          * @param totalBytes - total number of bytes of the file
          */

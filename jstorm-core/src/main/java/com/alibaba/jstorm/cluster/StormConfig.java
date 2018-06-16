@@ -374,8 +374,15 @@ public class StormConfig {
         return masterStormTmpRoot(conf) + FILE_SEPERATEOR + topologyId;
     }
 
+    /**
+     * ${storm.local.dir}/nimbus/inbox
+     *
+     * @param conf
+     * @return
+     * @throws IOException
+     */
     public static String masterInbox(Map conf) throws IOException {
-        String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "inbox";
+        String ret = masterLocalDir(conf) + FILE_SEPERATEOR + "inbox"; // ${storm.local.dir}/nimbus/inbox
         try {
             FileUtils.forceMkdir(new File(ret));
         } catch (IOException e) {

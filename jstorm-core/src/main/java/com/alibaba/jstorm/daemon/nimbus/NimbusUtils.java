@@ -452,19 +452,32 @@ public class NimbusUtils {
         }
     }
 
-    public static <T> void transitionName(NimbusData data, String topologyName, boolean errorOnNoTransition,
-                                          StatusType transition_status, T... args)
+    /**
+     * 对指定 topology 实施状态转移
+     *
+     * @param data
+     * @param topologyName
+     * @param errorOnNoTransition
+     * @param transition_status
+     * @param args
+     * @param <T>
+     * @throws Exception
+     */
+    public static <T> void transitionName(
+            NimbusData data, String topologyName, boolean errorOnNoTransition, StatusType transition_status, T... args)
             throws Exception {
+        // 基于 topology_name 获取对应的 topology_id
         StormClusterState stormClusterState = data.getStormClusterState();
         String topologyId = Cluster.get_topology_id(stormClusterState, topologyName);
         if (topologyId == null) {
             throw new NotAliveException(topologyName);
         }
+        // 调用 transition 方法进行状态转移
         transition(data, topologyId, errorOnNoTransition, transition_status, args);
     }
 
-    public static <T> void transition(NimbusData data, String topologyid, boolean errorOnNoTransition,
-                                      StatusType transition_status, T... args) {
+    public static <T> void transition(
+            NimbusData data, String topologyid, boolean errorOnNoTransition, StatusType transition_status, T... args) {
         try {
             data.getStatusTransition().transition(topologyid, errorOnNoTransition, transition_status, args);
         } catch (Exception e) {
@@ -671,7 +684,7 @@ public class NimbusUtils {
     public static int getTopologyMasterId(Map<Integer, TaskInfo> tasksInfo) {
         int ret = 0;
         for (Entry<Integer, TaskInfo> entry : tasksInfo.entrySet()) {
-            if (entry.getValue().getComponentId().equalsIgnoreCase(Common.TOPOLOGY_MASTER_COMPONENT_ID)) {
+            if (entry.getValue().getComponentId().equalsIgnoreCase(Common.TOPOLOGY_MASTER_COMPONENT_ID)) { // __topology_master
                 ret = entry.getKey();
                 break;
             }

@@ -151,7 +151,8 @@ public class Common {
     }
 
     /**
-     * Convert topologyId to topologyName. TopologyId = topoloygName-counter-timeStamp
+     * 由 topology_name 获取 topology_id，topology_id = topology_name-counter-timstamp
+     * eg. passport-risk-compute-trident-topology -> passport-risk-compute-trident-topology-308-1528967840
      */
     public static String topologyIdToName(String topologyId) throws InvalidTopologyException {
         String ret;
@@ -642,13 +643,14 @@ public class Common {
     @SuppressWarnings({"rawtypes"})
     public static StormTopology system_topology(Map storm_conf, StormTopology topology) throws InvalidTopologyException {
         StormTopology ret = topology.deepCopy();
-
-        // 添加 acker
+        // 添加 acker-bolt
         add_acker(storm_conf, ret);
+        // 添加 master-bolt
         addTopologyMaster(storm_conf, ret);
+        // 添加 metrics-bolt
         add_metrics_component(ret);
+        // 添加 system-bolt
         add_system_components(ret);
-
         return ret;
     }
 

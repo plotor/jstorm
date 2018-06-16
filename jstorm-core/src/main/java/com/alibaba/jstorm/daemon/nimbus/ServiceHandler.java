@@ -36,7 +36,7 @@ import backtype.storm.generated.ListBlobsResult;
 import backtype.storm.generated.MetricInfo;
 import backtype.storm.generated.MetricSnapshot;
 import backtype.storm.generated.MonitorOptions;
-import backtype.storm.generated.Nimbus.Iface;
+import backtype.storm.generated.Nimbus;
 import backtype.storm.generated.NimbusSummary;
 import backtype.storm.generated.NotAliveException;
 import backtype.storm.generated.ReadableBlobMeta;
@@ -134,10 +134,13 @@ import java.util.regex.Pattern;
 /**
  * Thrift callback, all commands handling entrance
  *
+ * Nimbus 真正处理请求的地方，负责处理请求信息的逻辑都在这里，
+ * 实现了 Nimbus.thrift 中定义的方法
+ *
  * @author version 1: lixin, version 2:Longda
  */
 @SuppressWarnings("unchecked")
-public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
+public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon {
 
     private final static Logger LOG = LoggerFactory.getLogger(ServiceHandler.class);
 
@@ -145,7 +148,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     private NimbusData data;
 
-    private Map<Object, Object> conf;
+    private Map<Object, Object> conf; // 配置项
 
     public ServiceHandler(NimbusData data) {
         this.data = data;
@@ -173,32 +176,15 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
     }
 
     @Override
-    public String submitTopology(String name, String uploadedJarLocation, String jsonConf, StormTopology topology)
+    public String submitTopology(
+            String name, String uploadedJarLocation, String jsonConf, StormTopology topology)
             throws TException, TopologyAssignException {
         SubmitOptions options = new SubmitOptions(TopologyInitialStatus.ACTIVE);
-        return submitTopologyWithOpts(name, uploadedJarLocation, jsonConf, topology, options);
-    }
-
-    private void makeAssignment(String topologyName, String topologyId, TopologyInitialStatus status)
-            throws FailedAssignTopologyException {
-        TopologyAssignEvent assignEvent = new TopologyAssignEvent();
-        assignEvent.setTopologyId(topologyId);
-        assignEvent.setScratch(false);
-        assignEvent.setTopologyName(topologyName);
-        assignEvent.setOldStatus(Thrift.topologyInitialStatusToStormStatus(status));
-
-        TopologyAssign.push(assignEvent);
-
-        boolean isSuccess = assignEvent.waitFinish();
-        if (isSuccess) {
-            LOG.info("Finished submitting " + topologyName);
-        } else {
-            throw new FailedAssignTopologyException(assignEvent.getErrorMsg());
-        }
+        return this.submitTopologyWithOpts(name, uploadedJarLocation, jsonConf, topology, options);
     }
 
     /**
-     * Submit a topology
+     * Submit a topology，提交一个新的 topology
      *
      * @param topologyName String: topology name
      * @param uploadedJarLocation String: already uploaded jar path
@@ -208,13 +194,14 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public String submitTopologyWithOpts(String topologyName, String uploadedJarLocation, String jsonConf,
-                                         StormTopology topology, SubmitOptions options) throws TException {
+    public String submitTopologyWithOpts(
+            String topologyName, String uploadedJarLocation, String jsonConf, StormTopology topology, SubmitOptions options)
+            throws TException {
         LOG.info("Received topology: " + topologyName + ", uploadedJarLocation:" + uploadedJarLocation);
 
         long start = System.nanoTime();
 
-        //check whether topology name is valid
+        // 验证 topology 名称是否合法
         if (!Common.charValidate(topologyName)) {
             throw new InvalidTopologyException(topologyName + " is not a valid topology name");
         }
@@ -230,7 +217,8 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
         boolean isUpgrade = ConfigExtension.isUpgradeTopology(serializedConf);
 
         try {
-            checkTopologyActive(data, topologyName, enableDeploy || isUpgrade);
+            // 保证没有同名的 topology 在运行
+            this.checkTopologyActive(data, topologyName, enableDeploy || isUpgrade);
         } catch (AlreadyAliveException e) {
             LOG.info(topologyName + " already exists ");
             throw e;
@@ -245,13 +233,13 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
         try {
             if (isUpgrade || enableDeploy) {
                 LOG.info("start to deploy the topology");
-                String topologyId = getTopologyId(topologyName);
+                String topologyId = this.getTopologyId(topologyName); // 基于 topology_name 获取 topology_id
                 if (topologyId == null) {
                     throw new NotAliveException(topologyName);
                 }
 
                 if (isUpgrade) {
-                    TopologyInfo topologyInfo = getTopologyInfo(topologyId);
+                    TopologyInfo topologyInfo = this.getTopologyInfo(topologyId);
                     if (topologyInfo == null) {
                         throw new TException("Failed to get topology info");
                     }
@@ -261,12 +249,10 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
                     Set<String> workers = ConfigExtension.getUpgradeWorkers(serializedConf);
 
                     if (!ConfigExtension.isTmSingleWorker(serializedConf, topologyInfo.get_topology().get_numWorkers())) {
-                        throw new TException("Gray upgrade requires that topology master to be a single worker, " +
-                                "cannot perform the upgrade!");
+                        throw new TException("Gray upgrade requires that topology master to be a single worker, cannot perform the upgrade!");
                     }
 
-                    return grayUpgrade(topologyId, uploadedJarLocation,
-                            topology, serializedConf, component, workers, workerNum);
+                    return this.grayUpgrade(topologyId, uploadedJarLocation, topology, serializedConf, component, workers, workerNum);
                 } else {
                     LOG.info("start to kill old topology {}", topologyId);
                     Map oldConf = new HashMap();
@@ -360,7 +346,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
             double metricsSampleRate = ConfigExtension.getMetricSampleRate(stormConf);
             StartTopologyEvent.pushEvent(topologyId, metricsSampleRate);
 
-            notifyTopologyActionListener(topologyName, "submitTopology");
+            this.notifyTopologyActionListener(topologyName, "submitTopology");
         } catch (InvalidTopologyException e) {
             LOG.error("Topology is invalid. {}", e.get_msg());
             throw e;
@@ -380,6 +366,24 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
         return topologyId;
     }
 
+    private void makeAssignment(String topologyName, String topologyId, TopologyInitialStatus status)
+            throws FailedAssignTopologyException {
+        TopologyAssignEvent assignEvent = new TopologyAssignEvent();
+        assignEvent.setTopologyId(topologyId);
+        assignEvent.setScratch(false);
+        assignEvent.setTopologyName(topologyName);
+        assignEvent.setOldStatus(Thrift.topologyInitialStatusToStormStatus(status));
+
+        TopologyAssign.push(assignEvent);
+
+        boolean isSuccess = assignEvent.waitFinish();
+        if (isSuccess) {
+            LOG.info("Finished submitting " + topologyName);
+        } else {
+            throw new FailedAssignTopologyException(assignEvent.getErrorMsg());
+        }
+    }
+
     /**
      * kill a topology
      *
@@ -387,14 +391,14 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
      */
     @Override
     public void killTopology(String topologyName) throws TException {
-        killTopologyWithOpts(topologyName, new KillOptions());
+        this.killTopologyWithOpts(topologyName, new KillOptions());
     }
 
     @Override
     public void killTopologyWithOpts(String topologyName, KillOptions options) throws TException {
         try {
-            checkTopologyActive(data, topologyName, true);
-            String topologyId = getTopologyId(topologyName);
+            this.checkTopologyActive(data, topologyName, true);
+            String topologyId = this.getTopologyId(topologyName);
 
             Integer wait_amt = null;
             if (options.is_set_wait_secs()) {
@@ -403,7 +407,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
             NimbusUtils.transitionName(data, topologyName, true, StatusType.kill, wait_amt);
 
             KillTopologyEvent.pushEvent(topologyId);
-            notifyTopologyActionListener(topologyName, "killTopology");
+            this.notifyTopologyActionListener(topologyName, "killTopology");
         } catch (NotAliveException e) {
             String errMsg = "KillTopology Error, topology " + topologyName + " is not alive!";
             LOG.error(errMsg, e);
@@ -623,17 +627,18 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     /**
      * prepare to upload topology jar, return the file location
+     *
+     * 为上传的 topology jar 设置路径和 Channel，并返回路径值
      */
     @Override
     public String beginFileUpload() throws TException {
         String fileLoc = null;
         try {
-            String path;
             String key = UUID.randomUUID().toString();
-            path = StormConfig.masterInbox(conf) + "/" + key;
+            String path = StormConfig.masterInbox(conf) + "/" + key; // ${storm.local.dir}/nimbus/inbox/${key}
             FileUtils.forceMkdir(new File(path));
             FileUtils.cleanDirectory(new File(path));
-            fileLoc = path + "/stormjar-" + key + ".jar";
+            fileLoc = path + "/stormjar-" + key + ".jar"; // ${storm.local.dir}/nimbus/inbox/${key}/stormjar-${key}.jar
 
             data.getUploaders().put(fileLoc, Channels.newChannel(new FileOutputStream(fileLoc)));
             LOG.info("Begin upload file from client to " + fileLoc);
@@ -649,6 +654,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     /**
      * upload topology jar data
+     * 基于文件路径从 uploaders 中找到对应的 WritableByteChannel，并将 ByteBuffer 中的数据写入其中，最后更新回 uploaders 中
      */
     @Override
     public void uploadChunk(String location, ByteBuffer chunk) throws TException {
@@ -673,6 +679,12 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     }
 
+    /**
+     * 关闭指定路径文件对应的 WritableByteChannel，同时从 uploaders 中移除
+     *
+     * @param location
+     * @throws TException
+     */
     @Override
     public void finishFileUpload(String location) throws TException {
         TimeCacheMap<Object, Object> uploaders = data.getUploaders();
@@ -695,14 +707,19 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     }
 
+    /**
+     * 为指定文件创建一个 BufferFileInputStream，并设置一个全局唯一的 ID 记录到 downloaders 中
+     *
+     * @param file
+     * @return
+     * @throws TException
+     */
     @Override
     public String beginFileDownload(String file) throws TException {
-        BufferFileInputStream is;
         String id;
         try {
             int bufferSize = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE), 1024 * 1024) / 2;
-
-            is = new BufferFileInputStream(file, bufferSize);
+            BufferFileInputStream is = new BufferFileInputStream(file, bufferSize);
             id = UUID.randomUUID().toString();
             data.getDownloaders().put(id, is);
         } catch (FileNotFoundException e) {
@@ -723,7 +740,6 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
         try {
             if (obj instanceof BufferFileInputStream) {
-
                 BufferFileInputStream is = (BufferFileInputStream) obj;
                 byte[] ret = is.read();
                 if (ret != null) {
@@ -946,6 +962,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     /**
      * get cluster's summary, it will contain SupervisorSummary and TopologySummary
+     * 获取当前集群的统计信息，包括系统资源占用、Nimbus 服务运行时长，以及当前 topology 的运行统计等
      *
      * @return ClusterSummary
      */
@@ -960,7 +977,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
             // get TopologySummary
             List<TopologySummary> topologySummaries = NimbusUtils.getTopologySummary(stormClusterState, assignments);
 
-            // all supervisors
+            // all supervisors：<supervisor_id, SupervisorInfo>
             Map<String, SupervisorInfo> supervisorInfos = Cluster.get_all_SupervisorInfo(stormClusterState, null);
 
             // generate SupervisorSummaries
@@ -1129,6 +1146,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     /**
      * Get TopologyInfo, it contain all topology running data
+     * 获取一个 topology 的运行信息
      *
      * @return TopologyInfo
      */
@@ -1422,7 +1440,6 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
             if (topologyId != null) {
                 return topologyId;
             }
-
         } catch (Exception e) {
             LOG.info("Failed to get getTopologyId " + topologyName, e);
             throw new TException("Failed to get getTopologyId " + topologyName);
@@ -1442,12 +1459,14 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
     public StormTopology getTopology(String id) throws TException {
         StormTopology topology;
         try {
+            // 从本地（jstorm-local/nimbus/stormlist/{topology_id}/stormcode.ser）获取对应的 storm 对象
             StormTopology stormtopology = StormConfig.read_nimbus_topology_code(id, data.getBlobStore());
             if (stormtopology == null) {
                 throw new NotAliveException("No topology of " + id);
             }
-
+            // 从本地读取 topology 的配置项
             Map<Object, Object> topologyConf = (Map<Object, Object>) StormConfig.read_nimbus_topology_conf(id, data.getBlobStore());
+            // 为当前 topology 添加系统组件（acker-bolt、master-bolt、metrics-bolt、system-bolt等等）
             topology = Common.system_topology(topologyConf, stormtopology);
         } catch (Exception e) {
             LOG.error("Failed to get topology " + id + ",", e);
@@ -1456,6 +1475,13 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
         return topology;
     }
 
+    /**
+     * 相对于 getTopology 的区别在于这里返回的信息不包含系统组件（acker-bolt, master-bolt, metric-bolt, system-bolt 等）
+     *
+     * @param id
+     * @return
+     * @throws TException
+     */
     @Override
     public StormTopology getUserTopology(String id) throws TException {
         try {
@@ -1463,7 +1489,6 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
             if (stormtopology == null) {
                 throw new NotAliveException("No topology of " + id);
             }
-
             return stormtopology;
         } catch (Exception e) {
             LOG.error("Failed to get topology " + id + ",", e);
@@ -1472,12 +1497,12 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
     }
 
     /**
-     * check whether the topology is bActive?
+     * 检查指定 storm 的状态是不是为 {@code bActive}
      *
      * @throws Exception
      */
     public void checkTopologyActive(NimbusData nimbus, String topologyName, boolean bActive) throws Exception {
-        if (isTopologyActive(nimbus.getStormClusterState(), topologyName) != bActive) {
+        if (this.isTopologyActive(nimbus.getStormClusterState(), topologyName) != bActive) {
             if (bActive) {
                 throw new NotAliveException(topologyName + " is not alive");
             } else {
@@ -1488,6 +1513,7 @@ public class ServiceHandler implements Iface, Shutdownable, DaemonCommon {
 
     /**
      * whether the topology is active by topology name
+     * 判断指定 topology 是不是处于活跃状态
      *
      * @param stormClusterState see Cluster_clj
      * @param topologyName topology name

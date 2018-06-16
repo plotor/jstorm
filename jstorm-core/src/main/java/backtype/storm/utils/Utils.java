@@ -265,7 +265,6 @@ public class Utils {
         if (json == null) {
             return null;
         } else {
-            // return JSON.parse(json);
             return JSONValue.parse(json);
         }
     }

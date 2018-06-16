@@ -177,7 +177,7 @@ struct TopologySummary {
   1: required string id;
   2: required string name;
   3: required string status;
-  4: required i32 uptimeSecs;
+  4: required i32 uptimeSecs; // 运行时长
   5: required i32 numTasks;
   6: required i32 numWorkers;
   7: optional string errorInfo;
@@ -189,11 +189,11 @@ struct TopologySummary {
  * 主要供 Nimbus 使用
  **/
 struct SupervisorSummary {
-  1: required string host;
-  2: required string supervisorId;
-  3: required i32 uptimeSecs;
-  4: required i32 numWorkers;
-  5: required i32 numUsedWorkers; // 已经占用的 Worker 数目
+  1: required string host; // 主机名
+  2: required string supervisorId; // ID
+  3: required i32 uptimeSecs; // 启动时间
+  4: required i32 numWorkers; // 可以使用的端口数目
+  5: required i32 numUsedWorkers; // 已经使用的端口数目
   6: optional string version;
   7: optional string buildTs;
   8: optional i32 port;
@@ -338,12 +338,15 @@ struct Credentials {
   1: required map<string,string> creds;
 }
 
+// topology 初始化状态
 enum TopologyInitialStatus {
     ACTIVE = 1,
     INACTIVE = 2
 }
+
+// topology 提交选项
 struct SubmitOptions {
-  1: required TopologyInitialStatus initial_status;
+  1: required TopologyInitialStatus initial_status; // 初始化状态
   2: optional Credentials creds;
 }
 

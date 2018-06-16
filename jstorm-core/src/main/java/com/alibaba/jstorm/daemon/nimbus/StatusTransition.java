@@ -68,7 +68,7 @@ public class StatusTransition {
         }
 
         synchronized (lock) {
-            transitionLock(topologyId, errorOnNoTransition, changeStatus, args);
+            this.transitionLock(topologyId, errorOnNoTransition, changeStatus, args);
             // update the lock times
             topologyLocks.put(topologyId, lock);
         }
@@ -84,15 +84,13 @@ public class StatusTransition {
         // get ZK's topology node's data, which is StormBase
         StormBase stormbase = data.getStormClusterState().storm_base(topologyId, null);
         if (stormbase == null) {
-            LOG.error("Cannot apply event: changing status " + topologyId + " -> " + changeStatus.getStatus() +
-                    ", cause: failed to get StormBase from ZK");
+            LOG.error("Cannot apply event: changing status " + topologyId + " -> " + changeStatus.getStatus() + ", cause: failed to get StormBase from ZK");
             return;
         }
 
         StormStatus currentStatus = stormbase.getStatus();
         if (currentStatus == null) {
-            LOG.error("Cannot apply event: changing status " + topologyId + " -> " + changeStatus.getStatus() +
-                    ", cause: topologyStatus is null in ZK");
+            LOG.error("Cannot apply event: changing status " + topologyId + " -> " + changeStatus.getStatus() + ", cause: topologyStatus is null in ZK");
             return;
         }
 
@@ -102,8 +100,7 @@ public class StatusTransition {
         // get current changingCallbacks
         Map<StatusType, Callback> changingCallbacks = callbackMap.get(currentStatus.getStatusType());
 
-        if (changingCallbacks == null || !changingCallbacks.containsKey(changeStatus) ||
-                changingCallbacks.get(changeStatus) == null) {
+        if (changingCallbacks == null || !changingCallbacks.containsKey(changeStatus) || changingCallbacks.get(changeStatus) == null) {
             String msg = "No transition for event: changing status:" + changeStatus.getStatus() +
                     ", current status: " + currentStatus.getStatusType() + ", topology-id: " + topologyId;
             LOG.info(msg);

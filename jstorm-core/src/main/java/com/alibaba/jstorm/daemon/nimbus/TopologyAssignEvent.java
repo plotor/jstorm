@@ -30,7 +30,7 @@ public class TopologyAssignEvent {
     private String topologyId;
     private String topologyName; // if this field has been set, it is create topology
     private String group;
-    private boolean isScratch; // FIXME 是否是从头开始？
+    private boolean isScratch; // 是否需要重新调度
     private boolean isReassign;
     private StormStatus oldStatus; // if this field has been set, it is rebalance
     private CountDownLatch latch = new CountDownLatch(1);

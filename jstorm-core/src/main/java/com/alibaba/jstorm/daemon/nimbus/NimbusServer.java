@@ -127,7 +127,7 @@ public class NimbusServer {
     /**
      * 启动 nimbus 服务
      *
-     * @param conf
+     * @param conf 配置项
      * @param inimbus
      */
     @SuppressWarnings("rawtypes")
@@ -147,7 +147,7 @@ public class NimbusServer {
             // 3. 注册 shutdown hook 方法，用于执行在 JVM 进程终止时的清理逻辑
             this.initShutdownHook();
 
-            // 4. 模板方法
+            // 4. 目前 prepare 的实现为空
             inimbus.prepare(conf, StormConfig.masterInimbus(conf));
 
             // 5. 基于 conf 创建 NimbusData 对象
@@ -254,7 +254,7 @@ public class NimbusServer {
         this.initTopologyAssign();
 
         // 状态更新
-        initTopologyStatus();
+        this.initTopologyStatus();
 
         // 清除函数
         initCleaner(conf);
@@ -286,12 +286,16 @@ public class NimbusServer {
         topologyAssign.init(data);
     }
 
+    /**
+     * 初始化 topology 运行状态，这里设置为 {@code StatusType.startup}
+     *
+     * @throws Exception
+     */
     private void initTopologyStatus() throws Exception {
         // get active topology in ZK
         List<String> active_ids = data.getStormClusterState().active_storms();
 
         if (active_ids != null) {
-
             for (String topologyid : active_ids) {
                 // set the topology status as startup
                 // in fact, startup won't change anything
@@ -412,6 +416,9 @@ public class NimbusServer {
         });
     }
 
+    /**
+     * 服务停止时的清理工作
+     */
     public void cleanup() {
         if (data == null || data.getIsShutdown().getAndSet(true)) {
             LOG.info("Notify to quit nimbus");
@@ -424,7 +431,6 @@ public class NimbusServer {
         data.getScheduExec().shutdownNow();
 
         for (AsyncLoopThread t : smartThreads) {
-
             t.cleanup();
             JStormUtils.sleepMs(10);
             t.interrupt();
