@@ -94,6 +94,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+/**
+ * Worker 相关数据
+ */
 public class WorkerData {
 
     private static Logger LOG = LoggerFactory.getLogger(WorkerData.class);
@@ -121,7 +124,7 @@ public class WorkerData {
     private StatusType topologyStatus;
 
     // ZK interface
-    private ClusterState zkClusterState;
+    private ClusterState zkClusterState;  // Cluster 状态信息
     private StormClusterState zkCluster;
 
     // running taskId list in current worker

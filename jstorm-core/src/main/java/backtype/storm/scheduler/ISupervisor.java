@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.scheduler;
 
 import java.util.Map;
 import java.util.Collection;
 
 public interface ISupervisor {
+
     void prepare(Map stormConf, String schedulerLocalDir);
 
     /**

@@ -47,6 +47,11 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * Supervisor 可以理解为单机任务调度器，它负责监听 Nimbus 的任务调度，
+ * 启动相应的 Worker 对 Nimbus 分配的任务进行处理，同时监测 Worker 的
+ * 运行状态，一旦发现有 Worker 有异常，就会杀死该 Worker，并将原先分配
+ * 给 Worker 的任务交还给 Nimbus 重新分配
+ *
  * Supervisor workflow
  *
  * 1. write SupervisorInfo to ZK

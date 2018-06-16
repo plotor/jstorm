@@ -20,11 +20,21 @@ package backtype.storm.scheduler;
 
 import java.util.Map;
 
+/**
+ * 调度器
+ */
 public interface IScheduler {
 
+    /**
+     * 执行一些初始化工作
+     *
+     * @param conf
+     */
     void prepare(Map conf);
 
     /**
+     * 执行任务分配
+     *
      * Set assignments for the topologies which needs scheduling.
      * The new assignments is available through <code>cluster.getAssignments()</code>
      *

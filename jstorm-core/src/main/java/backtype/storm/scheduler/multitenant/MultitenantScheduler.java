@@ -24,13 +24,19 @@ import backtype.storm.scheduler.IScheduler;
 import backtype.storm.scheduler.Topologies;
 import backtype.storm.scheduler.TopologyDetails;
 import com.alibaba.jstorm.utils.LoadConf;
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ * 多租户调度器
+ */
 public class MultitenantScheduler implements IScheduler {
+
     private static final Logger LOG = LoggerFactory.getLogger(MultitenantScheduler.class);
+
     @SuppressWarnings("rawtypes")
     private Map _conf;
 

@@ -457,9 +457,9 @@ class SyncProcessEvent extends ShutdownWork {
             LOG.info("topology id not equal whb=" + whb.getTopologyId() + ",localAssignment=" + localAssignment.getTopologyId());
             isMatch = false;
         }/*
-          * else if (!(whb.getTaskIds().equals(localAssignment.getTaskIds()))) { // task-id isn't equal LOG.info("task-id isn't equal whb=" + whb.getTaskIds() +
-          * ",localAssignment=" + localAssignment.getTaskIds()); isMatch = false; }
-          */
+         * else if (!(whb.getTaskIds().equals(localAssignment.getTaskIds()))) { // task-id isn't equal LOG.info("task-id isn't equal whb=" + whb.getTaskIds() +
+         * ",localAssignment=" + localAssignment.getTaskIds()); isMatch = false; }
+         */
 
         return isMatch;
     }

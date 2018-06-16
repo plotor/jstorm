@@ -57,20 +57,21 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * JStorm的主节点上运行着nimbus的守护进程，主要负责与ZK通信，分发代码，给集群中的从节点分配任务，监视集群状态等等。
- * 此外nimbus需要维护的所有状态都会存储在ZK中，JStorm为了减少对ZK的访问次数做了一些缓存
- *
  * NimbusServer workflow:
  * 1. cleanup interrupted topology delete /storm-local-dir/nimbus/topologyid/stormdis delete /storm-zk-root/storms/topologyid
  * 2. set /storm-zk-root/storms/topology stats as run
- * 3. start one thread, every nimbus.monitor.freq.secs set /storm-zk-root/storms/ all topology as monitor.
- * when the topology's status is monitor, nimbus would reassign workers
+ * 3. start one thread, every nimbus.monitor.freq.secs set /storm-zk-root/storms/ all topology as monitor. when the topology's status is monitor, nimbus would reassign workers
  * 4. start one thread, every nimbus.cleanup.inbox.freq.secs cleanup useless jar
  *
- * 清除中断的Topology（删除本地目录/storm-local-dir/nimbus/topologyid/stormdis和zk上的/storm-zk-root/storms/topologyid）
- * 设置/storm-zk-root/storms/topology中的Topology状态为active
- * 启动一个monitor线程，每nimbus.monitor.reeq.secs检查/storm-zk-root/storms中所有Topology状态，如果Topology中有task是不活动的则讲Topology状态转换为monitor（这个状态下nimbus会重新分配workers）
- * 启动一个cleaner线程，每nimubs.cleanup.inbox.freq.secs清除无用的jar
+ *
+ * JStorm的主节点上运行着nimbus的守护进程，主要负责与ZK通信，分发代码，给集群中的从节点分配任务，监视集群状态等等。
+ * 此外nimbus需要维护的所有状态都会存储在ZK中，JStorm为了减少对ZK的访问次数做了一些缓存
+ *
+ * NimbusServer 运行流程：
+ * 1. 清除中断的 topology（删除本地目录 /storm-local-dir/nimbus/${topology_id}/stormdis 和 zk 上的 /storm-zk-root/storms/${topology_id}）
+ * 2. 设置 /storm-zk-root/storms/topology 中的 topology 状态为 active
+ * 3. 启动一个 monitor 线程，每 ${nimbus.monitor.reeq.secs} 检查 /storm-zk-root/storms 中所有 topology 状态，如果 topology 中有 task 是不活动的，则将其状态转换为 monitor，并重新分配 workers
+ * 4. 启动一个 cleaner 线程，每 ${nimubs.cleanup.inbox.freq.secs} 清除无用的 jar
  *
  * @author version 1: Nathan Marz version 2: Lixin/Chenjun version 3: Longda
  */
@@ -96,9 +97,16 @@ public class NimbusServer {
         // 设置默认的线程异常处理器
         Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
 
-        // 加载集群配置信息
+        /*
+         * 加载并解析集群配置信息，全部以 KV 的形式封装到 Map 中：
+         * 1. 解析 default.yaml
+         * 2. 解析 storm.yaml
+         * 3. 解析 -Dstorm.options 指定的命令行参数
+         * 4. 替换所有配置项中的 JSTORM_HOME 占位符
+         */
         Map config = Utils.readStormConfig();
 
+        // 空实现
         JStormServerUtils.startTaobaoJvmMonitor();
 
         NimbusServer instance = new NimbusServer();
@@ -135,19 +143,18 @@ public class NimbusServer {
         LOG.info("Begin to start nimbus with conf " + conf);
 
         try {
-            // 1. 验证当前为分布式运行模式
+            // 1. 验证当前为分布式运行模式，不允许以本地模式运行
             StormConfig.validate_distributed_mode(conf);
 
             /*
-             * 2. 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}
-             *    如果存在历史运行记录，则会进行清除
+             * 2. 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}，如果存在历史运行记录，则会进行清除
              */
             this.createPid(conf);
 
             // 3. 注册 shutdown hook 方法，用于执行在 JVM 进程终止时的清理逻辑
             this.initShutdownHook();
 
-            // 4. 目前 prepare 的实现为空
+            // 4. 空方法
             inimbus.prepare(conf, StormConfig.masterInimbus(conf));
 
             // 5. 基于 conf 创建 NimbusData 对象

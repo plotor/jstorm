@@ -79,7 +79,7 @@ public class NimbusData {
     private ConcurrentHashMap<String, Map<Integer, TkHbCacheTime>> taskHeartbeatsCache;
 
     /**
-     * 定义了downloades和uploaders缓存：
+     * 定义了 downloades 和 uploaders 缓存：
      *
      * 当用户提交 topology 的时候，系统会创建一个上传流放入 uploaders 缓存中,
      * 当 supervisor 从 nimbus 下载 topology 的 jar 包时，系统则会创建一个下载流并将其放入 downloaders 缓存中。
@@ -152,8 +152,13 @@ public class NimbusData {
     public NimbusData(final Map conf, INimbus inimbus) throws Exception {
         this.conf = conf;
 
+        /*
+         * 初始化上传和下载通道缓存，
+         * 并为其设置一个守护线程按照设定的过期时间定期对通道进行关闭
+         */
         this.createFileHandler();
         this.mkBlobCacheMap();
+        // TODO by zhenchao 2018-06-16 17:27:30
         this.nimbusHostPortInfo = NimbusInfo.fromConf(conf);
         this.blobStore = BlobStoreUtils.getNimbusBlobStore(conf, nimbusHostPortInfo);
 
@@ -213,7 +218,8 @@ public class NimbusData {
     }
 
     /**
-     * 创建上传和下载通道，并设置一个守护线程按照设定的过期时间定期对通道进行关闭
+     * 初始化上传和下载通道缓存，
+     * 并为其设置一个守护线程按照设定的过期时间定期对通道进行关闭
      */
     public void createFileHandler() {
         // 注册一个 callback 方法，基于回调的方式关闭管道或输入流
@@ -239,7 +245,7 @@ public class NimbusData {
         };
 
         /*
-         * 获取超时时间，默认为 30 秒
+         * 获取文件上传和下载的超时时间，默认为 30 秒
          *
          * During upload/download with the master,
          * how long an upload or download connection is idle before nimbus considers it dead and drops the connection.
@@ -249,14 +255,14 @@ public class NimbusData {
         /*
          * {@link TimeCacheMap} 在实例化时会启动一个守护线程，
          * 并依据超时时间循环从 buckets 中去除对象，并应用执行 callback 的 expire 方法
-         * 这里的 expire 逻辑就是执行关闭管道或输入流
+         * 这里的 expire 逻辑是执行关闭管道或输入流
          */
         uploaders = new TimeCacheMap<>(file_copy_expiration_secs, expiredCallback);
         downloaders = new TimeCacheMap<>(file_copy_expiration_secs, expiredCallback);
     }
 
     /**
-     *
+     * 同 createFileHandler
      */
     public void mkBlobCacheMap() {
         ExpiredCallback<Object, Object> expiredCallback = new ExpiredCallback<Object, Object>() {

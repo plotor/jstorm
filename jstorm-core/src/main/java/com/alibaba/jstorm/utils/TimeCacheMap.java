@@ -55,7 +55,7 @@ public class TimeCacheMap<K, V> implements TimeOutMap<K, V> {
         final long expirationMillis = expirationSecs * 1000L;
         final long sleepTime = expirationMillis / (numBuckets - 1);
 
-        /**
+        /*
          * cleaner 线程会一直循环的执行，
          * 从缓冲区尾部中获取对象，并应用到 callback 的 expire 方法
          */

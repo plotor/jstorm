@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.yarn.container;
 
 import com.alibaba.jstorm.yarn.constants.JOYConstants;
@@ -98,8 +99,9 @@ public class Executor {
 
             LOG.info("can't get heartbeat over " + String.valueOf(JOYConstants.EXECUTOR_HEARTBEAT_TIMEOUT) + " seconds");
             return false;
-        } else
+        } else {
             return true;
+        }
     }
 
     /**
@@ -124,8 +126,9 @@ public class Executor {
                     new BufferedReader
                             (new InputStreamReader(p.getInputStream()));
             while ((line = input.readLine()) != null) {
-                if (line.contains("fail"))
+                if (line.contains("fail")) {
                     exist = false;
+                }
                 LOG.info("process read :" + line.toString());
             }
             input.close();
@@ -247,7 +250,7 @@ public class Executor {
             //set system env
             LOG.info(JOYConstants.CONTAINER_SUPERVISOR_HEARTBEAT + JOYConstants.EQUAL + executorMeta.getLocalDir() + JOYConstants.JSTORM_SUPERVISOR_HEARTBEAT_PATH);
             Process p = Runtime.getRuntime().exec(command.toString(),
-                    new String[]{JOYConstants.CONTAINER_SUPERVISOR_HEARTBEAT + JOYConstants.EQUAL + executorMeta.getLocalDir() + JOYConstants.JSTORM_SUPERVISOR_HEARTBEAT_PATH,
+                    new String[] {JOYConstants.CONTAINER_SUPERVISOR_HEARTBEAT + JOYConstants.EQUAL + executorMeta.getLocalDir() + JOYConstants.JSTORM_SUPERVISOR_HEARTBEAT_PATH,
                             JOYConstants.CONTAINER_NIMBUS_HEARTBEAT + JOYConstants.EQUAL + executorMeta.getLocalDir() + JOYConstants.JSTORM_NIMBUS_HEARTBEAT_PATH});
             //wait 30 seconds
             Thread.sleep(JOYConstants.EXECUTOR_LOOP_TIME);
@@ -313,8 +316,9 @@ public class Executor {
         String supervisorLogView = args[13];
         String nimbusThriftPort = args[14];
         String shellArgs = "";
-        if (args.length > 14)
+        if (args.length > 14) {
             shellArgs = args[14];
+        }
 
         try {
             Executor executor = new Executor(instanceName, shellCommand, startType.equals(JOYConstants.NIMBUS) ? STARTType.NIMBUS : STARTType.SUPERVISOR,
