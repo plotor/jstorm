@@ -158,8 +158,8 @@ public class NimbusData {
          */
         this.createFileHandler();
         this.mkBlobCacheMap();
-        // TODO by zhenchao 2018-06-16 17:27:30
         this.nimbusHostPortInfo = NimbusInfo.fromConf(conf);
+        // local blob or hdfs blob
         this.blobStore = BlobStoreUtils.getNimbusBlobStore(conf, nimbusHostPortInfo);
 
         this.isLaunchedCleaner = false;

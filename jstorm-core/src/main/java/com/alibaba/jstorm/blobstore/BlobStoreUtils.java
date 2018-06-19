@@ -68,7 +68,7 @@ public class BlobStoreUtils {
     public static CuratorFramework createZKClient(Map conf) throws Exception {
         CuratorFramework zkClient = null;
         try {
-            List<String> zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
+            List<String> zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS); // storm.zookeeper.servers
             Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
             zkClient = Utils.newCurator(conf, zkServers, port, (String) conf.get(Config.STORM_ZOOKEEPER_ROOT));
             zkClient.start();
