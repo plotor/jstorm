@@ -62,7 +62,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * 2.3 assign new task to /local-dir/supervisor/localstate
  * 2.4 add one syncProcesses event
  *
- * 3. Every supervisor.monitor.frequency.secs run SyncProcesses
+ * 3. Every {supervisor.monitor.frequency.secs} run SyncProcesses
  * 3.1 kill useless worker
  * 3.2 start new worker
  *
@@ -198,7 +198,8 @@ public class Supervisor {
     }
 
     /**
-     * 添加一个 hook 方法
+     * 添加一个 hook 方法，
+     * 当 jvm 运行停止时调用 SupervisorManger#run() 方法
      *
      * @param supervisor
      */
@@ -223,9 +224,14 @@ public class Supervisor {
      * start supervisor
      */
     public void run() {
-        SupervisorManger supervisorManager; // supervisor shutdown manager
         try {
-            // 解析配置文件
+            /*
+             * 解析配置文件：
+             * 1. 解析 default.yaml
+             * 2. 解析 storm.yaml
+             * 3. 解析 -Dstorm.options 指定的命令行参数
+             * 4. 替换所有配置项中的 JSTORM_HOME 占位符
+             */
             Map<Object, Object> conf = Utils.readStormConfig();
 
             // 确保当前为分布式模式
@@ -234,19 +240,21 @@ public class Supervisor {
             // 创建 ${storm.local.dir}/supervisor/pids/${pid}
             this.createPid(conf);
 
-            supervisorManager = this.mkSupervisor(conf, null);
+            // 创建并启动 supervisor
+            SupervisorManger supervisorManager = this.mkSupervisor(conf, null);
 
             JStormUtils.redirectOutput("/dev/null");
 
+            // 注册 SupervisorManger#run 方法，当 jvm 停止运行时执行 shutdown 逻辑
             this.initShutdownHook(supervisorManager);
 
+            // 循环监测 shutdown 方法是否执行完毕
             while (!supervisorManager.isFinishShutdown()) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ignored) {
                 }
             }
-
         } catch (Throwable e) {
             if (e instanceof OutOfMemoryError) {
                 LOG.error("Halting due to out of memory error...");
@@ -263,7 +271,9 @@ public class Supervisor {
      * start supervisor daemon
      */
     public static void main(String[] args) {
+        // 1. 设置线程默认异常处理器
         Thread.setDefaultUncaughtExceptionHandler(new DefaultUncaughtExceptionHandler());
+        // 2. 空实现
         JStormServerUtils.startTaobaoJvmMonitor();
         Supervisor instance = new Supervisor();
         instance.run();

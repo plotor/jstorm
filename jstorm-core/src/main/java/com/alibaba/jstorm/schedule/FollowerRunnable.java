@@ -199,6 +199,7 @@ public class FollowerRunnable implements Runnable {
             try {
                 Thread.sleep(sleepTime);
                 if (!zkClusterState.leader_existed()) {
+                    // 不存在 leader，尝试成为 leader
                     this.tryToBeLeader(data.getConf());
                     continue;
                 }
@@ -260,8 +261,7 @@ public class FollowerRunnable implements Runnable {
     }
 
     private void tryToBeLeader(final Map conf) throws Exception {
-        boolean allowed = check_nimbus_priority();
-
+        boolean allowed = this.check_nimbus_priority();
         if (allowed) {
             RunnableCallback masterCallback = new RunnableCallback() {
                 @Override
@@ -286,7 +286,7 @@ public class FollowerRunnable implements Runnable {
      * Compared with other nimbus to get priority of this nimbus
      */
     private boolean check_nimbus_priority() throws Exception {
-        int gap = update_nimbus_detail();
+        int gap = this.update_nimbus_detail();
         if (gap == 0) {
             return true;
         }
@@ -322,7 +322,7 @@ public class FollowerRunnable implements Runnable {
     }
 
     private int update_nimbus_detail() throws Exception {
-        //update count = count of zk's binary files - count of nimbus's binary files
+        // update count = count of zk's binary files - count of nimbus's binary files
         StormClusterState zkClusterState = data.getStormClusterState();
 
         // if we use other blobstore, such as HDFS, all nimbus slave can be leader

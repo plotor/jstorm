@@ -146,9 +146,7 @@ public class NimbusServer {
             // 1. 验证当前为分布式运行模式，不允许以本地模式运行
             StormConfig.validate_distributed_mode(conf);
 
-            /*
-             * 2. 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}，如果存在历史运行记录，则会进行清除
-             */
+            // 2. 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}，如果存在历史运行记录，则会进行清除
             this.createPid(conf);
 
             // 3. 注册 shutdown hook 方法，用于执行在 JVM 进程终止时的清理逻辑
@@ -171,9 +169,8 @@ public class NimbusServer {
             // 8. 如果集群运行在 YARN 上，则初始化容器心跳线程
             this.initContainerHBThread(conf);
 
+            // 9. 创建 ServiceHandler（实现了 Nimbus.Iface），并启动 Thrift 服务，用于处理 Nimbus 请求
             serviceHandler = new ServiceHandler(data);
-
-            // 9. 初始化并启动 thrift 服务
             this.initThrift(conf);
         } catch (Throwable e) {
             if (e instanceof OutOfMemoryError) {
@@ -368,10 +365,11 @@ public class NimbusServer {
         Integer thrift_port = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT)); // ${nimbus.thrift.port}
         TNonblockingServerSocket socket = new TNonblockingServerSocket(thrift_port);
 
+        // ${nimbus.thrift.max_buffer_size}
         Integer maxReadBufSize = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE));
 
         THsHaServer.Args args = new THsHaServer.Args(socket);
-        args.workerThreads(ServiceHandler.THREAD_NUM);
+        args.workerThreads(ServiceHandler.THREAD_NUM); // 64
         args.protocolFactory(new TBinaryProtocol.Factory(false, true, maxReadBufSize, -1));
 
         args.processor(new Nimbus.Processor<Iface>(serviceHandler));
@@ -384,7 +382,7 @@ public class NimbusServer {
     }
 
     /**
-     * leader-follower 线程模型
+     * leader-follower 模式
      *
      * @param conf
      */

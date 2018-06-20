@@ -46,7 +46,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * supervisor shutdown manager which can shutdown supervisor
+ * supervisor shutdown manager which can shutdown all workers and supervisor
  *
  * @author Johnfang (xiaojian.fxj@alibaba-inc.com)
  */
@@ -72,6 +72,7 @@ public class SupervisorManger extends ShutdownWork implements SupervisorDaemon, 
 
     private final ConcurrentHashMap<String, String> workerThreadPidsAtom;
 
+    /** 标记 shutdown 方法是否执行完毕 */
     private volatile boolean isFinishShutdown = false;
 
     public SupervisorManger(Map conf, String supervisorId, Vector<AsyncLoopThread> threads, EventManager eventManager,
