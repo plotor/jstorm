@@ -195,6 +195,13 @@ public class StormConfig {
         return ret;
     }
 
+    /**
+     * 创建并返回 ${storm.local.dir}/supervisor
+     *
+     * @param conf
+     * @return
+     * @throws IOException
+     */
     private static String supervisor_local_dir(Map conf) throws IOException {
         String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "supervisor"; // ${storm.local.dir}/supervisor
         FileUtils.forceMkdir(new File(ret));
@@ -462,14 +469,21 @@ public class StormConfig {
         } catch (IOException e) {
             LOG.error("Failed to create dir " + ret, e);
             throw e;
-
         }
         return ret;
     }
 
+    /**
+     * 创建并返回 {@link LocalState} 实例，以 ${storm.local.dir}/supervisor/localstate 作为存储路径
+     *
+     * @param conf
+     * @return
+     * @throws IOException
+     */
     public static LocalState supervisorState(Map conf) throws IOException {
         LocalState localState;
         try {
+            // ${storm.local.dir}/supervisor/localstate
             String localstateDir = supervisor_local_dir(conf) + FILE_SEPERATEOR + "localstate";
             FileUtils.forceMkdir(new File(localstateDir));
             localState = new LocalState(localstateDir);

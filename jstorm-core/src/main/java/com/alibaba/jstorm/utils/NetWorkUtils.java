@@ -39,6 +39,11 @@ import java.util.Set;
 public class NetWorkUtils {
     private static Logger LOG = LoggerFactory.getLogger(NetWorkUtils.class);
 
+    /**
+     * 获取当前机器主机名称
+     *
+     * @return
+     */
     public static String hostname() {
         String hostname = null;
         try {
@@ -49,6 +54,11 @@ public class NetWorkUtils {
         return hostname;
     }
 
+    /**
+     * 获取当前机器 IP
+     *
+     * @return
+     */
     public static String ip() {
         String hostname = null;
         try {

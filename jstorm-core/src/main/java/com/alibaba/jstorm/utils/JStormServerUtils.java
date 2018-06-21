@@ -172,16 +172,20 @@ public class JStormServerUtils {
         return componentId + ":" + taskId;
     }
 
+    /**
+     * 获取 supervisor 的主机名
+     *
+     * @param conf
+     * @return
+     */
     public static String getHostName(Map conf) {
         String hostName = ConfigExtension.getSupervisorHost(conf);
         if (hostName == null) {
             hostName = NetWorkUtils.hostname();
         }
-
         if (ConfigExtension.isSupervisorUseIp(conf)) {
             hostName = NetWorkUtils.ip();
         }
-
         return hostName;
     }
 

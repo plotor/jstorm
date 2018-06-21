@@ -28,13 +28,14 @@ import java.util.HashSet;
 import java.util.List;
 
 public class VersionedStore {
+
     private static final String FINISHED_VERSION_SUFFIX = ".version";
 
     private String _root;
 
     public VersionedStore(String path) throws IOException {
         _root = path;
-        mkdirs(_root);
+        this.mkdirs(_root);
     }
 
     public String getRoot() {

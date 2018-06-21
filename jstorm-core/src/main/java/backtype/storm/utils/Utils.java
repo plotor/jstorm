@@ -1279,6 +1279,11 @@ public class Utils {
         return ret;
     }
 
+    /**
+     * 获取当前 JStorm 版本
+     *
+     * @return
+     */
     public static String getVersion() {
         String ret = "";
         InputStream input = null;
@@ -1306,6 +1311,11 @@ public class Utils {
         return ret;
     }
 
+    /**
+     * 获取当前版本 JStorm 的构建时间
+     *
+     * @return
+     */
     public static String getBuildTime() {
         String ret = "";
         InputStream input = null;

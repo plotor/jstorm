@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.client;
 
 import backtype.storm.Config;
@@ -157,8 +158,9 @@ public class ConfigExtension {
 
     public static boolean getWorkerRedirectOutput(Map conf) {
         Object result = conf.get(WOREKER_REDIRECT_OUTPUT);
-        if (result == null)
+        if (result == null) {
             return false;
+        }
         return (Boolean) result;
     }
 
@@ -171,7 +173,6 @@ public class ConfigExtension {
     public static String getWorkerRedirectOutputFile(Map conf) {
         return (String) conf.get(WOREKER_REDIRECT_OUTPUT_FILE);
     }
-
 
     protected static final String OUTPUT_WOEKER_DUMP = "output.worker.dump";
 
@@ -221,7 +222,7 @@ public class ConfigExtension {
     }
 
     /**
-     * * *  worker machine minimum available memory (reserved)
+     * worker machine minimum available memory (reserved)
      */
     protected static final String STORM_MACHINE_RESOURCE_RESERVE_MEM = " storm.machine.resource.reserve.mem";
 
@@ -247,7 +248,6 @@ public class ConfigExtension {
     public static void setStormMachineReserveCpuPercent(Map conf, int percent) {
         conf.put(STORM_MACHINE_RESOURCE_RESERVE_CPU_PERCENT, percent);
     }
-
 
     /**
      * if the setting has been set, the component's task must run different node This is conflict with USE_SINGLE_NODE
@@ -276,7 +276,6 @@ public class ConfigExtension {
     public static boolean isEnableCheckSupervisor(Map conf) {
         return JStormUtils.parseBoolean(conf.get(SUPERVISOR_ENABLE_CHECK), false);
     }
-
 
     protected static String SUPERVISOR_FREQUENCY_CHECK = "supervisor.frequency.check.secs";
 
@@ -307,7 +306,6 @@ public class ConfigExtension {
     public static String getStormMachineResourceWarningCheckDir(Map conf) {
         return (String) (conf.get(STORM_MACHINE_RESOURCE_WARNING_CHECK_DIR));
     }
-
 
     protected static final String STORM_HEALTH_CHECK_TIMEOUT_MS = "storm.health.check.timeout.ms";
 
@@ -349,7 +347,7 @@ public class ConfigExtension {
     public static final Object SUPERVISOR_HOSTNAME_SCHEMA = String.class;
 
     public static String getSupervisorHost(Map conf) {
-        return (String) conf.get(SUPERVISOR_HOSTNAME);
+        return (String) conf.get(SUPERVISOR_HOSTNAME); // ${supervisor.hostname}
     }
 
     protected static final String SUPERVISOR_USE_IP = "supervisor.use.ip";
@@ -487,7 +485,9 @@ public class ConfigExtension {
     public static List<WorkerAssignment> getUserDefineAssignment(Map conf) {
         List<WorkerAssignment> ret = new ArrayList<>();
         if (conf.get(USE_USERDEFINE_ASSIGNMENT) == null) // ${use.userdefine.assignment}
+        {
             return ret;
+        }
         for (String worker : (List<String>) conf.get(USE_USERDEFINE_ASSIGNMENT)) {
             ret.add(WorkerAssignment.parseFromObj(Utils.from_json(worker)));
         }
@@ -521,20 +521,26 @@ public class ConfigExtension {
     }
 
     public static void setMemSizePerWorkerByKB(Map conf, long memSize) {
-        long size = memSize * 1024l;
+        long size = memSize * 1024L;
         setMemSizePerWorker(conf, size);
     }
 
     public static void setMemSizePerWorkerByMB(Map conf, long memSize) {
-        long size = memSize * 1024l;
+        long size = memSize * 1024L;
         setMemSizePerWorkerByKB(conf, size);
     }
 
     public static void setMemSizePerWorkerByGB(Map conf, long memSize) {
-        long size = memSize * 1024l;
+        long size = memSize * 1024L;
         setMemSizePerWorkerByMB(conf, size);
     }
 
+    /**
+     * 获取 worker 的内存可用值，默认为 2G
+     *
+     * @param conf
+     * @return
+     */
     public static long getMemSizePerWorker(Map conf) {
         long size = JStormUtils.parseLong(conf.get(MEMSIZE_PER_WORKER), JStormUtils.SIZE_1_G * 2);
         return size > 0 ? size : JStormUtils.SIZE_1_G * 2;
@@ -692,7 +698,6 @@ public class ConfigExtension {
         return JStormUtils.parseInt(uiCluster.get(UI_CLUSTER_ZK_PORT));
     }
 
-
     protected static String SPOUT_PEND_FULL_SLEEP = "spout.pending.full.sleep";
 
     public static boolean isSpoutPendFullSleep(Map conf) {
@@ -708,8 +713,9 @@ public class ConfigExtension {
 
     public static String getLogViewEncoding(Map conf) {
         String ret = (String) conf.get(LOGVIEW_ENCODING);
-        if (ret == null)
+        if (ret == null) {
             ret = UTF8;
+        }
         return ret;
     }
 
@@ -784,23 +790,31 @@ public class ConfigExtension {
     public static Integer getSpoutParallelism(Map conf, String componentName) {
         Integer ret = null;
         Map<String, String> map = (Map<String, String>) (conf.get(SPOUT_PARALLELISM));
-        if (map != null)
+        if (map != null) {
             ret = JStormUtils.parseInt(map.get(componentName));
+        }
         return ret;
     }
 
     public static Integer getBoltParallelism(Map conf, String componentName) {
         Integer ret = null;
         Map<String, String> map = (Map<String, String>) (conf.get(BOLT_PARALLELISM));
-        if (map != null)
+        if (map != null) {
             ret = JStormUtils.parseInt(map.get(componentName));
+        }
         return ret;
     }
 
     protected static String SUPERVISOR_SLOTS_PORTS_BASE = "supervisor.slots.ports.base";
 
+    /**
+     * 获取基础端口号，后续端口在此基础上进行累加
+     *
+     * @param conf
+     * @return
+     */
     public static int getSupervisorSlotsPortsBase(Map conf) {
-        return JStormUtils.parseInt(conf.get(SUPERVISOR_SLOTS_PORTS_BASE), 6800);
+        return JStormUtils.parseInt(conf.get(SUPERVISOR_SLOTS_PORTS_BASE), 6800); // ${supervisor.slots.ports.base}
     }
 
     // SUPERVISOR_SLOTS_PORTS_BASE don't provide setting function, it must be
@@ -821,7 +835,7 @@ public class ConfigExtension {
     protected static String SUPERVISOR_SLOTS_PORT_MEM_WEIGHT = "supervisor.slots.port.mem.weight";
 
     public static double getSupervisorSlotsPortMemWeight(Map conf) {
-        Object value = conf.get(SUPERVISOR_SLOTS_PORT_MEM_WEIGHT);
+        Object value = conf.get(SUPERVISOR_SLOTS_PORT_MEM_WEIGHT); // ${supervisor.slots.port.mem.weight}
         Double ret = JStormUtils.convertToDouble(value);
         if (ret == null || ret <= 0) {
             return 0.7;
@@ -930,7 +944,6 @@ public class ConfigExtension {
         conf.put(WORKER_CPU_CORE_UPPER_LIMIT, cpuUpperLimit);
     }
 
-
     protected static String CLUSTER_NAME = "cluster.name";
 
     public static String getClusterName(Map conf) {
@@ -940,7 +953,6 @@ public class ConfigExtension {
     public static void setClusterName(Map conf, String clusterName) {
         conf.put(CLUSTER_NAME, clusterName);
     }
-
 
     protected static final String NIMBUS_CACHE_CLASS = "nimbus.cache.class";
 

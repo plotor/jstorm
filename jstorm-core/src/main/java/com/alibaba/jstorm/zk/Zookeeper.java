@@ -28,6 +28,7 @@ import org.apache.curator.framework.api.CuratorEvent;
 import org.apache.curator.framework.api.CuratorEventType;
 import org.apache.curator.framework.api.CuratorListener;
 import org.apache.curator.framework.api.UnhandledErrorListener;
+import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.ZooDefs;
@@ -88,14 +89,13 @@ public class Zookeeper {
         return fk;
     }
 
-    public String createNode(CuratorFramework zk, String path, byte[] data, org.apache.zookeeper.CreateMode mode)
-            throws Exception {
+    public String createNode(CuratorFramework zk, String path, byte[] data, CreateMode mode) throws Exception {
         String normPath = PathUtils.normalize_path(path);
         return zk.create().withMode(mode).withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(normPath, data);
     }
 
     public String createNode(CuratorFramework zk, String path, byte[] data) throws Exception {
-        return createNode(zk, path, data, org.apache.zookeeper.CreateMode.PERSISTENT);
+        return createNode(zk, path, data, CreateMode.PERSISTENT);
     }
 
     public boolean existsNode(CuratorFramework zk, String path, boolean watch) throws Exception {
@@ -112,7 +112,15 @@ public class Zookeeper {
         zk.delete().forPath(PathUtils.normalize_path(path));
     }
 
+    /**
+     * 创建对应的 ZK 路径，如果已经存在则返回
+     *
+     * @param zk
+     * @param path
+     * @throws Exception
+     */
     public void mkdirs(CuratorFramework zk, String path) throws Exception {
+        // 对 path 进行规范化
         String normPath = PathUtils.normalize_path(path);
 
         // the node is "/"
@@ -120,14 +128,15 @@ public class Zookeeper {
             return;
         }
 
-        // the node exist
-        if (existsNode(zk, normPath, false)) {
+        // 对应的路径已经存在
+        if (this.existsNode(zk, normPath, false)) {
             return;
         }
 
-        mkdirs(zk, PathUtils.parent_path(normPath));
+        // 创建路径
+        this.mkdirs(zk, PathUtils.parent_path(normPath));
         try {
-            createNode(zk, normPath, JStormUtils.barr((byte) 7), org.apache.zookeeper.CreateMode.PERSISTENT);
+            this.createNode(zk, normPath, JStormUtils.barr((byte) 7), CreateMode.PERSISTENT);
         } catch (KeeperException e) {
             // this exception can be raised when multiple clients are making the same dir at the same time
             LOG.warn("zookeeper mkdir for path" + path, e);

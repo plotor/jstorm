@@ -89,7 +89,7 @@ public class Supervisor {
         LOG.info("Starting Supervisor with conf " + conf);
 
         /*
-         * Step 1: cleanup all files in ${storm.local.dir}/supervisor/tmp
+         * Step 1: create and cleanup all files in ${storm.local.dir}/supervisor/tmp
          */
         String path = StormConfig.supervisorTmpDir(conf);
         FileUtils.cleanDirectory(new File(path));
@@ -100,6 +100,7 @@ public class Supervisor {
 
         StormClusterState stormClusterState = Cluster.mk_storm_cluster_state(conf);
 
+        // 获取主机名
         String hostName = JStormServerUtils.getHostName(conf);
         WorkerReportError workerReportError = new WorkerReportError(stormClusterState, hostName);
 
@@ -109,26 +110,28 @@ public class Supervisor {
          * 3.2 get supervisorId, if there's no supervisorId, create one
          */
 
+        // 创建 LocalState 对象（简单、低效的 KV 存储）
         LocalState localState = StormConfig.supervisorState(conf);
 
+        // 获取 supervisorId，如果不存在则创建一个（UUID）
         String supervisorId = (String) localState.get(Common.LS_ID); // supervisor-id
         if (supervisorId == null) {
             supervisorId = UUID.randomUUID().toString();
             localState.put(Common.LS_ID, supervisorId);
         }
-        //clean LocalStat's zk-assignment & versions
-        localState.remove(Common.LS_LOCAl_ZK_ASSIGNMENTS);
-        localState.remove(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION);
+        // clean LocalStat's zk-assignment & versions
+        localState.remove(Common.LS_LOCAl_ZK_ASSIGNMENTS); // lcoal-zk-assignment-version
+        localState.remove(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION); // lcoal-zk-assignment-version
 
         Vector<AsyncLoopThread> threads = new Vector<>();
 
         /*
          * Step 4: create HeartBeat
-         * every supervisor.heartbeat.frequency.secs, write SupervisorInfo to ZK sync heartbeat to nimbus
+         * every ${supervisor.heartbeat.frequency.secs} write SupervisorInfo to ZK sync heartbeat to nimbus
          */
 
         Heartbeat hb = new Heartbeat(conf, stormClusterState, supervisorId, localState);
-        hb.update();
+        hb.update(); // TODO by zhenchao 2018-06-21 10:31:31
 
         AsyncLoopThread heartbeat = new AsyncLoopThread(hb, false, null, Thread.MIN_PRIORITY, true);
         threads.add(heartbeat);

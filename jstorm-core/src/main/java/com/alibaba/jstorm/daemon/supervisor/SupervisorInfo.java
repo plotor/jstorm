@@ -43,8 +43,8 @@ public class SupervisorInfo implements Serializable {
 
     private Integer timeSecs; // 最新一次更新 SupervisorInfo 数据的时间
     private Integer uptimeSecs; // 截止上次心跳更新时的启动时间
-    private String version;
-    private String buildTs;
+    private String version; // 当前 JStorm 版本
+    private String buildTs; // 当前 JStorm 版本的 build 时间
     private Integer port;
 
     private Set<Integer> workerPorts;

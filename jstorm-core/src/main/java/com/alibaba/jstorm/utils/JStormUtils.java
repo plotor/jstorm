@@ -937,6 +937,13 @@ public class JStormUtils {
         return rtn;
     }
 
+    /**
+     * 将多参转换成数组
+     *
+     * @param args
+     * @param <V>
+     * @return
+     */
     public static <V> V[] mk_arr(V... args) {
         return args;
     }
@@ -1277,6 +1284,11 @@ public class JStormUtils {
         return sb.toString();
     }
 
+    /**
+     * 获取系统物理内存大小
+     *
+     * @return
+     */
     public static Long getPhysicMemorySize() {
         Object object;
         try {
@@ -1286,7 +1298,6 @@ public class JStormUtils {
             LOG.warn("Failed to get system physical memory size,", e);
             return null;
         }
-
         return (Long) object;
     }
 
@@ -1411,9 +1422,15 @@ public class JStormUtils {
 
     /**
      * calculate port number from cpu number and physical memory size
+     * 分别基于 CPU 核心数和物理内存计算允许的端口数，并选择两者的较小值
+     *
+     * @param conf
+     * @param sysCpuNum CPU 核心数
+     * @param physicalMemSize 可用物理内存
+     * @return
      */
     public static int getSupervisorPortNum(Map conf, int sysCpuNum, Long physicalMemSize) {
-        double cpuWeight = ConfigExtension.getSupervisorSlotsPortCpuWeight(conf);
+        double cpuWeight = ConfigExtension.getSupervisorSlotsPortCpuWeight(conf); // ${supervisor.slots.port.cpu.weight}
 
         int cpuPortNum = (int) (sysCpuNum / cpuWeight);
 
@@ -1422,6 +1439,7 @@ public class JStormUtils {
             cpuPortNum = 1;
         }
 
+        // 获取 ${supervisor.slots.port.mem.weight} 配置项，如果未配置就使用 0.7 代替
         Double memWeight = ConfigExtension.getSupervisorSlotsPortMemWeight(conf);
 
         int memPortNum = Integer.MAX_VALUE;
@@ -1431,26 +1449,35 @@ public class JStormUtils {
         } else {
             LOG.debug("Get system memory size: " + physicalMemSize);
 
+            // 获取 worker 的内存可用值，默认为 2G
             long workerMemSize = ConfigExtension.getMemSizePerWorker(conf);
 
             memPortNum = (int) (physicalMemSize / (workerMemSize * memWeight));
 
             if (memPortNum < 1) {
                 LOG.info("System memory is too small for Jstorm");
-                memPortNum = 1;     // minimal port number set to 1 if memory is not enough
+                memPortNum = 1; // minimal port number set to 1 if memory is not enough
             }
         }
 
         return Math.min(cpuPortNum, memPortNum);
     }
 
+    /**
+     * 基于 CPU 核心数和物理内存计算并返回允许的端口数，并从基础端口开始累加（默认为 6800）
+     * 这里不会检查端口是否已经被占用
+     *
+     * @param conf
+     * @return
+     */
     public static Set<Integer> getDefaultSupervisorPortList(Map conf) {
-        List<Integer> slots = (List<Integer>) conf.get(Config.SUPERVISOR_SLOTS_PORTS);
+        List<Integer> slots = (List<Integer>) conf.get(Config.SUPERVISOR_SLOTS_PORTS); // supervisor.slots.ports
 
         if (slots != null && slots.size() > 0) {
             return new HashSet<>(slots);
         }
 
+        // 获取 CPU 核心数，默认为 4
         int sysCpuNum = 4;
         try {
             sysCpuNum = Runtime.getRuntime().availableProcessors();
@@ -1458,6 +1485,7 @@ public class JStormUtils {
             LOG.info("Failed to get CPU core num, set to 4");
         }
 
+        // 获取系统物理内存大小
         Long physicalMemSize = JStormUtils.getPhysicMemorySize();
 
         if (physicalMemSize != null && physicalMemSize > 8 * SIZE_1_G) {
@@ -1465,13 +1493,16 @@ public class JStormUtils {
             if (physicalMemSize < reserveMemory) {
                 throw new RuntimeException("ReserveMemory is too large , PhysicalMemSize is:" + physicalMemSize);
             }
+            // 实际内存减去 worker 宿主机最小运行内存
             physicalMemSize -= reserveMemory;
         }
 
+        // 分别基于 CPU 核心数和物理内存计算允许的端口数，并选择两者的较小值
         int portNum = getSupervisorPortNum(conf, sysCpuNum, physicalMemSize);
         // the minimal default port number is 4 , even if the resource is not enough
         portNum = Math.max(4, portNum);
 
+        // 获取基础端口号，默认为 6800
         int portBase = ConfigExtension.getSupervisorSlotsPortsBase(conf);
 
         Set<Integer> portList = new HashSet<>();

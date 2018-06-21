@@ -32,16 +32,17 @@ import java.util.List;
  * @author yannian
  */
 public class PathUtils {
+
     static Logger LOG = LoggerFactory.getLogger(PathUtils.class);
 
     public static final String SEPARATOR = "/";
 
     /**
-     * split path as list
+     * 将 path 以 “/” 分割，记录到 List 中
      */
     public static List<String> tokenize_path(String path) {
         String[] tokens = path.split(SEPARATOR);
-        java.util.ArrayList<String> rtn = new ArrayList<>();
+        ArrayList<String> rtn = new ArrayList<>();
         for (String str : tokens) {
             if (!str.isEmpty()) {
                 rtn.add(str);
@@ -50,6 +51,12 @@ public class PathUtils {
         return rtn;
     }
 
+    /**
+     * 以 “/” 作为分隔符拼接路径
+     *
+     * @param tokens
+     * @return
+     */
     public static String toks_to_path(List<String> tokens) {
         StringBuilder buff = new StringBuilder();
         buff.append(SEPARATOR);
@@ -59,7 +66,6 @@ public class PathUtils {
             if (i < (size - 1)) {
                 buff.append(SEPARATOR);
             }
-
         }
         return buff.toString();
     }

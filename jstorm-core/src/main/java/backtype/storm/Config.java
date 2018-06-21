@@ -820,8 +820,9 @@ public class Config extends HashMap<String, Object> {
     public static final String SUPERVISOR_SCHEDULER_META = "supervisor.scheduler.meta";
     public static final Object SUPERVISOR_SCHEDULER_META_SCHEMA = Map.class;
     /**
-     * A list of ports that can run workers on this supervisor. Each worker uses one port, and the supervisor will only run one worker per port. Use this
-     * configuration to tune how many workers run on each machine.
+     * A list of ports that can run workers on this supervisor.
+     * Each worker uses one port, and the supervisor will only run one worker per port.
+     * Use this configuration to tune how many workers run on each machine.
      */
     public static final String SUPERVISOR_SLOTS_PORTS = "supervisor.slots.ports";
     public static final Object SUPERVISOR_SLOTS_PORTS_SCHEMA = ConfigValidation.IntegersValidator;

@@ -77,12 +77,25 @@ class Heartbeat extends RunnableCallback {
         this.localState = localState;
         this.healthStatus = HealthStatus.INFO;
 
-        initSupervisorInfo(conf);
+        /*
+         * 初始化 supervisor 信息，包括
+         *  - 计算可用的端口号集合
+         *  - 当前 JStorm 版本、build 时间
+         */
+        this.initSupervisorInfo(conf);
 
         LOG.info("Successfully inited supervisor heartbeat thread, " + supervisorInfo);
     }
 
+    /**
+     * 初始化 supervisor 信息，包括
+     * - 计算可用的端口号集合
+     * - 当前 JStorm 版本、build 时间
+     *
+     * @param conf
+     */
     private void initSupervisorInfo(Map conf) {
+        // 基于 CPU 核心数和物理内存计算并返回允许的端口数，并从基础端口开始累加（默认为 6800）
         Set<Integer> portList = JStormUtils.getDefaultSupervisorPortList(conf);
         if (!StormConfig.local_mode(conf)) {
             try {
@@ -96,6 +109,7 @@ class Heartbeat extends RunnableCallback {
             }
             supervisorInfo = new SupervisorInfo(myHostName, supervisorId, portList, conf);
         } else {
+            // 本地模式
             supervisorInfo = new SupervisorInfo(myHostName, supervisorId, portList, conf);
         }
 

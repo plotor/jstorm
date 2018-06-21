@@ -95,13 +95,14 @@ public class StormZkClusterState implements StormClusterState {
                 }
 
                 String path = (String) args[1];
+                // 以 “/” 作为分隔符切分 path
                 List<String> tokens = PathUtils.tokenize_path(path);
                 int size = tokens.size();
                 if (size >= 1) {
                     String params;
                     String root = tokens.get(0);
                     RunnableCallback fn = null;
-                    if (root.equals(Cluster.ASSIGNMENTS_ROOT)) {
+                    if (root.equals(Cluster.ASSIGNMENTS_ROOT)) { // assignments
                         if (size == 1) {
                             // set null and get the old value
                             fn = assignments_callback.getAndSet(null);
@@ -110,16 +111,16 @@ public class StormZkClusterState implements StormClusterState {
                             fn = assignment_info_callback.remove(params);
                         }
 
-                    } else if (root.equals(Cluster.SUPERVISORS_ROOT)) {
+                    } else if (root.equals(Cluster.SUPERVISORS_ROOT)) { // supervisors
                         fn = supervisors_callback.getAndSet(null);
-                    } else if (root.equals(Cluster.STORMS_ROOT) && size > 1) {
+                    } else if (root.equals(Cluster.STORMS_ROOT) && size > 1) { // topology
                         params = tokens.get(1);
                         fn = storm_base_callback.remove(params);
-                    } else if (root.equals(Cluster.MASTER_ROOT)) {
+                    } else if (root.equals(Cluster.MASTER_ROOT)) { // nimbus_master
                         fn = master_callback.getAndSet(null);
-                    } else if (root.equals(Cluster.BLOBSTORE_ROOT)) {
+                    } else if (root.equals(Cluster.BLOBSTORE_ROOT)) { // blobstore
                         fn = blobstore_callback.getAndSet(null);
-                    } else if (root.equals(Cluster.GRAY_UPGRADE_ROOT)) {
+                    } else if (root.equals(Cluster.GRAY_UPGRADE_ROOT)) { // gray_upgrade
                         fn = gray_upgrade_callback.getAndSet(null);
                         LOG.error("@@@@@@@@@@@@@ Tokens under gray upgrade: {}", tokens);
                     } else {
@@ -136,11 +137,23 @@ public class StormZkClusterState implements StormClusterState {
             }
         });
 
+        /**
+         * 创建 ZK 路径:
+         * - supervisors
+         * - topology
+         * - assignments
+         * - assignments_bak
+         * - tasks
+         * - taskbeats
+         * - taskerrors
+         * - metrics
+         * - blobstore
+         * - gray_upgrade
+         */
         String[] pathList =
                 JStormUtils.mk_arr(Cluster.SUPERVISORS_SUBTREE, Cluster.STORMS_SUBTREE, Cluster.ASSIGNMENTS_SUBTREE,
                         Cluster.ASSIGNMENTS_BAK_SUBTREE, Cluster.TASKS_SUBTREE, Cluster.TASKBEATS_SUBTREE,
-                        Cluster.TASKERRORS_SUBTREE, Cluster.METRIC_SUBTREE, Cluster.BLOBSTORE_SUBTREE,
-                        Cluster.GRAY_UPGRADE_SUBTREE);
+                        Cluster.TASKERRORS_SUBTREE, Cluster.METRIC_SUBTREE, Cluster.BLOBSTORE_SUBTREE, Cluster.GRAY_UPGRADE_SUBTREE);
         for (String path : pathList) {
             cluster_state.mkdirs(path);
         }

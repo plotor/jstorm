@@ -42,13 +42,21 @@ public class WorkerReportError {
         this.hostName = hostName;
     }
 
+    /**
+     * Report worker's error to zk
+     *
+     * @param topologyId
+     * @param workerPort
+     * @param tasks
+     * @param error
+     * @param errorCode
+     */
     public void report(String topologyId, Integer workerPort, Set<Integer> tasks, String error, int errorCode) {
-        // Report worker's error to zk
         try {
             Date now = new Date();
             String nowStr = TimeFormat.getSecond(now);
             String errorInfo = error + "on " + this.hostName + ":" + workerPort + "," + nowStr;
-            //we only report one task
+            // we only report one task
             for (Integer task : tasks) {
                 zkCluster.report_task_error(topologyId, task, errorInfo, ErrorConstants.FATAL, errorCode);
                 break;
