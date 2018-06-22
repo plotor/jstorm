@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.utils;
 
 import backtype.storm.utils.ShellUtils;
@@ -99,7 +100,7 @@ public class LinuxResource {
         long jiffiesPerSecond = -1;
         try {
             ShellUtils.ShellCommandExecutor shellExecutorClk =
-                    new ShellUtils.ShellCommandExecutor(new String[]{"getconf", "CLK_TCK"});
+                    new ShellUtils.ShellCommandExecutor(new String[] {"getconf", "CLK_TCK"});
             shellExecutorClk.execute();
             jiffiesPerSecond = Long.parseLong(shellExecutorClk.getOutput().replace("\n", ""));
         } catch (Exception e) {
@@ -108,6 +109,11 @@ public class LinuxResource {
         return jiffiesPerSecond;
     }
 
+    /**
+     * 获取 CPU 使用率
+     *
+     * @return
+     */
     public static synchronized float getTotalCpuUsage() {
         if (!OSInfo.isLinux()) {
             return 0.0f;
@@ -125,14 +131,16 @@ public class LinuxResource {
                         size = 8;
                     } else {
                         matcher = CPU_TIME_FORMAT.matcher(line);
-                        if (matcher.find())
+                        if (matcher.find()) {
                             size = 5;
+                        }
                     }
                     for (int i = 1; i < size; i++) {
                         long value = JStormUtils.parseLong(matcher.group(i));
                         totalCpuTime += value;
-                        if (i == 4)
+                        if (i == 4) {
                             idleCpuTime = value;
+                        }
                     }
                     if (size > 0) {
                         totalCpu2idle = new Pair<>();
@@ -151,8 +159,7 @@ public class LinuxResource {
         }
 
         Pair<Long, Long> totalCpu2idle = (Pair<Long, Long>) result;
-        if (lastCpuTime == -1 ||
-                lastCpuTime > totalCpu2idle.getFirst()) {
+        if (lastCpuTime == -1 || lastCpuTime > totalCpu2idle.getFirst()) {
             lastCpuTime = totalCpu2idle.getFirst();
             lastIdieTime = totalCpu2idle.getSecond();
             return lastcpuUsage;//return -1 first time
@@ -290,8 +297,9 @@ public class LinuxResource {
             }
         });
         Object result = procResourceParse.getResource();
-        if (result != null)
+        if (result != null) {
             pair = (Pair<Long, Long>) result;
+        }
         return pair;
     }
 

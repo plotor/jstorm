@@ -47,7 +47,7 @@ public class SupervisorInfo implements Serializable {
     private String buildTs; // 当前 JStorm 版本的 build 时间
     private Integer port;
 
-    private Set<Integer> workerPorts;
+    private Set<Integer> workerPorts; // 端口号列表
     private Map<Object, Object> supervisorConf;
 
     private String errorMessage;

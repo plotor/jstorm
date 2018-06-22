@@ -131,8 +131,10 @@ public class Supervisor {
          */
 
         Heartbeat hb = new Heartbeat(conf, stormClusterState, supervisorId, localState);
-        hb.update(); // TODO by zhenchao 2018-06-21 10:31:31
+        // 更新端口号列表，并写入 supervisor 信息到 ZK
+        hb.update();
 
+        // 启动循环执行 Heartbeat#update 方法
         AsyncLoopThread heartbeat = new AsyncLoopThread(hb, false, null, Thread.MIN_PRIORITY, true);
         threads.add(heartbeat);
 
@@ -144,7 +146,7 @@ public class Supervisor {
 
         /*
          * Step 5: create and start sync Supervisor thread every
-         * supervisor.monitor.frequency.secs second run SyncSupervisor
+         * ${supervisor.monitor.frequency.secs} second run SyncSupervisor
          */
 
         ConcurrentHashMap<String, String> workerThreadPids = new ConcurrentHashMap<>();
@@ -158,10 +160,18 @@ public class Supervisor {
         SyncSupervisorEvent syncSupervisorEvent = new SyncSupervisorEvent(
                 supervisorId, conf, syncSupEventManager, stormClusterState, localState, syncProcessEvent, hb);
 
+        // ${supervisor.monitor.frequency.secs}
         int syncFrequency = JStormUtils.parseInt(conf.get(Config.SUPERVISOR_MONITOR_FREQUENCY_SECS));
         EventManagerPusher syncSupervisorPusher = new EventManagerPusher(syncSupEventManager, syncSupervisorEvent, syncFrequency);
+        /*
+         * 每间隔 ${supervisor.monitor.frequency.secs} 调用 EventManagerPusher#run()，
+         * 本质上是调用 EventManagerImp#add(RunnableCallback) 将 syncSupervisorEvent 记录到自己的阻塞队列中，
+         * 同时 EventManagerImp 也会循环消费阻塞队列，取出其中的 syncSupervisorEvent，并应用其 run 方法：SyncSupervisorEvent#run()
+         */
         AsyncLoopThread syncSupervisorThread = new AsyncLoopThread(syncSupervisorPusher);
         threads.add(syncSupervisorThread);
+
+        // TODO by zhenchao SyncSupervisorEvent#run() 2018-06-22 10:16:29
 
         /*
          * Step 6: start httpserver

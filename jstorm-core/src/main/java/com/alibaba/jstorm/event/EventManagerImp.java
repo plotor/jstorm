@@ -67,7 +67,7 @@ public class EventManagerImp extends RunnableCallback implements EventManager {
             }
             r.run();
             e = r.error();
-            processInc();
+            this.processInc();
         } catch (InterruptedException e) {
             LOG.info("Interrupted when processing event.");
         }

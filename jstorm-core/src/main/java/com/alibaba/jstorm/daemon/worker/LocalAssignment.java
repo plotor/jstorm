@@ -15,13 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
+
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
 
 /**
  * supervisor local assignment
@@ -112,39 +114,53 @@ public class LocalAssignment implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         LocalAssignment other = (LocalAssignment) obj;
-        if (cpu != other.cpu)
+        if (cpu != other.cpu) {
             return false;
+        }
         if (jvm == null) {
-            if (other.jvm != null)
+            if (other.jvm != null) {
                 return false;
-        } else if (!jvm.equals(other.jvm))
+            }
+        } else if (!jvm.equals(other.jvm)) {
             return false;
-        if (mem != other.mem)
+        }
+        if (mem != other.mem) {
             return false;
+        }
         if (taskIds == null) {
-            if (other.taskIds != null)
+            if (other.taskIds != null) {
                 return false;
-        } else if (!taskIds.equals(other.taskIds))
+            }
+        } else if (!taskIds.equals(other.taskIds)) {
             return false;
+        }
         if (topologyId == null) {
-            if (other.topologyId != null)
+            if (other.topologyId != null) {
                 return false;
-        } else if (!topologyId.equals(other.topologyId))
+            }
+        } else if (!topologyId.equals(other.topologyId)) {
             return false;
+        }
         if (topologyName == null) {
-            if (other.topologyName != null)
+            if (other.topologyName != null) {
                 return false;
-        } else if (!topologyName.equals(other.topologyName))
+            }
+        } else if (!topologyName.equals(other.topologyName)) {
             return false;
-        if (timeStamp != other.getTimeStamp())
+        }
+        if (timeStamp != other.getTimeStamp()) {
             return false;
+        }
         return true;
     }
 

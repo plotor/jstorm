@@ -121,20 +121,28 @@ class Heartbeat extends RunnableCallback {
 
     @SuppressWarnings("unchecked")
     public void update() {
+        // 更新最新一次更新 SupervisorInfo 数据的时间
         supervisorInfo.setTimeSecs(TimeUtils.current_time_secs());
+        // 更新截止上次心跳更新时的启动时间
         supervisorInfo.setUptimeSecs(TimeUtils.current_time_secs() - startTime);
 
-        updateSupervisorInfo();
+        // 依据具体配置和资源占用，调整端口号列表
+        this.updateSupervisorInfo();
 
         try {
+            // 将 supervisor 信息写入 ZK：supervisors/${supervisor_id}
             stormClusterState.supervisor_heartbeat(supervisorId, supervisorInfo);
         } catch (Exception e) {
             LOG.error("Failed to update SupervisorInfo to ZK", e);
         }
     }
 
+    /**
+     * 依据具体配置和资源占用，调整端口号列表
+     */
     private void updateSupervisorInfo() {
-        Set<Integer> portList = calculateCurrentPortList();
+        // 获取端口号列表（包含已经占用的）
+        Set<Integer> portList = this.calculateCurrentPortList();
         LOG.debug("portList : {}", portList);
         supervisorInfo.setWorkerPorts(portList);
     }
@@ -156,7 +164,7 @@ class Heartbeat extends RunnableCallback {
     public void run() {
         boolean updateHb = hbUpdateTrigger.getAndSet(false);
         if (updateHb) {
-            update();
+            this.update();
         }
     }
 
@@ -172,18 +180,26 @@ class Heartbeat extends RunnableCallback {
         hbUpdateTrigger.set(update);
     }
 
+    /**
+     * 获取端口号列表（包含已经占用的）
+     *
+     * @return
+     */
     private Set<Integer> calculateCurrentPortList() {
+        // 基于 CPU 核心数和物理内存计算并返回允许的端口数，并从基础端口开始累加（默认为 6800）
         Set<Integer> defaultPortList = JStormUtils.getDefaultSupervisorPortList(conf);
 
+        // 获取已经使用的端口号
         Set<Integer> usedList;
         try {
-            usedList = getLocalAssignmentPortList();
+            usedList = this.getLocalAssignmentPortList();
         } catch (IOException e) {
             supervisorInfo.setErrorMessage(null);
             return defaultPortList;
         }
 
-        int availablePortNum = calculateAvailablePortNumber(defaultPortList, usedList);
+        // 获取可用的端口号数目
+        int availablePortNum = this.calculateAvailablePortNumber(defaultPortList, usedList);
 
         if (availablePortNum >= (defaultPortList.size() - usedList.size())) {
             supervisorInfo.setErrorMessage(null);
@@ -192,7 +208,7 @@ class Heartbeat extends RunnableCallback {
             List<Integer> freePortList = new ArrayList<>(defaultPortList);
             freePortList.removeAll(usedList);
             Collections.sort(freePortList);
-            Set<Integer> portList = new HashSet<>(usedList);
+            Set<Integer> portList = new HashSet<>(usedList); // 已经使用的排在前面
             for (int i = 1; i <= availablePortNum; i++) {
                 portList.add(freePortList.get(i));
             }
@@ -203,6 +219,15 @@ class Heartbeat extends RunnableCallback {
         }
     }
 
+    /**
+     * 计算可用的端口号数目，
+     * 如果满足（非 linux || CPU 核心数小于等于 4 || 不允许自动调整 slot）则直接以计划端口号数目减去已经占用的端口数目
+     * 否则会基于 CPU 和 内存使用率进行进一步计算
+     *
+     * @param defaultList 计划端口号列表
+     * @param usedList 已经使用的端口号
+     * @return
+     */
     private int calculateAvailablePortNumber(Set<Integer> defaultList, Set<Integer> usedList) {
         if (healthStatus.isMoreSeriousThan(HealthStatus.WARN)) {
             LOG.warn("Due to no enough resource, limit supervisor's ports and block scheduling");
@@ -210,7 +235,9 @@ class Heartbeat extends RunnableCallback {
             return 0;
         }
 
+        // 获取 CPU 核心数
         int vcores = JStormUtils.getNumProcessors();
+        // 获取 CPU 使用率
         double cpuUsage = JStormUtils.getTotalCpuUsage();
 
         // do not adjust port list if match the following conditions
@@ -218,6 +245,7 @@ class Heartbeat extends RunnableCallback {
                 || vcores <= 4   // machine configuration is too low
                 || !ConfigExtension.isSupervisorEnableAutoAdjustSlots(conf) // auto adjust is disabled
                 ) {
+            // 非 linux || CPU 核心数小于等于 4 || 不允许自动调整 slot
             return defaultList.size() - usedList.size();
         }
 
@@ -235,10 +263,16 @@ class Heartbeat extends RunnableCallback {
         }
     }
 
+    /**
+     * 获取已经分配的端口号
+     *
+     * @return
+     * @throws IOException
+     */
     private Set<Integer> getLocalAssignmentPortList() throws IOException {
         Map<Integer, LocalAssignment> localAssignment;
         try {
-            localAssignment = (Map<Integer, LocalAssignment>) localState.get(Common.LS_LOCAL_ASSIGNMENTS);
+            localAssignment = (Map<Integer, LocalAssignment>) localState.get(Common.LS_LOCAL_ASSIGNMENTS); // ${local-assignments}
         } catch (IOException e) {
             LOG.error("get LS_LOCAL_ASSIGNMENTS of localState failed .");
             throw e;

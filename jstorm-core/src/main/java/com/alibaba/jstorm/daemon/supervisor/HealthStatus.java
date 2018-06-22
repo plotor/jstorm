@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
 
 /**
@@ -22,35 +23,35 @@ package com.alibaba.jstorm.daemon.supervisor;
  */
 public class HealthStatus {
 
-	public static HealthStatus INFO = new HealthStatus(StatusType.INFO);
-	public static HealthStatus WARN = new HealthStatus(StatusType.WARN);
-	public static HealthStatus ERROR = new HealthStatus(StatusType.ERROR);
-	public static HealthStatus PANIC = new HealthStatus(StatusType.PANIC);
+    public static HealthStatus INFO = new HealthStatus(StatusType.INFO);
+    public static HealthStatus WARN = new HealthStatus(StatusType.WARN);
+    public static HealthStatus ERROR = new HealthStatus(StatusType.ERROR);
+    public static HealthStatus PANIC = new HealthStatus(StatusType.PANIC);
 
-	private enum StatusType {
-		INFO,
-		WARN,
-		ERROR,
-		PANIC
-	}
+    private enum StatusType {
+        INFO,
+        WARN,
+        ERROR,
+        PANIC
+    }
 
-	private StatusType status;
+    private StatusType status;
 
+    // avoid to create other instance
+    private HealthStatus() {
+    }
 
-	// avoid to create other instance
-	private HealthStatus() {}
+    private HealthStatus(StatusType status) {
+        this.status = status;
+    }
 
-	private HealthStatus(StatusType status) {
-		this.status = status;
-	}
+    public boolean isMoreSeriousThan(HealthStatus status) {
+        return this.status.ordinal() >= status.status.ordinal();
+    }
 
-	public boolean isMoreSeriousThan(HealthStatus status) {
-		return this.status.ordinal() >= status.status.ordinal();
-	}
-
-	@Override
-	public String toString() {
-		return status.toString();
-	}
+    @Override
+    public String toString() {
+        return status.toString();
+    }
 
 }

@@ -104,6 +104,12 @@ public class Cluster {
         BLACKLIST_SUBTREE = ZK_SEPARATOR + BLACKLIST_ROOT; // blacklist
     }
 
+    /**
+     * supervisors/${supervisor_id}
+     *
+     * @param id
+     * @return
+     */
     public static String supervisor_path(String id) {
         return SUPERVISORS_SUBTREE + ZK_SEPARATOR + id;
     }

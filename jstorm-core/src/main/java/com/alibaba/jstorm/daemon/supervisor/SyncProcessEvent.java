@@ -73,6 +73,7 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"unused", "unchecked"})
 class SyncProcessEvent extends ShutdownWork {
+
     private static Logger LOG = LoggerFactory.getLogger(SyncProcessEvent.class);
 
     private LocalState localState;
@@ -120,8 +121,8 @@ class SyncProcessEvent extends ShutdownWork {
         this.sandBoxMaker = new SandBoxMaker(conf);
         this.workerIdToStartTimeAndPort = new HashMap<>();
         this.needDownloadTopologies = new AtomicReference<>();
-        this.isJstormOnYarn = JStormUtils.parseBoolean(System.getProperty("jstorm-on-yarn"), false) ||
-                ConfigExtension.isJStormOnYarn(conf);
+        this.isJstormOnYarn =
+                JStormUtils.parseBoolean(System.getProperty("jstorm-on-yarn"), false) || ConfigExtension.isJStormOnYarn(conf);
         if (ConfigExtension.isEnableCgroup(conf)) {
             cgroupManager = new CgroupManager(conf);
         }

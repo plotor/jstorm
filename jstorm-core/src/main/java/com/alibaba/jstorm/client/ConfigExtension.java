@@ -847,6 +847,7 @@ public class ConfigExtension {
     protected static String SUPERVISOR_ENABLE_AUTO_ADJUST_SLOTS = "supervisor.enable.auto.adjust.slots";
 
     public static boolean isSupervisorEnableAutoAdjustSlots(Map conf) {
+        // ${supervisor.enable.auto.adjust.slots}
         return JStormUtils.parseBoolean(conf.get(SUPERVISOR_ENABLE_AUTO_ADJUST_SLOTS), false);
     }
 

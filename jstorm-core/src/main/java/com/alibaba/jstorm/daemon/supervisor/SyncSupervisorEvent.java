@@ -90,10 +90,12 @@ class SyncSupervisorEvent extends RunnableCallback {
         try {
             RunnableCallback syncCallback = new EventManagerZkPusher(this, syncSupEventManager);
 
+            // ${lcoal-zk-assignment-version}
             Map<String, Integer> assignmentVersion = (Map<String, Integer>) localState.get(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION);
             if (assignmentVersion == null) {
                 assignmentVersion = new HashMap<>();
             }
+            // ${local-zk-assignments}
             Map<String, Assignment> assignments = (Map<String, Assignment>) localState.get(Common.LS_LOCAl_ZK_ASSIGNMENTS);
             if (assignments == null) {
                 assignments = new HashMap<>();
@@ -101,7 +103,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             LOG.debug("get local assignments  " + assignments);
             LOG.debug("get local assignments version " + assignmentVersion);
 
-            /**
+            /*
              * Step 1: get all assignments and add assignment watchers for /ZK-dir/assignment
              */
             if (healthStatus.isMoreSeriousThan(HealthStatus.ERROR)) {
@@ -110,7 +112,7 @@ class SyncSupervisorEvent extends RunnableCallback {
                 assignments.clear();
                 LOG.warn("Supervisor machine check status: " + healthStatus + ", killing all workers.");
             } else {
-                getAllAssignments(assignmentVersion, assignments, syncCallback);
+                this.getAllAssignments(assignmentVersion, assignments, syncCallback);
             }
             LOG.debug("Get all assignments " + assignments);
 

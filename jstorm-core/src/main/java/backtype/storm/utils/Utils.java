@@ -152,7 +152,7 @@ public class Utils {
      * Go thrift gzip serializer
      */
     public static byte[] serialize(Object obj) {
-        /**
+        /*
          * JStorm disables the thrift.gz.serializer
          */
         // return serializationDelegate.serialize(obj);

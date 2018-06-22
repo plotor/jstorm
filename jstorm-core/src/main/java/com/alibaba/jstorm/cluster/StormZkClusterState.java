@@ -687,7 +687,8 @@ public class StormZkClusterState implements StormClusterState {
     @Override
     public void supervisor_heartbeat(String supervisorId, SupervisorInfo info) throws Exception {
         String supervisorPath = Cluster.supervisor_path(supervisorId);
-        setTempObject(supervisorPath, info);
+        // 写入 ZK：supervisors/${supervisor_id}
+        this.setTempObject(supervisorPath, info);
     }
 
     @Override
