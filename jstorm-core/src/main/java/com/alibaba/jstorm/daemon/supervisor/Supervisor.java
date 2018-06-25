@@ -171,8 +171,6 @@ public class Supervisor {
         AsyncLoopThread syncSupervisorThread = new AsyncLoopThread(syncSupervisorPusher);
         threads.add(syncSupervisorThread);
 
-        // TODO by zhenchao SyncSupervisorEvent#run() 2018-06-22 10:16:29
-
         /*
          * Step 6: start httpserver
          */

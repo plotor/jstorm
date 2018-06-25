@@ -494,13 +494,21 @@ class SyncSupervisorEvent extends RunnableCallback {
         }
     }
 
+    /**
+     * TODO by zhenchao 2018-06-25 10:28:43
+     *
+     * @param assignmentVersion
+     * @param localZkAssignments
+     * @param callback
+     * @throws Exception
+     */
     private void getAllAssignments(Map<String, Integer> assignmentVersion,
-                                   Map<String, Assignment> localZkAssignments,
-                                   RunnableCallback callback) throws Exception {
+                                   Map<String, Assignment> localZkAssignments, RunnableCallback callback) throws Exception {
+
         Map<String, Assignment> ret = new HashMap<>();
         Map<String, Integer> updateAssignmentVersion = new HashMap<>();
 
-        // get /assignments {topologyId}
+        // get /assignments/${topologyId}
         List<String> assignments = stormClusterState.assignments(callback);
         if (assignments == null) {
             assignmentVersion.clear();
