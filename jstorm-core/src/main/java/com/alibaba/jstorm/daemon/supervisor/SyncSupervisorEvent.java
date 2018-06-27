@@ -495,8 +495,6 @@ class SyncSupervisorEvent extends RunnableCallback {
     }
 
     /**
-     * TODO by zhenchao 2018-06-25 10:28:43
-     *
      * @param assignmentVersion
      * @param localZkAssignments
      * @param callback
@@ -508,7 +506,7 @@ class SyncSupervisorEvent extends RunnableCallback {
         Map<String, Assignment> ret = new HashMap<>();
         Map<String, Integer> updateAssignmentVersion = new HashMap<>();
 
-        // get /assignments/${topologyId}
+        // 枚举所有 /assignments/${topology_id}
         List<String> assignments = stormClusterState.assignments(callback);
         if (assignments == null) {
             assignmentVersion.clear();
@@ -517,6 +515,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             return;
         }
 
+        // TODO by zhenchao 2018-06-27 10:13:58
         for (String topologyId : assignments) {
             Integer zkVersion = stormClusterState.assignment_version(topologyId, callback);
             LOG.debug(topologyId + "'s assignment version of zk is :" + zkVersion);
@@ -527,7 +526,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             if (recordedVersion != null && zkVersion != null && recordedVersion.equals(zkVersion)) {
                 assignment = localZkAssignments.get(topologyId);
             }
-            //because the first version is 0
+            // because the first version is 0
             if (assignment == null) {
                 assignment = stormClusterState.assignment_info(topologyId, callback);
             }

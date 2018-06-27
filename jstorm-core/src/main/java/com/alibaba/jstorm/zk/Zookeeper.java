@@ -147,7 +147,7 @@ public class Zookeeper {
     public Integer getVersion(CuratorFramework zk, String path, boolean watch) throws Exception {
         String normPath = PathUtils.normalize_path(path);
         Stat stat;
-        if (existsNode(zk, normPath, watch)) {
+        if (this.existsNode(zk, normPath, watch)) {
             if (watch) {
                 stat = zk.checkExists().watched().forPath(PathUtils.normalize_path(path));
             } else {
@@ -155,7 +155,6 @@ public class Zookeeper {
             }
             return stat.getVersion();
         }
-
         return null;
     }
 
@@ -176,9 +175,17 @@ public class Zookeeper {
         return null;
     }
 
+    /**
+     * 枚举当前 path 下面所有的子路径
+     *
+     * @param zk
+     * @param path
+     * @param watch
+     * @return
+     * @throws Exception
+     */
     public List<String> getChildren(CuratorFramework zk, String path, boolean watch) throws Exception {
         String normPath = PathUtils.normalize_path(path);
-
         if (watch) {
             return zk.getChildren().watched().forPath(normPath);
         } else {

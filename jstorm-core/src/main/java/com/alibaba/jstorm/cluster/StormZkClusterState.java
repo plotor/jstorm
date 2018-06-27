@@ -278,6 +278,7 @@ public class StormZkClusterState implements StormClusterState {
         if (callback != null) {
             assignment_info_callback.put(topologyId, callback);
         }
+        // assignments/{topology_id}
         String assignmentPath = Cluster.assignment_path(topologyId);
         return cluster_state.get_version(assignmentPath, callback != null);
     }
@@ -287,6 +288,7 @@ public class StormZkClusterState implements StormClusterState {
         if (callback != null) {
             assignments_callback.set(callback);
         }
+        // 枚举 assignments 路径下面所有的子路径
         return cluster_state.get_children(Cluster.ASSIGNMENTS_SUBTREE, callback != null);
     }
 
