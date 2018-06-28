@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.cluster;
 
 import backtype.storm.Config;
@@ -57,6 +58,7 @@ public class DistributedClusterState implements ClusterState {
     private final Map<Object, Object> conf;
     private final AtomicBoolean active;
 
+    /** 本地缓存，用于缓存 ZK 路径与对应的 ZK 数据 */
     private JStormCache zkCache;
 
     public DistributedClusterState(Map<Object, Object> conf) throws Exception {
@@ -138,7 +140,6 @@ public class DistributedClusterState implements ClusterState {
         if (zkCache != null) {
             zkCache.put(path, ret);
         }
-
         return ret;
     }
 

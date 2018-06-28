@@ -1,5 +1,7 @@
 package org.zhenchao.zk;
 
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.schedule.Assignment;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -28,9 +30,15 @@ public class ZKResolver {
         String ROOT_PATH = "/storm/assignments";
         List<String> paths = client.getChildren().forPath(ROOT_PATH);
         for (final String path : paths) {
+            String absolutePath = ROOT_PATH + "/" + path;
             System.out.println(path);
-            Stat stat = client.checkExists().forPath(ROOT_PATH + "/" + path);
+            Stat stat = client.checkExists().forPath(absolutePath);
             System.out.println(stat);
+
+            byte[] data = client.getData().forPath(absolutePath);
+            System.out.println(data.length);
+            Assignment assignment = (Assignment) Utils.maybe_deserialize(data);
+            System.out.println(assignment);
         }
     }
 }

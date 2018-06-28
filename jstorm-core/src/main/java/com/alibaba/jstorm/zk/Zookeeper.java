@@ -161,7 +161,7 @@ public class Zookeeper {
     public byte[] getData(CuratorFramework zk, String path, boolean watch) throws Exception {
         String normPath = PathUtils.normalize_path(path);
         try {
-            if (existsNode(zk, normPath, watch)) {
+            if (this.existsNode(zk, normPath, watch)) {
                 if (watch) {
                     return zk.getData().watched().forPath(normPath);
                 } else {

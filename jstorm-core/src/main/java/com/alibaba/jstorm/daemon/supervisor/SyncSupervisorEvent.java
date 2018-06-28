@@ -495,7 +495,7 @@ class SyncSupervisorEvent extends RunnableCallback {
     }
 
     /**
-     * @param assignmentVersion
+     * @param assignmentVersion <topology_id, version>
      * @param localZkAssignments
      * @param callback
      * @throws Exception
@@ -515,7 +515,6 @@ class SyncSupervisorEvent extends RunnableCallback {
             return;
         }
 
-        // TODO by zhenchao 2018-06-27 10:13:58
         for (String topologyId : assignments) {
             Integer zkVersion = stormClusterState.assignment_version(topologyId, callback);
             LOG.debug(topologyId + "'s assignment version of zk is :" + zkVersion);
@@ -524,6 +523,7 @@ class SyncSupervisorEvent extends RunnableCallback {
 
             Assignment assignment = null;
             if (recordedVersion != null && zkVersion != null && recordedVersion.equals(zkVersion)) {
+                // 版本相同就从本地获取分配信息
                 assignment = localZkAssignments.get(topologyId);
             }
             // because the first version is 0

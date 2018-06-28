@@ -268,9 +268,9 @@ public class StormZkClusterState implements StormClusterState {
             assignment_info_callback.put(topologyId, callback);
         }
 
-        // 获取 topology 对应的任务分配信息
+        // 获取 topology 对应的任务分配信息：assignments/${topology_id}
         String assignmentPath = Cluster.assignment_path(topologyId);
-        return (Assignment) getObject(assignmentPath, callback != null);
+        return (Assignment) this.getObject(assignmentPath, callback != null);
     }
 
     @Override
