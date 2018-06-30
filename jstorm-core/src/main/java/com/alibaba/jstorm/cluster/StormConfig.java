@@ -509,6 +509,13 @@ public class StormConfig {
         return (StormTopology) readLocalObject(topologyId, codePath);
     }
 
+    /**
+     * 获取 STORM-LOCAL-DIR/supervisor/stormdist/ 目录下面所有的 topology 名称
+     *
+     * @param conf
+     * @return
+     * @throws IOException
+     */
     @SuppressWarnings("rawtypes")
     public static List<String> get_supervisor_toplogy_list(Map conf) throws IOException {
         // get the path: STORM-LOCAL-DIR/supervisor/stormdist/

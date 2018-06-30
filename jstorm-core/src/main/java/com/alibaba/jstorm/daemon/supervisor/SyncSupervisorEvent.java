@@ -90,12 +90,12 @@ class SyncSupervisorEvent extends RunnableCallback {
         try {
             RunnableCallback syncCallback = new EventManagerZkPusher(this, syncSupEventManager);
 
-            // ${lcoal-zk-assignment-version}
+            // lcoal-zk-assignment.version
             Map<String, Integer> assignmentVersion = (Map<String, Integer>) localState.get(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION);
             if (assignmentVersion == null) {
                 assignmentVersion = new HashMap<>();
             }
-            // ${local-zk-assignments}
+            // local-zk-assignments
             Map<String, Assignment> assignments = (Map<String, Assignment>) localState.get(Common.LS_LOCAl_ZK_ASSIGNMENTS);
             if (assignments == null) {
                 assignments = new HashMap<>();
@@ -105,6 +105,8 @@ class SyncSupervisorEvent extends RunnableCallback {
 
             /*
              * Step 1: get all assignments and add assignment watchers for /ZK-dir/assignment
+             *
+             * 1. 获取所有的拓扑分配信息
              */
             if (healthStatus.isMoreSeriousThan(HealthStatus.ERROR)) {
                 // if status is panic or error, clear all assignments and kill all workers
@@ -112,12 +114,15 @@ class SyncSupervisorEvent extends RunnableCallback {
                 assignments.clear();
                 LOG.warn("Supervisor machine check status: " + healthStatus + ", killing all workers.");
             } else {
+                // 获取所有 topology 的分配信息
                 this.getAllAssignments(assignmentVersion, assignments, syncCallback);
             }
             LOG.debug("Get all assignments " + assignments);
 
-            /**
+            /*
              * Step 2: get topology id list from STORM-LOCAL-DIR/supervisor/stormdist/
+             *
+             * 2. 获取本地下载下来的所有拓扑ID
              */
             List<String> downloadedTopologyIds = StormConfig.get_supervisor_toplogy_list(conf);
             LOG.debug("Downloaded storm ids: " + downloadedTopologyIds);
@@ -125,7 +130,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             /**
              * Step 3: get <port,LocalAssignments> from ZK local node's assignment
              */
-            Map<Integer, LocalAssignment> zkAssignment = getLocalAssign(stormClusterState, supervisorId, assignments);
+            Map<Integer, LocalAssignment> zkAssignment = this.getLocalAssign(stormClusterState, supervisorId, assignments);
 
             Map<Integer, LocalAssignment> localAssignment;
 
@@ -222,8 +227,8 @@ class SyncSupervisorEvent extends RunnableCallback {
      *
      * @return map: [port,LocalAssignment]
      */
-    private Map<Integer, LocalAssignment> getLocalAssign(StormClusterState stormClusterState, String supervisorId,
-                                                         Map<String, Assignment> assignments) throws Exception {
+    private Map<Integer, LocalAssignment> getLocalAssign(
+            StormClusterState stormClusterState, String supervisorId, Map<String, Assignment> assignments) throws Exception {
         Map<Integer, LocalAssignment> portToAssignment = new HashMap<>();
         for (Entry<String, Assignment> assignEntry : assignments.entrySet()) {
             String topologyId = assignEntry.getKey();
@@ -495,8 +500,10 @@ class SyncSupervisorEvent extends RunnableCallback {
     }
 
     /**
-     * @param assignmentVersion <topology_id, version>
-     * @param localZkAssignments
+     * 获取所有topology的分配信息，更新到参数中
+     *
+     * @param assignmentVersion <topology_id, assign_version>
+     * @param localZkAssignments <topology_id, assignment>
      * @param callback
      * @throws Exception
      */
@@ -504,6 +511,7 @@ class SyncSupervisorEvent extends RunnableCallback {
                                    Map<String, Assignment> localZkAssignments, RunnableCallback callback) throws Exception {
 
         Map<String, Assignment> ret = new HashMap<>();
+        // <topology_id, assign_version>
         Map<String, Integer> updateAssignmentVersion = new HashMap<>();
 
         // 枚举所有 /assignments/${topology_id}
@@ -523,11 +531,12 @@ class SyncSupervisorEvent extends RunnableCallback {
 
             Assignment assignment = null;
             if (recordedVersion != null && zkVersion != null && recordedVersion.equals(zkVersion)) {
-                // 版本相同就从本地获取分配信息
+                // 版本相同就从本地获取分配信息（减小对 ZK 的压力？）
                 assignment = localZkAssignments.get(topologyId);
             }
             // because the first version is 0
             if (assignment == null) {
+                // 从 ZK 拉取拓扑的分配信息
                 assignment = stormClusterState.assignment_info(topologyId, callback);
             }
             if (assignment == null) {
