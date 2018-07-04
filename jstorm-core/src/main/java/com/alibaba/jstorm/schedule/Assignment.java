@@ -299,8 +299,7 @@ public class Assignment implements Serializable {
 
     public boolean isTopologyChange(long oldTimeStamp) {
         boolean isChange = false;
-        if (timeStamp > oldTimeStamp && (type.equals(AssignmentType.UpdateTopology) ||
-                type.equals(AssignmentType.ScaleTopology))) {
+        if (timeStamp > oldTimeStamp && (type.equals(AssignmentType.UpdateTopology) || type.equals(AssignmentType.ScaleTopology))) {
             isChange = true;
         }
         return isChange;

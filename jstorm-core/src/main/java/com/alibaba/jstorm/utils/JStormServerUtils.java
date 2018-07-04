@@ -47,8 +47,7 @@ public class JStormServerUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(JStormServerUtils.class);
 
-    public static void downloadCodeFromBlobStore(Map conf, String localRoot, String topologyId)
-            throws IOException, KeyNotFoundException {
+    public static void downloadCodeFromBlobStore(Map conf, String localRoot, String topologyId) throws IOException, KeyNotFoundException {
         ClientBlobStore blobStore = BlobStoreUtils.getClientBlobStoreForSupervisor(conf);
         FileUtils.forceMkdir(new File(localRoot));
 

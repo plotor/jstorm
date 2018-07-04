@@ -141,8 +141,7 @@ class SyncProcessEvent extends ShutdownWork {
     }
 
     public void run(Map<Integer, LocalAssignment> localAssignments,
-                    Set<String> downloadFailedTopologyIds,
-                    Map<String, Set<Pair<String, Integer>>> upgradeTopologyPorts) {
+                    Set<String> downloadFailedTopologyIds, Map<String, Set<Pair<String, Integer>>> upgradeTopologyPorts) {
         LOG.debug("Syncing processes, interval (sec): " + TimeUtils.time_delta(lastTime));
         lastTime = TimeUtils.current_time_secs();
         try {

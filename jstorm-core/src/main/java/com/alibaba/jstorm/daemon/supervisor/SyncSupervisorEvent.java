@@ -127,19 +127,20 @@ class SyncSupervisorEvent extends RunnableCallback {
             List<String> downloadedTopologyIds = StormConfig.get_supervisor_toplogy_list(conf);
             LOG.debug("Downloaded storm ids: " + downloadedTopologyIds);
 
-            /**
+            /*
              * Step 3: get <port,LocalAssignments> from ZK local node's assignment
+             *
+             * 3. 获取当前 supervisor 的任务分配信息
              */
             Map<Integer, LocalAssignment> zkAssignment = this.getLocalAssign(stormClusterState, supervisorId, assignments);
 
-            Map<Integer, LocalAssignment> localAssignment;
-
-            /**
+            /*
              * Step 4: writer local assignment to LocalState
              */
+            Map<Integer, LocalAssignment> localAssignment;
             try {
                 LOG.debug("Writing local assignment " + zkAssignment);
-                localAssignment = (Map<Integer, LocalAssignment>) localState.get(Common.LS_LOCAL_ASSIGNMENTS);
+                localAssignment = (Map<Integer, LocalAssignment>) localState.get(Common.LS_LOCAL_ASSIGNMENTS); // local-assignments
                 if (localAssignment == null) {
                     localAssignment = new HashMap<>();
                 }
@@ -149,40 +150,47 @@ class SyncSupervisorEvent extends RunnableCallback {
                 throw e;
             }
 
-            /**
+            /*
              * Step 5: get reloaded topologies
              */
-            Set<String> updateTopologies = getUpdateTopologies(localAssignment, zkAssignment, assignments);
-            Set<String> reDownloadTopologies = getNeedReDownloadTopologies(localAssignment);
+            Set<String> updateTopologies = this.getUpdateTopologies(localAssignment, zkAssignment, assignments);
+            Set<String> reDownloadTopologies = this.getNeedReDownloadTopologies(localAssignment);
             if (reDownloadTopologies != null) {
                 updateTopologies.addAll(reDownloadTopologies);
             }
 
-            /**
+            /*
              * get upgrade topology ports
              */
-            Map<String, Set<Pair<String, Integer>>> upgradeTopologyPorts = getUpgradeTopologies(
-                    stormClusterState, localAssignment, zkAssignment);
+            Map<String, Set<Pair<String, Integer>>> upgradeTopologyPorts =
+                    this.getUpgradeTopologies(stormClusterState, localAssignment, zkAssignment);
             if (upgradeTopologyPorts.size() > 0) {
                 LOG.info("upgrade topology ports:{}", upgradeTopologyPorts);
                 updateTopologies.addAll(upgradeTopologyPorts.keySet());
             }
 
-            /**
+            /*
              * Step 6: download code from ZK
+             *
+             * 从 nimbus 下载对应的 topology 信息
              */
+            // 从 ZK 上获取当前 supervisor 上分配的 [topologyId, master-code-dir] 信息
             Map<String, String> topologyCodes = getTopologyCodeLocations(assignments, supervisorId);
             // downloadFailedTopologyIds which can't finished download binary from nimbus
             Set<String> downloadFailedTopologyIds = new HashSet<>();
-            downloadTopology(topologyCodes, downloadedTopologyIds,
-                    updateTopologies, assignments, downloadFailedTopologyIds);
+            this.downloadTopology(topologyCodes, downloadedTopologyIds, updateTopologies, assignments, downloadFailedTopologyIds);
+
+            /*
+             * Step 7: remove any downloaded useless topology
+             *
+             * 删除那些之前下载过，但是本次未分配给当前 supervisor 的 topology
+             */
+            this.removeUselessTopology(topologyCodes, downloadedTopologyIds);
 
             /**
-             * Step 7: remove any downloaded useless topology
-             */
-            removeUselessTopology(topologyCodes, downloadedTopologyIds);
-            /**
              * Step 8: push syncProcesses Event
+             *
+             * todo by zhenchao 2018-07-04 09:38:06
              */
             // processEventManager.add(syncProcesses);
             syncProcesses.run(zkAssignment, downloadFailedTopologyIds, upgradeTopologyPorts);
@@ -214,7 +222,6 @@ class SyncSupervisorEvent extends RunnableCallback {
      */
     private void downloadStormCode(Map conf, String topologyId, String masterCodeDir) throws IOException, TException {
         String clusterMode = StormConfig.cluster_mode(conf);
-
         if (clusterMode.endsWith("distributed")) {
             BlobStoreUtils.downloadDistributeStormCode(conf, topologyId, masterCodeDir);
         } else if (clusterMode.endsWith("local")) {
@@ -225,7 +232,11 @@ class SyncSupervisorEvent extends RunnableCallback {
     /**
      * a port must be assigned to a topology
      *
+     * @param stormClusterState
+     * @param supervisorId
+     * @param assignments [topology_id, Assignment]
      * @return map: [port,LocalAssignment]
+     * @throws Exception
      */
     private Map<Integer, LocalAssignment> getLocalAssign(
             StormClusterState stormClusterState, String supervisorId, Map<String, Assignment> assignments) throws Exception {
@@ -234,23 +245,25 @@ class SyncSupervisorEvent extends RunnableCallback {
             String topologyId = assignEntry.getKey();
             Assignment assignment = assignEntry.getValue();
 
-            Map<Integer, LocalAssignment> portTasks = readMyTasks(stormClusterState, topologyId, supervisorId, assignment);
+            // 获取当前 supervisor 分配的任务
+            Map<Integer, LocalAssignment> portTasks = this.readMyTasks(stormClusterState, topologyId, supervisorId, assignment);
             if (portTasks == null) {
                 continue;
             }
 
             // a port must be assigned to one assignment
+            // 校验、保证每一个port对应一个任务
             for (Entry<Integer, LocalAssignment> entry : portTasks.entrySet()) {
                 Integer port = entry.getKey();
                 LocalAssignment la = entry.getValue();
                 if (!portToAssignment.containsKey(port)) {
                     portToAssignment.put(port, la);
                 } else {
+                    // 同一个端口不允许出现多个 topology
                     throw new RuntimeException("Should not have multiple topologies assigned to one port");
                 }
             }
         }
-
         return portToAssignment;
     }
 
@@ -260,8 +273,8 @@ class SyncSupervisorEvent extends RunnableCallback {
      * @return Map: [port, LocalAssignment]
      */
     @SuppressWarnings("unused")
-    private Map<Integer, LocalAssignment> readMyTasks(StormClusterState stormClusterState, String topologyId,
-                                                      String supervisorId, Assignment assignmentInfo) throws Exception {
+    private Map<Integer, LocalAssignment> readMyTasks(
+            StormClusterState stormClusterState, String topologyId, String supervisorId, Assignment assignmentInfo) throws Exception {
         Map<Integer, LocalAssignment> portTasks = new HashMap<>();
 
         Set<ResourceWorkerSlot> workers = assignmentInfo.getWorkers();
@@ -284,6 +297,7 @@ class SyncSupervisorEvent extends RunnableCallback {
 
     /**
      * get master code dir for each topology
+     * 从 ZK 上获取当前 supervisor 上分配的 [topologyId, master-code-dir] 信息
      *
      * @return Map: [topologyId, master-code-dir] from zookeeper
      */
@@ -294,10 +308,12 @@ class SyncSupervisorEvent extends RunnableCallback {
             String topologyId = entry.getKey();
             Assignment assignmentInfo = entry.getValue();
 
+            // 获取当前 topology 分配的 worker 信息
             Set<ResourceWorkerSlot> workers = assignmentInfo.getWorkers();
             for (ResourceWorkerSlot worker : workers) {
                 String node = worker.getNodeId();
                 if (supervisorId.equals(node)) {
+                    // 对应分配在当前 supervisor 上的 topology 信息，记录 [topologyId, master-code-dir]
                     rtn.put(topologyId, assignmentInfo.getMasterCodeDir());
                     break;
                 }
@@ -307,26 +323,33 @@ class SyncSupervisorEvent extends RunnableCallback {
         return rtn;
     }
 
+    /**
+     * @param topologyCodes [topologyId, master-code-dir]
+     * @param downloadedTopologyIds 本地已经下载的 topology
+     * @param updateTopologies
+     * @param assignments
+     * @param downloadFailedTopologyIds
+     * @throws Exception
+     */
     public void downloadTopology(Map<String, String> topologyCodes, List<String> downloadedTopologyIds,
-                                 Set<String> updateTopologies, Map<String, Assignment> assignments,
-                                 Set<String> downloadFailedTopologyIds) throws Exception {
+                                 Set<String> updateTopologies, Map<String, Assignment> assignments, Set<String> downloadFailedTopologyIds) throws Exception {
         Set<String> downloadTopologies = new HashSet<>();
         for (Entry<String, String> entry : topologyCodes.entrySet()) {
             String topologyId = entry.getKey();
             String masterCodeDir = entry.getValue();
+            // 对于未下载的或需要更新的 topology 执行下载
             if (!downloadedTopologyIds.contains(topologyId) || updateTopologies.contains(topologyId)) {
                 LOG.info("Downloading code for storm id " + topologyId + " from " + masterCodeDir);
                 int retry = 0;
                 while (retry < 3) {
                     try {
-                        downloadStormCode(conf, topologyId, masterCodeDir);
-                        // Update assignment timeStamp
+                        this.downloadStormCode(conf, topologyId, masterCodeDir);
+                        // update assignment timeStamp
                         StormConfig.write_supervisor_topology_timestamp(
                                 conf, topologyId, assignments.get(topologyId).getTimeStamp());
                         break;
                     } catch (IOException | TException e) {
-                        LOG.error(e + " downloadStormCode failed, topologyId:" + topologyId +
-                                ", masterCodeDir:" + masterCodeDir);
+                        LOG.error(e + " downloadStormCode failed, topologyId:" + topologyId + ", masterCodeDir:" + masterCodeDir);
                     }
                     retry++;
                 }
@@ -339,8 +362,8 @@ class SyncSupervisorEvent extends RunnableCallback {
                 }
             }
         }
-        // clear directory of topologyId is dangerous , so it only clear the topologyId which
-        // isn't contained by downloadedTopologyIds
+        // clear directory of topologyId is dangerous,
+        // so it only clear the topologyId which isn't contained by downloadedTopologyIds
         for (String topologyId : downloadFailedTopologyIds) {
             if (!downloadedTopologyIds.contains(topologyId)) {
                 try {
@@ -353,15 +376,22 @@ class SyncSupervisorEvent extends RunnableCallback {
             }
         }
 
-        updateTaskCleanupTimeout(downloadTopologies);
+        this.updateTaskCleanupTimeout(downloadTopologies);
     }
 
+    /**
+     * 删除那些之前下载过，但是本次未分配给当前 supervisor 的 topology
+     *
+     * @param topologyCodes
+     * @param downloadedTopologyIds
+     */
     public void removeUselessTopology(Map<String, String> topologyCodes, List<String> downloadedTopologyIds) {
         for (String topologyId : downloadedTopologyIds) {
             if (!topologyCodes.containsKey(topologyId)) {
                 LOG.info("Removing code for storm id " + topologyId);
                 String path = null;
                 try {
+                    // ${storm.local.dir}/supervisor/stormdist/${topology_id}
                     path = StormConfig.supervisor_stormdist_root(conf, topologyId);
                     PathUtils.rmr(path);
                 } catch (IOException e) {
@@ -373,8 +403,7 @@ class SyncSupervisorEvent extends RunnableCallback {
     }
 
     private Set<String> getUpdateTopologies(Map<Integer, LocalAssignment> localAssignments,
-                                            Map<Integer, LocalAssignment> zkAssignments,
-                                            Map<String, Assignment> assignments) {
+                                            Map<Integer, LocalAssignment> zkAssignments, Map<String, Assignment> assignments) {
         Set<String> ret = new HashSet<>();
         if (localAssignments != null && zkAssignments != null) {
             for (Entry<Integer, LocalAssignment> entry : localAssignments.entrySet()) {
@@ -386,23 +415,20 @@ class SyncSupervisorEvent extends RunnableCallback {
                 }
 
                 Assignment assignment = assignments.get(localAssignment.getTopologyId());
-                if (localAssignment.getTopologyId().equals(zkAssignment.getTopologyId()) && assignment != null
-                        && assignment.isTopologyChange(localAssignment.getTimeStamp())) {
+                if (localAssignment.getTopologyId().equals(zkAssignment.getTopologyId())
+                        && assignment != null && assignment.isTopologyChange(localAssignment.getTimeStamp())) {
                     if (ret.add(localAssignment.getTopologyId())) {
                         LOG.info("Topology " + localAssignment.getTopologyId() +
-                                " has been updated. LocalTs=" + localAssignment.getTimeStamp() + ", ZkTs="
-                                + zkAssignment.getTimeStamp());
+                                " has been updated. LocalTs=" + localAssignment.getTimeStamp() + ", ZkTs=" + zkAssignment.getTimeStamp());
                     }
                 }
             }
         }
-
         return ret;
     }
 
-    private Map<String, Set<Pair<String, Integer>>> getUpgradeTopologies(StormClusterState stormClusterState,
-                                                                         Map<Integer, LocalAssignment> localAssignments,
-                                                                         Map<Integer, LocalAssignment> zkAssignments) {
+    private Map<String, Set<Pair<String, Integer>>> getUpgradeTopologies(
+            StormClusterState stormClusterState, Map<Integer, LocalAssignment> localAssignments, Map<Integer, LocalAssignment> zkAssignments) {
         SupervisorInfo supervisorInfo = heartbeat.getSupervisorInfo();
         Map<String, Set<Pair<String, Integer>>> ret = new HashMap<>();
 
@@ -422,7 +448,6 @@ class SyncSupervisorEvent extends RunnableCallback {
                             ports = new HashSet<>();
                         }
                         ports.add(new Pair<>(host, port));
-
                         ret.put(topologyId, ports);
                     }
                 }
@@ -447,8 +472,7 @@ class SyncSupervisorEvent extends RunnableCallback {
                 needRemoveTopologies.add(entry.getValue().getTopologyId());
             }
         }
-        LOG.debug("workers are starting on these topologies, delay downloading topology binary: " +
-                needRemoveTopologies);
+        LOG.debug("workers are starting on these topologies, delay downloading topology binary: " + needRemoveTopologies);
         reDownloadTopologies.removeAll(needRemoveTopologies);
         if (reDownloadTopologies.size() > 0) {
             LOG.info("Following topologies are going to re-download the jars, " + reDownloadTopologies);

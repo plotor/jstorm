@@ -208,6 +208,13 @@ public class StormConfig {
         return ret;
     }
 
+    /**
+     * ${storm.local.dir}/supervisor/stormdist
+     *
+     * @param conf
+     * @return
+     * @throws IOException
+     */
     public static String supervisor_stormdist_root(Map conf) throws IOException {
         String ret = stormdist_path(supervisor_local_dir(conf));
         FileUtils.forceMkdir(new File(ret));

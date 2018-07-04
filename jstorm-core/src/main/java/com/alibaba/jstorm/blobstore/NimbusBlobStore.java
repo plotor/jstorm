@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.blobstore;
 
 import backtype.storm.Config;
@@ -58,7 +59,7 @@ public class NimbusBlobStore extends ClientBlobStore {
         private void readMore() throws TException {
             if (!eof) {
                 offset = 0;
-                synchronized(client) {
+                synchronized (client) {
                     listBlobs = client.getClient().listBlobs(listBlobs.get_session());
                 }
                 if (listBlobs.get_keys_size() == 0) {
@@ -127,7 +128,7 @@ public class NimbusBlobStore extends ClientBlobStore {
                 int ret = buffer[offset];
                 offset += length;
                 return ret;
-            } catch(TException exp) {
+            } catch (TException exp) {
                 throw new IOException(exp);
             }
         }
@@ -145,7 +146,7 @@ public class NimbusBlobStore extends ClientBlobStore {
                 System.arraycopy(buffer, offset, b, off, length);
                 offset += length;
                 return length;
-            } catch(TException exp) {
+            } catch (TException exp) {
                 throw new IOException(exp);
             }
         }
@@ -157,7 +158,7 @@ public class NimbusBlobStore extends ClientBlobStore {
         private void readMore() throws TException {
             if (!eof) {
                 ByteBuffer buff;
-                synchronized(client) {
+                synchronized (client) {
                     buff = client.getClient().downloadBlobChunk(beginBlobDownload.get_session());
                 }
                 buffer = buff.array();
@@ -200,7 +201,7 @@ public class NimbusBlobStore extends ClientBlobStore {
         @Override
         public void cancel() throws IOException {
             try {
-                synchronized(client) {
+                synchronized (client) {
                     client.getClient().cancelBlobUpload(session);
                 }
             } catch (TException e) {
@@ -211,8 +212,8 @@ public class NimbusBlobStore extends ClientBlobStore {
         @Override
         public void write(int b) throws IOException {
             try {
-                synchronized(client) {
-                    client.getClient().uploadBlobChunk(session, ByteBuffer.wrap(new byte[] {(byte)b}));
+                synchronized (client) {
+                    client.getClient().uploadBlobChunk(session, ByteBuffer.wrap(new byte[] {(byte) b}));
                 }
             } catch (TException e) {
                 throw new RuntimeException(e);
@@ -220,18 +221,18 @@ public class NimbusBlobStore extends ClientBlobStore {
         }
 
         @Override
-        public void write(byte []b) throws IOException {
+        public void write(byte[] b) throws IOException {
             write(b, 0, b.length);
         }
 
         @Override
-        public void write(byte []b, int offset, int len) throws IOException {
+        public void write(byte[] b, int offset, int len) throws IOException {
             try {
                 int end = offset + len;
                 for (int realOffset = offset; realOffset < end; realOffset += maxChunkSize) {
                     int realLen = Math.min(end - realOffset, maxChunkSize);
-                    LOG.debug("Writing {} bytes of {} remaining",realLen,(end-realOffset));
-                    synchronized(client) {
+                    LOG.debug("Writing {} bytes of {} remaining", realLen, (end - realOffset));
+                    synchronized (client) {
                         client.getClient().uploadBlobChunk(session, ByteBuffer.wrap(b, realOffset, realLen));
                     }
                 }
@@ -243,7 +244,7 @@ public class NimbusBlobStore extends ClientBlobStore {
         @Override
         public void close() throws IOException {
             try {
-                synchronized(client) {
+                synchronized (client) {
                     client.getClient().finishBlobUpload(session);
                     client.getClient().createStateInZookeeper(key);
                 }
@@ -265,10 +266,9 @@ public class NimbusBlobStore extends ClientBlobStore {
     }
 
     @Override
-    protected AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta)
-            throws KeyAlreadyExistsException {
+    protected AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta) throws KeyAlreadyExistsException {
         try {
-            synchronized(client) {
+            synchronized (client) {
                 return new NimbusUploadAtomicOutputStream(client.getClient().beginCreateBlob(key, meta), this.bufferSize, key);
             }
         } catch (KeyAlreadyExistsException exp) {
@@ -282,7 +282,7 @@ public class NimbusBlobStore extends ClientBlobStore {
     public AtomicOutputStream updateBlob(String key)
             throws KeyNotFoundException {
         try {
-            synchronized(client) {
+            synchronized (client) {
                 return new NimbusUploadAtomicOutputStream(client.getClient().beginUpdateBlob(key), this.bufferSize, key);
             }
         } catch (KeyNotFoundException exp) {
@@ -295,7 +295,7 @@ public class NimbusBlobStore extends ClientBlobStore {
     @Override
     public ReadableBlobMeta getBlobMeta(String key) throws KeyNotFoundException {
         try {
-            synchronized(client) {
+            synchronized (client) {
                 return client.getClient().getBlobMeta(key);
             }
         } catch (KeyNotFoundException exp) {
@@ -309,7 +309,7 @@ public class NimbusBlobStore extends ClientBlobStore {
     protected void setBlobMetaToExtend(String key, SettableBlobMeta meta)
             throws KeyNotFoundException {
         try {
-            synchronized(client) {
+            synchronized (client) {
                 client.getClient().setBlobMeta(key, meta);
             }
         } catch (KeyNotFoundException exp) {
@@ -322,7 +322,7 @@ public class NimbusBlobStore extends ClientBlobStore {
     @Override
     public void deleteBlob(String key) throws KeyNotFoundException {
         try {
-            synchronized(client) {
+            synchronized (client) {
                 client.getClient().deleteBlob(key);
             }
         } catch (KeyNotFoundException exp) {
@@ -335,7 +335,7 @@ public class NimbusBlobStore extends ClientBlobStore {
     @Override
     public void createStateInZookeeper(String key) {
         try {
-            synchronized(client) {
+            synchronized (client) {
                 client.getClient().createStateInZookeeper(key);
             }
         } catch (TException e) {
@@ -346,7 +346,7 @@ public class NimbusBlobStore extends ClientBlobStore {
     @Override
     public InputStreamWithMeta getBlob(String key) throws KeyNotFoundException {
         try {
-            synchronized(client) {
+            synchronized (client) {
                 return new NimbusDownloadInputStream(client.getClient().beginBlobDownload(key));
             }
         } catch (KeyNotFoundException exp) {
@@ -359,7 +359,7 @@ public class NimbusBlobStore extends ClientBlobStore {
     @Override
     public Iterator<String> listKeys() {
         try {
-            synchronized(client) {
+            synchronized (client) {
                 return new NimbusKeyIterator(client.getClient().listBlobs(""));
             }
         } catch (TException e) {

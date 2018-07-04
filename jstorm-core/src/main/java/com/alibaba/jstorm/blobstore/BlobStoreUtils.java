@@ -312,8 +312,8 @@ public class BlobStoreUtils {
     }
 
     public static ClientBlobStore getClientBlobStoreForSupervisor(Map conf) {
-        ClientBlobStore store = (ClientBlobStore) Utils.newInstance(
-                (String) conf.get(Config.SUPERVISOR_BLOBSTORE));
+        // default is NimbusBlobStore
+        ClientBlobStore store = (ClientBlobStore) Utils.newInstance((String) conf.get(Config.SUPERVISOR_BLOBSTORE));
         store.prepare(conf);
         return store;
     }
@@ -591,7 +591,6 @@ public class BlobStoreUtils {
             // STORM_LOCAL_DIR/supervisor/stormdist/topologyId
             String stormRoot = StormConfig.supervisor_stormdist_root(conf, topologyId);
 
-//        JStormServerUtils.downloadCodeFromMaster(conf, tmproot, masterCodeDir, topologyId, true);
             JStormServerUtils.downloadCodeFromBlobStore(conf, tmpToot, topologyId);
 
             // tmproot/stormjar.jar
@@ -616,8 +615,7 @@ public class BlobStoreUtils {
         }
     }
 
-    public static void downloadLocalStormCode(Map conf, String topologyId, String masterCodeDir) throws IOException,
-                                                                                                        TException {
+    public static void downloadLocalStormCode(Map conf, String topologyId, String masterCodeDir) throws IOException, TException {
         // STORM_LOCAL_DIR/supervisor/tmp/(UUID)
         String tmpRoot = StormConfig.supervisorTmpDir(conf) + File.separator + UUID.randomUUID().toString();
 
