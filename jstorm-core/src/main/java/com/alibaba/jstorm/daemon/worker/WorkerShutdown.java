@@ -15,35 +15,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
 
-import java.io.*;
+import backtype.storm.messaging.IConnection;
+import backtype.storm.messaging.IContext;
+import backtype.storm.scheduler.WorkerSlot;
+import com.alibaba.jstorm.callback.AsyncLoopRunnable;
+import com.alibaba.jstorm.callback.AsyncLoopThread;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.ClusterState;
+import com.alibaba.jstorm.cluster.StormClusterState;
+import com.alibaba.jstorm.cluster.StormConfig;
+import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.utils.JStormServerUtils;
+import com.alibaba.jstorm.utils.JStormUtils;
+import com.alibaba.jstorm.utils.PathUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.utils.JStormServerUtils;
-import com.alibaba.jstorm.utils.PathUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.messaging.IConnection;
-import backtype.storm.messaging.IContext;
-import backtype.storm.scheduler.WorkerSlot;
-
-import com.alibaba.jstorm.callback.AsyncLoopRunnable;
-import com.alibaba.jstorm.callback.AsyncLoopThread;
-import com.alibaba.jstorm.cluster.ClusterState;
-import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.task.TaskShutdownDameon;
-import com.alibaba.jstorm.utils.JStormUtils;
 
 /**
  * @author yannian/Longda
@@ -88,8 +92,9 @@ public class WorkerShutdown implements ShutdownableDameon {
         }
 
         //dump worker jstack, jmap info to specific file
-        if (ConfigExtension.isOutworkerDump(conf))
-            workerDumpInfoOutput();
+        if (ConfigExtension.isOutworkerDump(conf)) {
+            this.workerDumpInfoOutput();
+        }
 
         // shutdown tasks
         List<Future<?>> futures = new ArrayList<>();
@@ -145,7 +150,7 @@ public class WorkerShutdown implements ShutdownableDameon {
         }
 
         String clusterMode = StormConfig.cluster_mode(conf);
-        if(clusterMode.equals("distributed")) {
+        if (clusterMode.equals("distributed")) {
             // Only halt process in distributed mode. Because the worker is a fake process in local mode.
             JStormUtils.halt_process(0, "!!!Shutdown!!!");
         }
@@ -160,6 +165,7 @@ public class WorkerShutdown implements ShutdownableDameon {
         }
     }
 
+    @Override
     public boolean waiting() {
         Boolean isExistsWait = false;
         for (ShutdownableDameon task : shutdownTasks) {
@@ -179,7 +185,7 @@ public class WorkerShutdown implements ShutdownableDameon {
 
     @Override
     public void run() {
-        shutdown();
+        this.shutdown();
     }
 
     private void workerDumpInfoOutput() {

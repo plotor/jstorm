@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.command;
 
 import backtype.storm.utils.ShellUtils;
@@ -106,7 +107,7 @@ public class HealthCheck {
 
         public ScriptProcessLauncher(String command, long timeOut) {
             this.command = command;
-            this.executor = new ShellUtils.ShellCommandExecutor(new String[]{command}, null, null, timeOut);
+            this.executor = new ShellUtils.ShellCommandExecutor(new String[] {command}, null, null, timeOut);
         }
 
         public ExitStatus launch() {
@@ -121,7 +122,7 @@ public class HealthCheck {
                 }
                 LOG.warn(command + " exception, the exit status is: " + exitStatus, e);
             } finally {
-                if (exitStatus == ExitStatus.SUCCESS && hasNoResource(executor.getOutput())) {
+                if (exitStatus == ExitStatus.SUCCESS && this.hasNoResource(executor.getOutput())) {
                     exitStatus = ExitStatus.FAILED;
                     LOG.info("Script execute output: " + executor.getOutput());
                 }
@@ -141,6 +142,9 @@ public class HealthCheck {
     }
 
     private enum ExitStatus {
-        SUCCESS, TIMED_OUT, EXCEPTION, FAILED
+        SUCCESS,
+        TIMED_OUT,
+        EXCEPTION,
+        FAILED
     }
 }

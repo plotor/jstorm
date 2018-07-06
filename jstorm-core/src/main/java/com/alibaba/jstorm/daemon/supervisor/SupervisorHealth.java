@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
 
 import backtype.storm.command.HealthCheck;
@@ -51,8 +52,7 @@ public class SupervisorHealth extends RunnableCallback {
         String panicDir = ConfigExtension.getStormMachineResourcePanicCheckDir(conf);
         String warnDir = ConfigExtension.getStormMachineResourceWarningCheckDir(conf);
 
-        LOG.info("start supervisor health check , timeout is " + timeOut + ", scripts directories are: " + panicDir
-                 + ";" + errorDir + ";" + warnDir);
+        LOG.info("start supervisor health check , timeout is " + timeOut + ", scripts directories are: " + panicDir + ";" + errorDir + ";" + warnDir);
     }
 
     @SuppressWarnings("unchecked")
@@ -73,7 +73,7 @@ public class SupervisorHealth extends RunnableCallback {
 
     @Override
     public void run() {
-        updateStatus();
+        this.updateStatus();
     }
 
     public void setActive(boolean active) {

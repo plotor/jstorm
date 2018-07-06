@@ -32,9 +32,12 @@ import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.common.metric.AsmGauge;
 import com.alibaba.jstorm.common.metric.QueueGauge;
-import com.alibaba.jstorm.metric.*;
 import com.alibaba.jstorm.daemon.worker.hearbeat.SyncContainerHb;
 import com.alibaba.jstorm.daemon.worker.hearbeat.WorkerHeartbeatRunable;
+import com.alibaba.jstorm.metric.JStormMetrics;
+import com.alibaba.jstorm.metric.JStormMetricsReporter;
+import com.alibaba.jstorm.metric.MetricDef;
+import com.alibaba.jstorm.metric.MetricType;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormServerUtils;
@@ -48,8 +51,16 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -165,13 +176,13 @@ public class Worker {
         List<AsyncLoopThread> threads = new ArrayList<>();
 
         // create recv connection, reduce the count of netty client reconnect
-        AsyncLoopThread controlRvthread = startDispatchThread();
+        AsyncLoopThread controlRvthread = this.startDispatchThread();
         threads.add(controlRvthread);
 
         // create client before create task
         // so create client connection before create task
         // refresh connection
-        RefreshConnections refreshConn = makeRefreshConnections();
+        RefreshConnections refreshConn = this.makeRefreshConnections();
         AsyncLoopThread refreshconn = new AsyncLoopThread(refreshConn, false, Thread.MIN_PRIORITY, true);
         threads.add(refreshconn);
 
@@ -202,7 +213,7 @@ public class Worker {
         threads.add(hb);
 
         // shutdown task callbacks
-        List<TaskShutdownDameon> shutdownTasks = createTasks();
+        List<TaskShutdownDameon> shutdownTasks = this.createTasks();
         workerData.setShutdownTasks(shutdownTasks);
 
         //create worker serializes/deserialize threads
@@ -212,7 +223,6 @@ public class Worker {
         threads.addAll(deserializeThreads);
 
         return new WorkerShutdown(workerData, threads);
-
     }
 
     /**
@@ -238,7 +248,6 @@ public class Worker {
         LOG.info("Begin to run worker:" + sb.toString());
         Worker w = new Worker(conf, context, topologyId, supervisorId, port, workerId, jarPath);
         //   w.redirectOutput();
-
         return w.execute();
     }
 
@@ -286,17 +295,16 @@ public class Worker {
     }
 
     /**
+     * 获取指定端口对应的进程 ID
+     *
      * Note that if the worker's start parameter length is longer than 4096,
-     * ps -ef|grep com.alibaba.jstorm.daemon.worker.Worker can't find worker
+     * ps -ef | grep com.alibaba.jstorm.daemon.worker.Worker can't find worker
      *
      * @param port worker port
      */
-
     public static List<Integer> getOldPortPids(String port) {
-        String currPid = JStormUtils.process_pid();
-
+        String currPid = JStormUtils.process_pid(); // 获取当前 JVM 的 pid
         List<Integer> ret = new ArrayList<>();
-
         StringBuilder sb = new StringBuilder();
 
         sb.append("ps -Af ");
@@ -308,6 +316,7 @@ public class Worker {
 
         try {
             LOG.info("Begin to execute " + sb.toString());
+            // 调用终端执行命令
             String output = JStormUtils.launchProcess(sb.toString(), new HashMap<String, String>(), false);
             BufferedReader reader = new BufferedReader(new StringReader(output));
 
@@ -347,11 +356,9 @@ public class Worker {
                     if (field.contains(Worker.class.getName())) {
                         if (i + 3 >= fields.length) {
                             LOG.info("Failed to find port ");
-
                         } else if (fields[i + 3].equals(String.valueOf(port))) {
                             find = true;
                         }
-
                         break;
                     }
                 }
@@ -368,7 +375,6 @@ public class Worker {
                             continue;
                         }
                         Integer pid = Integer.valueOf(fields[1]);
-
                         LOG.info("Find one process :" + pid.toString());
                         ret.add(pid);
                     } catch (Exception e) {
@@ -387,8 +393,10 @@ public class Worker {
     }
 
     public static void killOldWorker(String port) {
+        // 获取指定端口对应的进程 ID
         List<Integer> oldPids = getOldPortPids(port);
         for (Integer pid : oldPids) {
+            // 逐个 kill 掉
             JStormUtils.kill(pid);
         }
     }
@@ -420,6 +428,7 @@ public class Worker {
             String workerId = args[3];
             String jarPath = args[4];
 
+            // kill 掉当前端口对应的进程列表
             killOldWorker(portStr);
 
             Map conf = Utils.readStormConfig();
@@ -427,8 +436,10 @@ public class Worker {
 
             JStormServerUtils.startTaobaoJvmMonitor();
 
-            sb.append("topologyId:").append(topologyId).append(", ").append("port:").append(portStr).append(", ")
-                    .append("workerId:").append(workerId).append(", ").append("jarPath:").append(jarPath).append("\n");
+            sb.append("topologyId:").append(topologyId).append(", ")
+                    .append("port:").append(portStr).append(", ")
+                    .append("workerId:").append(workerId).append(", ")
+                    .append("jarPath:").append(jarPath).append("\n");
 
             WorkerShutdown sd = mk_worker(conf, null, topologyId, supervisorId, Integer.parseInt(portStr), workerId, jarPath);
             sd.join();

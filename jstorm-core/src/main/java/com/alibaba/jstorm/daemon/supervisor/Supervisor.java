@@ -175,8 +175,8 @@ public class Supervisor {
          * Step 6: start httpserver
          */
         Httpserver httpserver = null;
-        if (!StormConfig.local_mode(conf)) {
-            int port = ConfigExtension.getSupervisorDeamonHttpserverPort(conf);
+        if (!StormConfig.local_mode(conf)) { // distribute mode
+            int port = ConfigExtension.getSupervisorDeamonHttpserverPort(conf); // 7622 default
             httpserver = new Httpserver(port, conf);
             httpserver.start();
         }
@@ -186,6 +186,7 @@ public class Supervisor {
          */
         if (!StormConfig.local_mode(conf)) {
             if (ConfigExtension.isEnableCheckSupervisor(conf)) {
+                // 启动一个线程用于检查状态
                 SupervisorHealth supervisorHealth = new SupervisorHealth(conf, hb, supervisorId);
                 AsyncLoopThread healthThread = new AsyncLoopThread(supervisorHealth, false, null, Thread.MIN_PRIORITY, true);
                 threads.add(healthThread);

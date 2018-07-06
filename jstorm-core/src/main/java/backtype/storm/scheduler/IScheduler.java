@@ -21,7 +21,7 @@ package backtype.storm.scheduler;
 import java.util.Map;
 
 /**
- * 调度器
+ * 调度器，负责为 topology 分配当前集群中的可用资源
  */
 public interface IScheduler {
 

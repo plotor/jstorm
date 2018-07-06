@@ -42,8 +42,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 /**
  * supervisor SynchronizeSupervisor workflow
@@ -190,7 +194,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             /**
              * Step 8: push syncProcesses Event
              *
-             * todo by zhenchao 2018-07-04 09:38:06
+             * TODO by zhenchao 2018-07-04 09:38:06
              */
             // processEventManager.add(syncProcesses);
             syncProcesses.run(zkAssignment, downloadFailedTopologyIds, upgradeTopologyPorts);
