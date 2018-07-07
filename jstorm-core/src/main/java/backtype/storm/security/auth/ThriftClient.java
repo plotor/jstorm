@@ -15,15 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.security.auth;
 
-import java.io.IOException;
-import java.security.InvalidParameterException;
-import java.util.List;
-import java.util.Map;
-
-import javax.security.auth.login.Configuration;
-
+import backtype.storm.Config;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.cluster.Cluster;
 import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -33,10 +30,11 @@ import org.apache.thrift.transport.TTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.jstorm.cluster.Cluster;
-
-import backtype.storm.Config;
-import backtype.storm.utils.Utils;
+import java.io.IOException;
+import java.security.InvalidParameterException;
+import java.util.List;
+import java.util.Map;
+import javax.security.auth.login.Configuration;
 
 public class ThriftClient {
     private static final Logger LOG = LoggerFactory.getLogger(ThriftClient.class);
@@ -63,7 +61,7 @@ public class ThriftClient {
 
     /**
      * This is only for be compatible for Storm
-     * 
+     *
      * @param conf
      * @param type
      * @param host
@@ -84,8 +82,8 @@ public class ThriftClient {
         this.type = type;
         this.asUser = asUser;
 
-        getMaster(conf, host, port);
-        reconnect();
+        this.getMaster(conf, host, port);
+        this.reconnect();
     }
 
     public static String getMasterByZk(Map conf) throws Exception {
@@ -154,7 +152,7 @@ public class ThriftClient {
     }
 
     public synchronized void reconnect() {
-        close();
+        this.close();
         try {
             TSocket socket = new TSocket(host, port);
             if (timeout != null) {

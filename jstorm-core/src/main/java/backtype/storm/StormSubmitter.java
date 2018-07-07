@@ -18,14 +18,17 @@
 
 package backtype.storm;
 
-import backtype.storm.generated.*;
+import backtype.storm.generated.AlreadyAliveException;
+import backtype.storm.generated.InvalidTopologyException;
+import backtype.storm.generated.Nimbus;
+import backtype.storm.generated.StormTopology;
+import backtype.storm.generated.SubmitOptions;
+import backtype.storm.generated.TopologyAssignException;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.utils.BufferFileInputStream;
 import backtype.storm.utils.NimbusClient;
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.client.ConfigExtension;
-
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +47,7 @@ import java.util.Map;
  */
 @SuppressWarnings("unchecked")
 public class StormSubmitter {
+
     public static Logger LOG = LoggerFactory.getLogger(StormSubmitter.class);
 
     private static Nimbus.Iface localNimbus = null;
@@ -61,8 +65,7 @@ public class StormSubmitter {
      * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
-    public static void submitTopology(String name, Map stormConf, StormTopology topology)
-            throws AlreadyAliveException, InvalidTopologyException {
+    public static void submitTopology(String name, Map stormConf, StormTopology topology) throws AlreadyAliveException, InvalidTopologyException {
         submitTopology(name, stormConf, topology, null);
     }
 
@@ -103,8 +106,7 @@ public class StormSubmitter {
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
     public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts)
-            throws AlreadyAliveException,
-                   InvalidTopologyException {
+            throws AlreadyAliveException, InvalidTopologyException {
         if (!Utils.isValidConf(stormConf)) {
             throw new IllegalArgumentException("Storm conf is not valid. Must be json-serializable");
         }

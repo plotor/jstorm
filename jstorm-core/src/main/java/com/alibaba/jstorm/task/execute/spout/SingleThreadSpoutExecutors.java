@@ -15,13 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.execute.spout;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.acker.Acker;
-import com.alibaba.jstorm.task.comm.TupleInfo;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RotatingMap;
 import org.slf4j.Logger;
@@ -57,12 +57,12 @@ public class SingleThreadSpoutExecutors extends SpoutExecutors {
     @Override
     public void run() {
         if (!checkTopologyFinishInit) {
-            initWrapper();
+            this.initWrapper();
             int delayRun = ConfigExtension.getSpoutDelayRunSeconds(storm_conf);
             long now = System.currentTimeMillis();
             while (!checkTopologyFinishInit) {
                 // wait other bolt is ready, but the spout can handle the received message
-                executeEvent();
+                this.executeEvent();
                 controlQueue.consumeBatch(this);
                 if (System.currentTimeMillis() - now > delayRun * 1000) {
                     executorStatus.setStatus(TaskStatus.RUN);
@@ -84,7 +84,7 @@ public class SingleThreadSpoutExecutors extends SpoutExecutors {
             LOG.info(idStr + " is ready, due to the topology finish init. ");
         }
 
-        executeEvent();
+        this.executeEvent();
         controlQueue.consumeBatch(this);
 
         super.nextTuple();

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.execute;
 
 import backtype.storm.Config;
@@ -26,14 +27,14 @@ import backtype.storm.tuple.MessageId;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.TupleExt;
 import backtype.storm.tuple.TupleImplExt;
-
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.daemon.worker.timer.TickTupleTrigger;
 import com.alibaba.jstorm.daemon.worker.timer.TimerConstants;
 import com.alibaba.jstorm.daemon.worker.timer.TimerTrigger;
 import com.alibaba.jstorm.metric.JStormMetrics;
-import com.alibaba.jstorm.task.*;
+import com.alibaba.jstorm.task.Task;
+import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.task.master.ctrlevent.TopoMasterCtrlEvent;
 import com.alibaba.jstorm.utils.JStormUtils;
@@ -41,7 +42,6 @@ import com.alibaba.jstorm.utils.Pair;
 import com.alibaba.jstorm.utils.RotatingMap;
 import com.alibaba.jstorm.utils.TimeUtils;
 import com.lmax.disruptor.EventHandler;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +88,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
         Integer topologyId = sysTopologyCtx.getTopologyMasterId();
         List<Integer> localWorkerTasks = sysTopologyCtx.getThisWorkerTasks();
         if (topologyId != 0 && !localWorkerTasks.contains(topologyId)) {
-            while (getConnection(topologyId) == null) {
+            while (this.getConnection(topologyId) == null) {
                 JStormUtils.sleepMs(10);
                 LOG.info("this task still is building connection with topology Master");
             }
@@ -99,8 +99,9 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
         Object tickFrequency = storm_conf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_MS);
         if (tickFrequency == null) {
             tickFrequency = storm_conf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS);
-            if (tickFrequency != null)
+            if (tickFrequency != null) {
                 tickFrequency = JStormUtils.parseInt(tickFrequency) * 1000;
+            }
         }
 
         isSystemBolt = Common.isSystemComponent(componentId);
@@ -130,11 +131,11 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
     @Override
     public void run() {
         if (!isFinishInit) {
-            initWrapper();
+            this.initWrapper();
         }
         while (!taskStatus.isShutdown()) {
             try {
-                consumeExecuteQueue();
+                this.consumeExecuteQueue();
             } catch (Throwable e) {
                 if (!taskStatus.isShutdown()) {
                     LOG.error(idStr + " bolt execute error", e);
@@ -165,17 +166,17 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
                 List<Object> values = ((Tuple) event).getValues();
                 tupleNum = values.size();
                 if (bolt instanceof IRichBatchBolt) {
-                    processTupleBatchEvent(tuple);
+                    this.processTupleBatchEvent(tuple);
                 } else {
                     for (Object value : values) {
                         Pair<MessageId, List<Object>> val = (Pair<MessageId, List<Object>>) value;
                         TupleImplExt t = new TupleImplExt(
                                 sysTopologyCtx, val.getSecond(), val.getFirst(), ((TupleImplExt) event));
-                        processTupleEvent(t);
+                        this.processTupleEvent(t);
                     }
                 }
             } else {
-                processTupleEvent(tuple);
+                this.processTupleEvent(tuple);
             }
             taskStats.tupleLifeCycle(tuple.getSourceComponent(), tuple.getSourceStreamId(), lifeCycleStart, startTime, tupleNum);
             taskStats.recv_tuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), tupleNum);
@@ -189,7 +190,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
                 }
             }
         } else if (event instanceof TimerTrigger.TimerEvent) {
-            processTimerEvent((TimerTrigger.TimerEvent) event);
+            this.processTimerEvent((TimerTrigger.TimerEvent) event);
         } else {
             LOG.warn("Bolt executor received an unknown message");
         }
@@ -204,7 +205,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
                         Pair<MessageId, List<Object>> val = (Pair<MessageId, List<Object>>) value;
                         TupleImplExt t = new TupleImplExt(
                                 sysTopologyCtx, val.getSecond(), val.getFirst(), ((TupleImplExt) tuple));
-                        processTupleEvent(t);
+                        this.processTupleEvent(t);
                     }
                 }
             } else {
@@ -288,10 +289,10 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
         if (event != null) {
             if (event instanceof TimerTrigger.TimerEvent) {
-                processTimerEvent((TimerTrigger.TimerEvent) event);
+                this.processTimerEvent((TimerTrigger.TimerEvent) event);
                 LOG.debug("Received an event from control queue");
             } else if (event instanceof Tuple) {
-                processTupleEvent((Tuple) event);
+                this.processTupleEvent((Tuple) event);
             } else {
                 LOG.warn("Received an unknown control event, " + event.getClass().getName());
             }

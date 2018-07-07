@@ -15,12 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.execute;
 
 import com.alibaba.jstorm.task.Task;
 
 public class TopologyMasterBoltExecutors extends BoltExecutors {
-    public TopologyMasterBoltExecutors (Task task) {
+    public TopologyMasterBoltExecutors(Task task) {
         super(task);
     }
 

@@ -15,15 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.execute.spout;
 
-import java.util.List;
-import java.util.Map;
-
-import com.alibaba.jstorm.task.TaskStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import backtype.storm.Config;
+import backtype.storm.spout.ISpout;
+import backtype.storm.spout.SpoutOutputCollector;
+import backtype.storm.tuple.MessageId;
+import backtype.storm.tuple.Tuple;
+import backtype.storm.tuple.TupleExt;
+import backtype.storm.tuple.TupleImplExt;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.client.spout.CtrlMsgSpout;
@@ -40,6 +41,7 @@ import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.metric.MetricType;
 import com.alibaba.jstorm.metric.MetricUtils;
 import com.alibaba.jstorm.task.Task;
+import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.task.comm.TupleInfo;
 import com.alibaba.jstorm.task.execute.BaseExecutors;
@@ -50,14 +52,11 @@ import com.alibaba.jstorm.utils.RotatingMap;
 import com.alibaba.jstorm.utils.TimeUtils;
 import com.codahale.metrics.Gauge;
 import com.lmax.disruptor.EventHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-import backtype.storm.spout.ISpout;
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.tuple.MessageId;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.TupleExt;
-import backtype.storm.tuple.TupleImplExt;
+import java.util.List;
+import java.util.Map;
 
 /**
  * spout executor base class
@@ -107,14 +106,14 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
         this.emptyCpuGauge = new TimerRatio();
         JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(
-                        topologyId, componentId, taskId, MetricDef.EMPTY_CPU_RATIO, MetricType.GAUGE),
+                topologyId, componentId, taskId, MetricDef.EMPTY_CPU_RATIO, MetricType.GAUGE),
                 new AsmGauge(emptyCpuGauge));
 
         isSpoutFullSleep = ConfigExtension.isSpoutPendFullSleep(storm_conf);
 
         LOG.info("isSpoutFullSleep:" + isSpoutFullSleep);
 
-        mkPending();
+        this.mkPending();
 
         JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(
                 topologyId, componentId, taskId, MetricDef.PENDING_MAP, MetricType.GAUGE), new AsmGauge(
@@ -138,7 +137,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
         Integer topologyMasterId = sysTopologyCtx.getTopologyMasterId();
         List<Integer> localWorkerTasks = sysTopologyCtx.getThisWorkerTasks();
         if (topologyMasterId != 0 && !localWorkerTasks.contains(topologyMasterId)) {
-            while (getConnection(topologyMasterId) == null) {
+            while (this.getConnection(topologyMasterId) == null) {
                 JStormUtils.sleepMs(10);
                 LOG.info("this task is still building connection with topology master");
             }
@@ -216,17 +215,17 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
                         Pair<MessageId, List<Object>> val = (Pair<MessageId, List<Object>>) value;
                         TupleImplExt tuple = new TupleImplExt(
                                 sysTopologyCtx, val.getSecond(), val.getFirst(), ((TupleImplExt) event));
-                        runnable = processTupleEvent(tuple);
+                        runnable = this.processTupleEvent(tuple);
                         if (runnable != null) {
                             runnable.run();
                             runnable = null;
                         }
                     }
                 } else {
-                    runnable = processTupleEvent((Tuple) event);
+                    runnable = this.processTupleEvent((Tuple) event);
                 }
             } else if (event instanceof TimerTrigger.TimerEvent) {
-                processTimerEvent((TimerTrigger.TimerEvent) event);
+                this.processTimerEvent((TimerTrigger.TimerEvent) event);
                 return;
             } else if (event instanceof IAckMsg) {
                 runnable = (Runnable) event;
@@ -238,8 +237,9 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
                 return;
             }
 
-            if (runnable != null)
+            if (runnable != null) {
                 runnable.run();
+            }
 
         } catch (Throwable e) {
             if (!taskStatus.isShutdown()) {
@@ -328,9 +328,9 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
         if (event != null) {
             Runnable runnable = null;
             if (event instanceof TimerTrigger.TimerEvent) {
-                processTimerEvent((TimerTrigger.TimerEvent) event);
+                this.processTimerEvent((TimerTrigger.TimerEvent) event);
             } else if (event instanceof Tuple) {
-                runnable = processTupleEvent((Tuple) event);
+                runnable = this.processTupleEvent((Tuple) event);
             } else {
                 LOG.warn("Received unknown control event, " + event.getClass().getName());
             }
@@ -341,6 +341,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
         }
     }
 
+    @Override
     public Object getOutputCollector() {
         return outputCollector;
     }

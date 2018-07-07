@@ -15,21 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.utils;
-
-import java.util.Map;
-
-import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.generated.Nimbus;
 import backtype.storm.security.auth.ThriftClient;
 import backtype.storm.security.auth.ThriftConnectionType;
+import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
 
 public class NimbusClient extends ThriftClient {
+
     private static final Logger LOG = LoggerFactory.getLogger(NimbusClient.class);
 
     private Nimbus.Client _client;
