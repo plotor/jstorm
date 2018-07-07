@@ -67,7 +67,7 @@ class SyncSupervisorEvent extends RunnableCallback {
     private LocalState localState; // 本地 KV 数据库
     private Map<Object, Object> conf;
     private SyncProcessEvent syncProcesses;
-    private int lastTime;
+    private int lastTime; // 最近一次扫描的时间
     private Heartbeat heartbeat;
 
     @SuppressWarnings("unchecked")
@@ -89,16 +89,16 @@ class SyncSupervisorEvent extends RunnableCallback {
         LOG.debug("Synchronizing supervisor, interval (sec): " + TimeUtils.time_delta(lastTime));
         lastTime = TimeUtils.current_time_secs();
         // make sure that the status is the same for each execution of syncsupervisor
-        HealthStatus healthStatus = heartbeat.getHealthStatus();
+        HealthStatus healthStatus = heartbeat.getHealthStatus(); // 获取当前 supervisor 心跳状态
         try {
             RunnableCallback syncCallback = new EventManagerZkPusher(this, syncSupEventManager);
 
-            // lcoal-zk-assignment.version
+            // 从本地获取任务分配的版本信息
             Map<String, Integer> assignmentVersion = (Map<String, Integer>) localState.get(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION);
             if (assignmentVersion == null) {
                 assignmentVersion = new HashMap<>();
             }
-            // local-zk-assignments
+            // 从本地获取任务分配信息
             Map<String, Assignment> assignments = (Map<String, Assignment>) localState.get(Common.LS_LOCAl_ZK_ASSIGNMENTS);
             if (assignments == null) {
                 assignments = new HashMap<>();
@@ -108,10 +108,11 @@ class SyncSupervisorEvent extends RunnableCallback {
 
             /*
              * Step 1: get all assignments and add assignment watchers for /ZK-dir/assignment
-             *
+             * TODO by zhenchao 2018-07-07 12:33:45
              * 1. 获取所有的拓扑分配信息
              */
             if (healthStatus.isMoreSeriousThan(HealthStatus.ERROR)) {
+                // 检查当前 supervisor 的状态信息，如果是 PANIC 或 ERROR，则清除所有本地的任务分配相关信息
                 // if status is panic or error, clear all assignments and kill all workers
                 assignmentVersion.clear();
                 assignments.clear();
