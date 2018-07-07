@@ -15,17 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.jstorm.daemon.supervisor;
 
-import org.apache.commons.lang.builder.ToStringBuilder;
-import org.apache.commons.lang.builder.ToStringStyle;
+package com.alibaba.jstorm.daemon.supervisor;
 
 import com.alibaba.jstorm.daemon.worker.State;
 import com.alibaba.jstorm.daemon.worker.WorkerHeartbeat;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 
 /**
  * Worker's state and Hearbeat
- * 
+ *
  * @author Xin.Zhou
  */
 public class StateHeartbeat {

@@ -154,12 +154,27 @@ public class StormConfig {
 
     }
 
+    /**
+     * 创建并返回 ${local_dir}/workers
+     *
+     * @param conf
+     * @return
+     * @throws IOException
+     */
     public static String worker_root(Map conf) throws IOException {
-        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "workers";
+        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "workers"; // ${local_dir}/workers
         FileUtils.forceMkdir(new File(ret));
         return ret;
     }
 
+    /**
+     * 创建并返回 ${local_dir}/workers/${worker_id}
+     *
+     * @param conf
+     * @param id
+     * @return
+     * @throws IOException
+     */
     public static String worker_root(Map conf, String id) throws IOException {
         String ret = worker_root(conf) + FILE_SEPERATEOR + id;
         FileUtils.forceMkdir(new File(ret));
@@ -176,6 +191,14 @@ public class StormConfig {
         return worker_pids_root(conf, id) + FILE_SEPERATEOR + pid;
     }
 
+    /**
+     * 创建并返回 ${local_dir}/workers/${worker_id}/heartbeats
+     *
+     * @param conf
+     * @param id
+     * @return
+     * @throws IOException
+     */
     public static String worker_heartbeats_root(Map conf, String id) throws IOException {
         String ret = worker_root(conf, id) + FILE_SEPERATEOR + "heartbeats";
         FileUtils.forceMkdir(new File(ret));
@@ -332,11 +355,9 @@ public class StormConfig {
     }
 
     public static LocalState worker_state(Map conf, String id) throws IOException {
+        // ${local_dir}/workers/${worker_id}/heartbeats
         String path = worker_heartbeats_root(conf, id);
-
-        LocalState rtn = new LocalState(path);
-        return rtn;
-
+        return new LocalState(path);
     }
 
     /**

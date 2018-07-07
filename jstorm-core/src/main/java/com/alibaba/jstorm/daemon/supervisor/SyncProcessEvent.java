@@ -101,8 +101,7 @@ class SyncProcessEvent extends ShutdownWork {
     private Map<String, Integer> killingWorkers;
     private Map<String, Set<Pair<String, Integer>>> upgradingTopologyPorts;
 
-    // private Supervisor supervisor;
-    private int lastTime;
+    private int lastTime; // 最近一次扫描时间
 
     private WorkerReportError workerReportError;
     private StormClusterState stormClusterState;
@@ -140,22 +139,29 @@ class SyncProcessEvent extends ShutdownWork {
     public void run() {
     }
 
+    /**
+     * @param localAssignments 本地 topology 分配信息, key is port
+     * @param downloadFailedTopologyIds 下载失败的 topologyId
+     * @param upgradeTopologyPorts
+     */
     public void run(Map<Integer, LocalAssignment> localAssignments,
-                    Set<String> downloadFailedTopologyIds, Map<String, Set<Pair<String, Integer>>> upgradeTopologyPorts) {
+                    Set<String> downloadFailedTopologyIds,
+                    Map<String, Set<Pair<String, Integer>>> upgradeTopologyPorts) {
+
         LOG.debug("Syncing processes, interval (sec): " + TimeUtils.time_delta(lastTime));
         lastTime = TimeUtils.current_time_secs();
         try {
 
-            /**
-             * Step 1: get assigned tasks from localstat Map<port(type Integer), LocalAssignment>
+            /*
+             * 1: get assigned tasks from localstat Map<port(type Integer), LocalAssignment>
              */
             if (localAssignments == null) {
                 localAssignments = new HashMap<>();
             }
             LOG.debug("Assigned tasks: " + localAssignments);
 
-            /**
-             * Step 2: get local WorkerStats from local_dir/worker/ids/heartbeat Map<workerid [WorkerHeartbeat, state]>
+            /*
+             * 2: 从 local_dir/workers/${worker_id}/heartbeats 中获取所有 worker 的状态：Map<worker_id [WorkerHeartbeat, state]>
              */
             Map<String, StateHeartbeat> localWorkerStats;
             try {
@@ -166,26 +172,26 @@ class SyncProcessEvent extends ShutdownWork {
             }
             LOG.debug("Allocated: " + localWorkerStats);
 
-            /**
-             * Step 3: kill Invalid Workers and remove killed worker from localWorkerStats
+            /*
+             * 3: 杀死无用的 worker，并从 localWorkerStats 中移除
              */
-            Map<String, Integer> taskCleaupTimeoutMap;
+            Map<String, Integer> taskCleanupTimeoutMap;
             Set<Integer> keepPorts = null;
             try {
-                taskCleaupTimeoutMap = (Map<String, Integer>) localState.get(Common.LS_TASK_CLEANUP_TIMEOUT);
-                keepPorts = this.killUselessWorkers(localWorkerStats, localAssignments, taskCleaupTimeoutMap);
-                localState.put(Common.LS_TASK_CLEANUP_TIMEOUT, taskCleaupTimeoutMap);
+                taskCleanupTimeoutMap = (Map<String, Integer>) localState.get(Common.LS_TASK_CLEANUP_TIMEOUT); // task-cleanup-timeout
+                keepPorts = this.killUselessWorkers(localWorkerStats, localAssignments, taskCleanupTimeoutMap);
+                localState.put(Common.LS_TASK_CLEANUP_TIMEOUT, taskCleanupTimeoutMap);
             } catch (IOException e) {
                 LOG.error("Failed to kill workers", e);
             }
 
-            // check new workers
+            // 检测新的 worker
             this.checkNewWorkers(conf);
 
-            // check which topology need update
+            // 检测哪些 topology 需要更新
             this.checkNeedUpdateTopologies(localWorkerStats, localAssignments);
 
-            // start new workers
+            // 为下载失败的 topology 在空闲端口上启动新的 worker
             this.startNewWorkers(keepPorts, localAssignments, downloadFailedTopologyIds);
 
             // restart upgraded workers
@@ -376,13 +382,11 @@ class SyncProcessEvent extends ShutdownWork {
         Map<String, StateHeartbeat> workerIdHbState = new HashMap<>();
         int now = TimeUtils.current_time_secs();
 
-        /**
-         * Get Map<workerId, WorkerHeartbeat> from local_dir/worker/ids/heartbeat
-         */
+        // 从 supervisor 本地获取所有 worker 对应的 WorkerHeartbeat 信息，key is workerId
         Map<String, WorkerHeartbeat> idToHeartbeat = this.readWorkerHeartbeats(conf);
         for (Map.Entry<String, WorkerHeartbeat> entry : idToHeartbeat.entrySet()) {
-            String workerId = entry.getKey();
-            WorkerHeartbeat whb = entry.getValue();
+            String workerId = entry.getKey(); // worker id
+            WorkerHeartbeat whb = entry.getValue(); // worker 的心跳信息
             State state;
 
             if (whb == null) {
@@ -465,17 +469,19 @@ class SyncProcessEvent extends ShutdownWork {
     }
 
     /**
-     * get all workers heartbeats of the supervisor
+     * 从 ${local_dir}/workers/${worker_id}/heartbeats 中获取当前 supervisor 上所有 worker 对应的 {@link WorkerHeartbeat} 信息
      *
      * @param conf conf
+     * @return key is workerId
      * @throws IOException
      */
     public Map<String, WorkerHeartbeat> readWorkerHeartbeats(Map conf) throws Exception {
         Map<String, WorkerHeartbeat> workerHeartbeats = new HashMap<>();
 
-        // get the path: STORM-LOCAL-DIR/workers
+        // ${local_dir}/workers
         String path = StormConfig.worker_root(conf);
 
+        // 获取 ${local_dir}/workers 下面所有的 worker_id
         List<String> workerIds = PathUtils.read_dir_contents(path);
 
         if (workerIds == null) {
@@ -484,15 +490,15 @@ class SyncProcessEvent extends ShutdownWork {
         }
 
         for (String workerId : workerIds) {
+            // 从 ${local_dir}/workers/${worker_id}/heartbeats 中获取指定 worker 对应的 {@link WorkerHeartbeat} 信息
             WorkerHeartbeat whb = this.readWorkerHeartbeat(conf, workerId);
-            // ATTENTION: whb can be null
-            workerHeartbeats.put(workerId, whb);
+            workerHeartbeats.put(workerId, whb); // ATTENTION: whb can be null
         }
         return workerHeartbeats;
     }
 
     /**
-     * get worker heartbeat by workerId
+     * 从 ${local_dir}/workers/${worker_id}/heartbeats 中获取指定 worker 对应的 {@link WorkerHeartbeat} 信息
      *
      * @param conf conf
      * @param workerId worker id
@@ -500,6 +506,7 @@ class SyncProcessEvent extends ShutdownWork {
      */
     public WorkerHeartbeat readWorkerHeartbeat(Map conf, String workerId) throws Exception {
         try {
+            // 创建 ${local_dir}/workers/${worker_id}/heartbeats 对应的 LocalState 对象
             LocalState ls = StormConfig.worker_state(conf, workerId);
             return (WorkerHeartbeat) ls.get(Common.LS_WORKER_HEARTBEAT);
         } catch (Exception e) {

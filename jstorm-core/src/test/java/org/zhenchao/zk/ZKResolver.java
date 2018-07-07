@@ -27,16 +27,15 @@ public class ZKResolver {
 
     @Test
     public void getData() throws Exception {
-        String ROOT_PATH = "/storm/assignments";
+        String ROOT_PATH = "/jstorm/assignments";
         List<String> paths = client.getChildren().forPath(ROOT_PATH);
         for (final String path : paths) {
             String absolutePath = ROOT_PATH + "/" + path;
             System.out.println(path);
             Stat stat = client.checkExists().forPath(absolutePath);
-            System.out.println(stat);
+            System.out.println("stat:" + stat);
 
             byte[] data = client.getData().forPath(absolutePath);
-            System.out.println(data.length);
             Assignment assignment = (Assignment) Utils.maybe_deserialize(data);
             System.out.println(assignment);
         }
