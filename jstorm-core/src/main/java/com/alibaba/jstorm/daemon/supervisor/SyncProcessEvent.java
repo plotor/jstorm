@@ -88,6 +88,7 @@ class SyncProcessEvent extends ShutdownWork {
      * Due to the worker startTime is put in Supervisor memory, When supervisor restart, the starting worker is likely to be killed
      */
     private Map<String, Pair<Integer, Integer>> workerIdToStartTimeAndPort;
+
     /**
      * workerIdToStartTimeAndPort ensure workId is unique, but don't ensure workId for workerPort
      */
@@ -321,6 +322,8 @@ class SyncProcessEvent extends ShutdownWork {
 
     /**
      * mark all new Workers like 52b11418-7474-446d-bff5-0ecd68f4954f
+     *
+     * @param workerIds map[port, worker_id]
      */
     public void markAllNewWorkers(Map<Integer, String> workerIds) {
         int startTime = TimeUtils.current_time_secs();
@@ -330,8 +333,7 @@ class SyncProcessEvent extends ShutdownWork {
             if (oldWorkerIds != null) {
                 workerIdToStartTimeAndPort.remove(oldWorkerIds);
                 // update portToWorkerId
-                LOG.info("A port is still occupied by an old worker, remove useless "
-                        + oldWorkerIds + " from workerIdToStartTimeAndPort");
+                LOG.info("A port is still occupied by an old worker, remove useless " + oldWorkerIds + " from workerIdToStartTimeAndPort");
             }
             portToWorkerId.put(entry.getKey(), entry.getValue());
             workerIdToStartTimeAndPort.put(entry.getValue(), new Pair<>(startTime, entry.getKey()));
@@ -1049,44 +1051,54 @@ class SyncProcessEvent extends ShutdownWork {
         return outputFile;
     }
 
+    /**
+     * 启动新的 worker:
+     *
+     * @param keepPorts
+     * @param localAssignments
+     * @param downloadFailedTopologyIds
+     * @throws Exception
+     */
     private void startNewWorkers(
             Set<Integer> keepPorts, Map<Integer, LocalAssignment> localAssignments, Set<String> downloadFailedTopologyIds)
             throws Exception {
-        /**
-         * Step 4: get reassigned tasks, which is in assignedTasks, but not in keeperPorts Map<port(type Integer), LocalAssignment>
+        /*
+         * 4: 获取所有需要重新分配 worker 的 task，即 localAssignments 中端口不包含在 keepPorts 中的
          */
         Map<Integer, LocalAssignment> newWorkers = JStormUtils.select_keys_pred(keepPorts, localAssignments);
 
-        /**
-         * Step 5: generate new work ids
+        /*
+         * 5: 生成新的 worker id，generate new work ids
          */
-        for (Iterator<Entry<Integer, LocalAssignment>> entryItr = newWorkers.entrySet().iterator();
-             entryItr.hasNext(); ) {
+        for (Iterator<Entry<Integer, LocalAssignment>> entryItr = newWorkers.entrySet().iterator(); entryItr.hasNext(); ) {
             Entry<Integer, LocalAssignment> entry = entryItr.next();
             Integer port = entry.getKey();
             LocalAssignment assignment = entry.getValue();
+            // 移除下载失败的 topology
             if (assignment != null && downloadFailedTopologyIds.contains(assignment.getTopologyId())) {
                 LOG.info("Can't start this worker: {} of topology: {} due to the damaged binary!!", port, assignment.getTopologyId());
                 entryItr.remove();
             }
         }
 
+        // 调用命令行启动 Worker
         this.startWorkers(newWorkers);
     }
 
     private void startWorkers(Map<Integer, LocalAssignment> portToAssignment) throws Exception {
-        Map<Integer, String> newWorkerIds = new HashMap<>();
+        Map<Integer, String> newWorkerIds = new HashMap<>(); // <port, worker_id>
 
         for (Entry<Integer, LocalAssignment> entry : portToAssignment.entrySet()) {
             Integer port = entry.getKey();
             LocalAssignment assignment = entry.getValue();
 
+            // 基于 UUID 生成 workerId
             String workerId = UUID.randomUUID().toString();
             newWorkerIds.put(port, workerId);
 
             // create new worker Id directory
-            // LOCALDIR/workers/newworkid/pids
             try {
+                // 创建 ${local_dir}/workers/${worker_id}/pids
                 StormConfig.worker_pids_root(conf, workerId);
             } catch (IOException e1) {
                 LOG.error("Failed to create local dir for worker:" + workerId, e1);
@@ -1095,6 +1107,7 @@ class SyncProcessEvent extends ShutdownWork {
 
             LOG.info("Launching worker with assignment {} for the supervisor {} on port {} with worker id {}", assignment, supervisorId, port, workerId);
             try {
+                // 调用命令行启动 Worker
                 this.doLaunchWorker(assignment, port, workerId);
             } catch (Exception e) {
                 workerReportError.report(assignment.getTopologyId(), port,
@@ -1104,15 +1117,26 @@ class SyncProcessEvent extends ShutdownWork {
             }
         }
 
+        // 记录
         this.markAllNewWorkers(newWorkerIds);
     }
 
+    /**
+     * 调用命令行启动 Worker
+     *
+     * @param assignment
+     * @param port
+     * @param workerId
+     * @throws Exception
+     */
     private void doLaunchWorker(LocalAssignment assignment, Integer port, String workerId) throws Exception {
         String clusterMode = StormConfig.cluster_mode(conf);
         String topologyId = assignment.getTopologyId();
         if (clusterMode.equals("distributed")) {
+            // 集群模式
             this.launchWorker(conf, sharedContext, topologyId, supervisorId, port, workerId, assignment);
         } else if (clusterMode.equals("local")) {
+            // 本地模式
             this.launchWorker(conf, sharedContext, topologyId, supervisorId, port, workerId, workerThreadPids);
         }
     }

@@ -181,6 +181,14 @@ public class StormConfig {
         return ret;
     }
 
+    /**
+     * 创建并返回 ${local_dir}/workers/${worker_id}/pids
+     *
+     * @param conf
+     * @param id
+     * @return
+     * @throws IOException
+     */
     public static String worker_pids_root(Map conf, String id) throws IOException {
         String ret = worker_root(conf, id) + FILE_SEPERATEOR + "pids";
         FileUtils.forceMkdir(new File(ret));

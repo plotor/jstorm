@@ -134,17 +134,21 @@ public class JStormUtils {
     }
 
     /**
-     * filter the map
+     * 从 all 中剔除所有位于 filter 中的 key
+     *
+     * @param filter
+     * @param all
+     * @param <K>
+     * @param <V>
+     * @return
      */
     public static <K, V> Map<K, V> select_keys_pred(Set<K> filter, Map<K, V> all) {
         Map<K, V> filterMap = new HashMap<>();
-
         for (Entry<K, V> entry : all.entrySet()) {
             if (!filter.contains(entry.getKey())) {
                 filterMap.put(entry.getKey(), entry.getValue());
             }
         }
-
         return filterMap;
     }
 
