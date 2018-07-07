@@ -120,11 +120,13 @@ public class Worker {
     private List<TaskShutdownDameon> createTasks() throws Exception {
         List<TaskShutdownDameon> shutdownTasks = new ArrayList<>();
 
+        // 获取所有线程ID
         Set<Integer> taskIds = workerData.getTaskIds();
 
         Set<Thread> threads = new HashSet<>();
         List<Task> taskArrayList = new ArrayList<>();
         for (int taskId : taskIds) {
+            // 创建并启动 task
             Task task = new Task(workerData, taskId);
             Thread thread = new Thread(task);
             threads.add(thread);
@@ -153,8 +155,7 @@ public class Worker {
         long timeout = JStormUtils.parseLong(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT), 10);
         WaitStrategy waitStrategy = new TimeoutBlockingWaitStrategy(timeout, TimeUnit.MILLISECONDS);
         int queueSize = JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_CTRL_BUFFER_SIZE), 256);
-        DisruptorQueue recvControlQueue = DisruptorQueue.mkInstance("Dispatch-control", ProducerType.MULTI,
-                queueSize, waitStrategy, false, 0, 0);
+        DisruptorQueue recvControlQueue = DisruptorQueue.mkInstance("Dispatch-control", ProducerType.MULTI, queueSize, waitStrategy, false, 0, 0);
 
         //metric for recvControlQueue
         QueueGauge revCtrlGauge = new QueueGauge(recvControlQueue, MetricDef.RECV_CTRL_QUEUE);
@@ -175,23 +176,23 @@ public class Worker {
     public WorkerShutdown execute() throws Exception {
         List<AsyncLoopThread> threads = new ArrayList<>();
 
-        // create recv connection, reduce the count of netty client reconnect
+        // 创建接收数据的线程连接, reduce the count of netty client reconnect
         AsyncLoopThread controlRvthread = this.startDispatchThread();
         threads.add(controlRvthread);
 
         // create client before create task
-        // so create client connection before create task
-        // refresh connection
+        // so create client connection before create task refresh connection
+        // 创建用于更新的连接
         RefreshConnections refreshConn = this.makeRefreshConnections();
         AsyncLoopThread refreshconn = new AsyncLoopThread(refreshConn, false, Thread.MIN_PRIORITY, true);
         threads.add(refreshconn);
 
-        // refresh ZK active status
+        // 更新 ZK 的活跃状态，refresh ZK active status
         RefreshActive refreshZkActive = new RefreshActive(workerData);
         AsyncLoopThread refreshZk = new AsyncLoopThread(refreshZkActive, false, Thread.MIN_PRIORITY, true);
         threads.add(refreshZk);
 
-        //create send control message thread
+        // create send control message thread
         DrainerCtrlRunable drainerCtrlRunable;
         drainerCtrlRunable = new DrainerCtrlRunable(workerData, MetricDef.SEND_THREAD);
         AsyncLoopThread controlSendThread = new AsyncLoopThread(drainerCtrlRunable, false, Thread.MAX_PRIORITY, true);
@@ -208,11 +209,13 @@ public class Worker {
         workerData.setMetricsReporter(metricReporter);
 
         // refresh heartbeat to Local dir
+        // 更新心跳信息到本地目录
         RunnableCallback heartbeatFn = new WorkerHeartbeatRunable(workerData);
         AsyncLoopThread hb = new AsyncLoopThread(heartbeatFn, false, null, Thread.NORM_PRIORITY, true);
         threads.add(hb);
 
         // shutdown task callbacks
+        // 创建 task，并注册 task 停止的回调监听
         List<TaskShutdownDameon> shutdownTasks = this.createTasks();
         workerData.setShutdownTasks(shutdownTasks);
 

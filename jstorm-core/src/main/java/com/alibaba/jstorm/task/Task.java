@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task;
 
 import backtype.storm.Config;
@@ -30,7 +31,6 @@ import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
 import backtype.storm.utils.WorkerClassLoader;
 import clojure.lang.Atom;
-
 import com.alibaba.jstorm.callback.AsyncLoopDefaultKill;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
@@ -54,7 +54,6 @@ import com.alibaba.jstorm.task.execute.spout.SpoutExecutors;
 import com.alibaba.jstorm.task.group.MkGrouper;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -189,7 +188,7 @@ public class Task implements Runnable {
         msg.add("startup");
 
         // create task receive object
-        TaskSendTargets sendTargets = makeSendTargets();
+        TaskSendTargets sendTargets = this.makeSendTargets();
 
         UnanchoredSend.send(topologyContext, sendTargets, taskTransfer, Common.SYSTEM_STREAM_ID, msg);
         return sendTargets;
@@ -204,12 +203,13 @@ public class Task implements Runnable {
         BaseExecutors baseExecutor = null;
 
         if (taskObj instanceof IBolt) {
-            if (taskId == topologyContext.getTopologyMasterId())
+            if (taskId == topologyContext.getTopologyMasterId()) {
                 baseExecutor = new TopologyMasterBoltExecutors(this);
-            else
+            } else {
                 baseExecutor = new BoltExecutors(this);
+            }
         } else if (taskObj instanceof ISpout) {
-            if (isSingleThread(stormConf)) {
+            if (this.isSingleThread(stormConf)) {
                 baseExecutor = new SingleThreadSpoutExecutors(this);
             } else {
                 baseExecutor = new MultipleThreadSpoutExecutors(this);
@@ -223,7 +223,7 @@ public class Task implements Runnable {
      * create executor to receive tuples and run bolt/spout execute function
      */
     private RunnableCallback prepareExecutor() {
-        return mkExecutor();
+        return this.mkExecutor();
     }
 
     public TaskReceiver mkTaskReceiver() {
@@ -238,31 +238,33 @@ public class Task implements Runnable {
     }
 
     public TaskShutdownDameon execute() throws Exception {
-        taskSendTargets = echoToSystemBolt();
+        taskSendTargets = this.echoToSystemBolt();
 
-        // create thread to get tuple from zeroMQ,
-        // and pass the tuple to bolt/spout
-        taskTransfer = mkTaskSending(workerData);
-        RunnableCallback baseExecutor = prepareExecutor();
+        // create thread to get tuple from zeroMQ, and pass the tuple to bolt/spout
+        // 创建线程获取数据，并封装成 tuple 专递给 spout/bolt
+        taskTransfer = this.mkTaskSending(workerData);
+        RunnableCallback baseExecutor = this.prepareExecutor();
         //set baseExecutors for update
-        setBaseExecutors((BaseExecutors) baseExecutor);
+        this.setBaseExecutors((BaseExecutors) baseExecutor);
 
         AsyncLoopThread executor_threads = new AsyncLoopThread(baseExecutor, false, Thread.MAX_PRIORITY, true);
-        taskReceiver = mkTaskReceiver();
+        // 创建一个 task 接收器
+        taskReceiver = this.mkTaskReceiver();
 
         List<AsyncLoopThread> allThreads = new ArrayList<>();
         allThreads.add(executor_threads);
 
         LOG.info("Finished loading task " + componentId + ":" + taskId);
 
-        taskShutdownDameon = getShutdown(allThreads, baseExecutor);
+        taskShutdownDameon = this.getShutdown(allThreads, baseExecutor);
         return taskShutdownDameon;
     }
 
     private TaskTransfer mkTaskSending(WorkerData workerData) {
         // sending tuple's serializer
-        KryoTupleSerializer serializer = new KryoTupleSerializer(
-                workerData.getStormConf(), topologyContext.getRawTopology());
+        // 创建一个用于发送 tuple 的 serializer
+        KryoTupleSerializer serializer = new KryoTupleSerializer(workerData.getStormConf(), topologyContext.getRawTopology());
+        // 获取 task 名称：“componentId:taskId”
         String taskName = JStormServerUtils.getName(componentId, taskId);
         // Task sending all tuples through this Object
         return new TaskTransfer(this, taskName, serializer, taskStatus, workerData, topologyContext);
@@ -294,8 +296,10 @@ public class Task implements Runnable {
         return taskShutdownDameon;
     }
 
+    @Override
     public void run() {
         try {
+            // 调用 execute 方法执行任务
             taskShutdownDameon = this.execute();
         } catch (Throwable e) {
             LOG.error("init task error", e);
@@ -325,7 +329,7 @@ public class Task implements Runnable {
         userContext.setThisWorkerTasks(localTasks);
 
         // Update the TaskSendTargets
-        updateSendTargets();
+        this.updateSendTargets();
     }
 
     public long getWorkerAssignmentTs() {

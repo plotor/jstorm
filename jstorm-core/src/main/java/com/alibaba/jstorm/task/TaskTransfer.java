@@ -15,26 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
+import backtype.storm.Config;
+import backtype.storm.messaging.IConnection;
+import backtype.storm.messaging.TaskMessage;
+import backtype.storm.scheduler.WorkerSlot;
+import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.task.GeneralTopologyContext;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.lmax.disruptor.*;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import backtype.storm.tuple.ITupleExt;
+import backtype.storm.tuple.TupleExt;
+import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.Utils;
+import backtype.storm.utils.WorkerClassLoader;
 import com.alibaba.jstorm.callback.AsyncLoopRunnable;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.callback.RunnableCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.common.metric.AsmGauge;
 import com.alibaba.jstorm.common.metric.AsmHistogram;
 import com.alibaba.jstorm.common.metric.QueueGauge;
@@ -45,18 +43,21 @@ import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.metric.MetricType;
 import com.alibaba.jstorm.metric.MetricUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
+import com.lmax.disruptor.AlertException;
+import com.lmax.disruptor.EventHandler;
+import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
+import com.lmax.disruptor.TimeoutException;
+import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import backtype.storm.Config;
-import backtype.storm.messaging.IConnection;
-import backtype.storm.messaging.TaskMessage;
-import backtype.storm.scheduler.WorkerSlot;
-import backtype.storm.serialization.KryoTupleSerializer;
-import backtype.storm.tuple.ITupleExt;
-import backtype.storm.tuple.TupleExt;
-import backtype.storm.utils.DisruptorQueue;
-import backtype.storm.utils.Utils;
-import backtype.storm.utils.WorkerClassLoader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The class which sends all task tuples.
@@ -94,8 +95,8 @@ public class TaskTransfer {
     protected final List<AsyncLoopThread> serializeThreads;
     protected final GeneralTopologyContext topologyContext;
 
-    public TaskTransfer(Task task, String taskName, KryoTupleSerializer serializer, TaskStatus taskStatus,
-                        WorkerData workerData, final GeneralTopologyContext context) {
+    public TaskTransfer(Task task, String taskName, KryoTupleSerializer serializer,
+                        TaskStatus taskStatus, WorkerData workerData, final GeneralTopologyContext context) {
         this.task = task;
         this.taskName = taskName;
         //this.serializer = serializer;
@@ -125,12 +126,12 @@ public class TaskTransfer {
 
         serializeThreadNum = ConfigExtension.getTaskSerializeThreadNum(workerData.getStormConf());
         serializeThreads = new ArrayList<>();
-        setupSerializeThread();
+        this.setupSerializeThread();
 
         String taskId = taskName.substring(taskName.indexOf(":") + 1);
         QueueGauge serializeQueueGauge = new QueueGauge(serializeQueue, taskName, MetricDef.SERIALIZE_QUEUE);
         JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(
-                        topologyId, componentId, this.taskId, MetricDef.SERIALIZE_QUEUE, MetricType.GAUGE),
+                topologyId, componentId, this.taskId, MetricDef.SERIALIZE_QUEUE, MetricType.GAUGE),
                 new AsmGauge(serializeQueueGauge));
         JStormHealthCheck.registerTaskHealthCheck(Integer.valueOf(taskId), MetricDef.SERIALIZE_QUEUE, serializeQueueGauge);
         AsmHistogram serializeTimerHistogram = new AsmHistogram();
@@ -250,7 +251,7 @@ public class TaskTransfer {
             if (event == null) {
                 return;
             }
-            serialize(serializer, event);
+            TaskTransfer.this.serialize(serializer, event);
         }
     }
 
@@ -268,7 +269,7 @@ public class TaskTransfer {
                     if (object == null) {
                         continue;
                     }
-                    serialize(serializer, object);
+                    this.serialize(serializer, object);
                 }
             } catch (InterruptedException e) {
                 LOG.error("InterruptedException " + e.getCause());
@@ -301,7 +302,7 @@ public class TaskTransfer {
         try {
             ITupleExt tuple = (ITupleExt) event;
             int targetTaskId = tuple.getTargetTaskId();
-            IConnection conn = getConnection(targetTaskId);
+            IConnection conn = this.getConnection(targetTaskId);
             if (conn != null) {
                 byte[] tupleMessage = serializer.serialize((TupleExt) tuple);
                 //LOG.info("Task-{} sent msg to task-{}, data={}", task.getTaskId(), taskid,
