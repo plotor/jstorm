@@ -71,8 +71,8 @@ class Heartbeat extends RunnableCallback {
         this.supervisorId = supervisorId;
         this.conf = conf;
         this.myHostName = myHostName;
-        this.startTime = TimeUtils.current_time_secs();
-        this.frequency = JStormUtils.parseInt(conf.get(Config.SUPERVISOR_HEARTBEAT_FREQUENCY_SECS));
+        this.startTime = TimeUtils.current_time_secs(); // 当前时间（单位：秒）
+        this.frequency = JStormUtils.parseInt(conf.get(Config.SUPERVISOR_HEARTBEAT_FREQUENCY_SECS)); // 默认间隔时间为 60 秒
         this.hbUpdateTrigger = new AtomicBoolean(true);
         this.localState = localState;
         this.healthStatus = HealthStatus.INFO;

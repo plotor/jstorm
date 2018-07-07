@@ -53,23 +53,22 @@ public class Zookeeper {
     private static Logger LOG = LoggerFactory.getLogger(Zookeeper.class);
 
     public CuratorFramework mkClient(Map conf, List<String> servers, Object port, String root) {
-        return mkClient(conf, servers, port, root, new DefaultWatcherCallBack());
+        return this.mkClient(conf, servers, port, root, new DefaultWatcherCallBack());
     }
 
     /**
      * connect ZK, register watchers
      */
-    public CuratorFramework mkClient(Map conf, List<String> servers, Object port,
-                                     String root, final WatcherCallBack watcher) {
+    public CuratorFramework mkClient(Map conf, List<String> servers, Object port, String root, final WatcherCallBack watcher) {
 
         CuratorFramework fk = Utils.newCurator(conf, servers, port, root);
 
+        // 注册 ZK 变更监听器
         fk.getCuratorListenable().addListener(new CuratorListener() {
             @Override
             public void eventReceived(CuratorFramework _fk, CuratorEvent e) throws Exception {
                 if (e.getType().equals(CuratorEventType.WATCHED)) {
                     WatchedEvent event = e.getWatchedEvent();
-
                     watcher.execute(event.getState(), event.getType(), event.getPath());
                 }
 
@@ -95,7 +94,7 @@ public class Zookeeper {
     }
 
     public String createNode(CuratorFramework zk, String path, byte[] data) throws Exception {
-        return createNode(zk, path, data, CreateMode.PERSISTENT);
+        return this.createNode(zk, path, data, CreateMode.PERSISTENT);
     }
 
     public boolean existsNode(CuratorFramework zk, String path, boolean watch) throws Exception {
@@ -199,7 +198,7 @@ public class Zookeeper {
     }
 
     public boolean exists(CuratorFramework zk, String path, boolean watch) throws Exception {
-        return existsNode(zk, path, watch);
+        return this.existsNode(zk, path, watch);
     }
 
     public void syncPath(CuratorFramework zk, String path) throws Exception {
@@ -209,7 +208,7 @@ public class Zookeeper {
     public void deleteRecursive(CuratorFramework zk, String path) throws Exception {
         String normPath = PathUtils.normalize_path(path);
 
-        if (existsNode(zk, normPath, false)) {
+        if (this.existsNode(zk, normPath, false)) {
             zk.delete().guaranteed().deletingChildrenIfNeeded().forPath(normPath);
         }
     }

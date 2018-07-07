@@ -15,18 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.cluster;
+
+import com.alibaba.jstorm.callback.ClusterStateCallback;
 
 import java.util.List;
 import java.util.UUID;
 
-import com.alibaba.jstorm.callback.ClusterStateCallback;
-
 /**
- * All ZK interface
+ * 定义所有对 ZK 的操作
  *
  * @author yannian
- *
  */
 public interface ClusterState {
 

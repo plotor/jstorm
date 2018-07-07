@@ -57,14 +57,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * 1. write SupervisorInfo to ZK
  *
  * 2. Every 10 seconds run SynchronizeSupervisor
- * 2.1 download new topology
- * 2.2 release useless worker
- * 2.3 assign new task to /local-dir/supervisor/localstate
- * 2.4 add one syncProcesses event
+ * - 2.1 download new topology
+ * - 2.2 release useless worker
+ * - 2.3 assign new task to /local-dir/supervisor/localstate
+ * - 2.4 add one syncProcesses event
  *
  * 3. Every {supervisor.monitor.frequency.secs} run SyncProcesses
- * 3.1 kill useless worker
- * 3.2 start new worker
+ * - 3.1 kill useless worker
+ * - 3.2 start new worker
  *
  * 4. create heartbeat thread every supervisor.heartbeat.frequency.secs, write SupervisorInfo to ZK
  *
@@ -89,25 +89,23 @@ public class Supervisor {
         LOG.info("Starting Supervisor with conf " + conf);
 
         /*
-         * Step 1: create and cleanup all files in ${storm.local.dir}/supervisor/tmp
+         * Step 1: 创建并清空 ${storm.local.dir}/supervisor/tmp
+         *
+         * 临时目录，从 nimbus 下载的文件的临时存储目录，简单处理之后复制到 stormdist/${topology_id}
          */
         String path = StormConfig.supervisorTmpDir(conf);
         FileUtils.cleanDirectory(new File(path));
 
         /*
-         * Step 2: create ZK operation instance StormClusterState
+         * Step 2: 创建 ZK 操作实例
          */
-
         StormClusterState stormClusterState = Cluster.mk_storm_cluster_state(conf);
 
-        // 获取主机名
-        String hostName = JStormServerUtils.getHostName(conf);
+        String hostName = JStormServerUtils.getHostName(conf); // 获取主机名
         WorkerReportError workerReportError = new WorkerReportError(stormClusterState, hostName);
 
         /*
-         * Step 3: create LocalState (a simple KV store)
-         * 3.1 create LocalState instance;
-         * 3.2 get supervisorId, if there's no supervisorId, create one
+         * Step 3: 创建 LocalState 对象（简单、低效的 KV 存储），同时获取当前 supervisorId（如果不存在则创建一个（基于 UUID））
          */
 
         // 创建 LocalState 对象（简单、低效的 KV 存储）
@@ -120,25 +118,22 @@ public class Supervisor {
             localState.put(Common.LS_ID, supervisorId);
         }
         // clean LocalStat's zk-assignment & versions
-        localState.remove(Common.LS_LOCAl_ZK_ASSIGNMENTS); // lcoal-zk-assignment-version
-        localState.remove(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION); // lcoal-zk-assignment-version
-
-        Vector<AsyncLoopThread> threads = new Vector<>();
+        localState.remove(Common.LS_LOCAl_ZK_ASSIGNMENTS); // lcoal-zk-assignment
+        localState.remove(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION); // lcoal-zk-assignment.version
 
         /*
-         * Step 4: create HeartBeat
+         * Step 4: 创建 HeartBeat
          * every ${supervisor.heartbeat.frequency.secs} write SupervisorInfo to ZK sync heartbeat to nimbus
          */
-
         Heartbeat hb = new Heartbeat(conf, stormClusterState, supervisorId, localState);
-        // 更新端口号列表，并写入 supervisor 信息到 ZK
-        hb.update();
+        hb.update(); // 更新端口号列表，并写入 supervisor 信息到 ZK
 
-        // 启动循环执行 Heartbeat#update 方法
+        // 启动循环尝试执行 Heartbeat#update 方法
+        Vector<AsyncLoopThread> threads = new Vector<>();
         AsyncLoopThread heartbeat = new AsyncLoopThread(hb, false, null, Thread.MIN_PRIORITY, true);
         threads.add(heartbeat);
 
-        // Sync heartbeat to Apsara Container
+        // Sync heartbeat to Apsaras（飞天） Container
         AsyncLoopThread syncContainerHbThread = SyncContainerHb.mkSupervisorInstance(conf);
         if (syncContainerHbThread != null) {
             threads.add(syncContainerHbThread);
@@ -148,7 +143,6 @@ public class Supervisor {
          * Step 5: create and start sync Supervisor thread every
          * ${supervisor.monitor.frequency.secs} second run SyncSupervisor
          */
-
         ConcurrentHashMap<String, String> workerThreadPids = new ConcurrentHashMap<>();
         SyncProcessEvent syncProcessEvent = new SyncProcessEvent(
                 supervisorId, conf, localState, workerThreadPids, sharedContext, workerReportError, stormClusterState);
@@ -164,7 +158,7 @@ public class Supervisor {
         int syncFrequency = JStormUtils.parseInt(conf.get(Config.SUPERVISOR_MONITOR_FREQUENCY_SECS));
         EventManagerPusher syncSupervisorPusher = new EventManagerPusher(syncSupEventManager, syncSupervisorEvent, syncFrequency);
         /*
-         * 每间隔 ${supervisor.monitor.frequency.secs} 调用 EventManagerPusher#run()，
+         * 每间隔一段时间（默认为 10 秒）调用 EventManagerPusher#run()，
          * 本质上是调用 EventManagerImp#add(RunnableCallback) 将 syncSupervisorEvent 记录到自己的阻塞队列中，
          * 同时 EventManagerImp 也会循环消费阻塞队列，取出其中的 syncSupervisorEvent，并应用其 run 方法：SyncSupervisorEvent#run()
          */

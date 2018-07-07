@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * All ZK interface implementation
+ * 对 {@link ClusterState} 的唯一实现，基于 curator 操作 ZK
  *
  * @author yannian.mu
  */
@@ -53,6 +53,7 @@ public class DistributedClusterState implements ClusterState {
     private CuratorFramework zk;
     private final WatcherCallBack watcher;
 
+    /** 记录集群数据变更时的回调策略 */
     private final ConcurrentHashMap<UUID, ClusterStateCallback> callbacks = new ConcurrentHashMap<>();
 
     private final Map<Object, Object> conf;
@@ -64,14 +65,15 @@ public class DistributedClusterState implements ClusterState {
     public DistributedClusterState(Map<Object, Object> conf) throws Exception {
         this.conf = conf;
 
-        // just mkdir STORM_ZOOKEEPER_ROOT dir
-        CuratorFramework _zk = mkZk();
-        String path = String.valueOf(this.conf.get(Config.STORM_ZOOKEEPER_ROOT));
+        // 创建 JStorm 顶级目录，默认是 '/jstorm'
+        CuratorFramework _zk = this.mkZk();
+        String path = String.valueOf(this.conf.get(Config.STORM_ZOOKEEPER_ROOT)); // default is '/jstorm'
         zkObj.mkdirs(_zk, path);
         _zk.close();
 
         active = new AtomicBoolean(true);
 
+        // 创建 ZK 数据变更监听器
         watcher = new WatcherCallBack() {
             @Override
             public void execute(KeeperState state, EventType type, String path) {
@@ -83,6 +85,7 @@ public class DistributedClusterState implements ClusterState {
                     }
 
                     if (!type.equals(EventType.None)) {
+                        // 当 ZK 数据发生变更时，便利应用注册的回调
                         for (Entry<UUID, ClusterStateCallback> e : callbacks.entrySet()) {
                             ClusterStateCallback fn = e.getValue();
                             fn.execute(type, path);
@@ -92,19 +95,26 @@ public class DistributedClusterState implements ClusterState {
             }
         };
         zk = null;
-        zk = mkZk(watcher);
-
+        zk = this.mkZk(watcher);
     }
 
     @SuppressWarnings("unchecked")
     private CuratorFramework mkZk() throws IOException {
-        return zkObj.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT), "");
+        return zkObj.mkClient(
+                conf,
+                (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), // zk server
+                conf.get(Config.STORM_ZOOKEEPER_PORT), // zk port
+                ""); // root
     }
 
     @SuppressWarnings("unchecked")
     private CuratorFramework mkZk(WatcherCallBack watcher) throws NumberFormatException, IOException {
-        return zkObj.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT),
-                String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)), watcher);
+        return zkObj.mkClient(
+                conf,
+                (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), // zk server
+                conf.get(Config.STORM_ZOOKEEPER_PORT), // zk port
+                String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)),  // default is '/jstorm'
+                watcher);
     }
 
     @Override

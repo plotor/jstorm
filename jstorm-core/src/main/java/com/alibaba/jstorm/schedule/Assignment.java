@@ -41,9 +41,15 @@ import java.util.Set;
  */
 public class Assignment implements Serializable {
 
+    /**
+     * 任务分配类型
+     */
     public enum AssignmentType {
+        // 新分配的任务
         Assign,
+        // 更新的任务
         UpdateTopology,
+        // 扩展？
         ScaleTopology
     }
 
@@ -329,7 +335,7 @@ public class Assignment implements Serializable {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (this.getClass() != obj.getClass()) {
             return false;
         }
         Assignment other = (Assignment) obj;

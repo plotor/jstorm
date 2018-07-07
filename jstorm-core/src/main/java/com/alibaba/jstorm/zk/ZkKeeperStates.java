@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.zk;
 
-import java.util.HashMap;
-
 import org.apache.zookeeper.Watcher;
+
+import java.util.HashMap;
 
 public class ZkKeeperStates {
 

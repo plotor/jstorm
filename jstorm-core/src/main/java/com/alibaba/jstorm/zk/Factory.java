@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.jstorm.zk;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
+package com.alibaba.jstorm.zk;
 
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
 import org.apache.zookeeper.server.ZooKeeperServer;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
 
 public class Factory extends NIOServerCnxnFactory {
 

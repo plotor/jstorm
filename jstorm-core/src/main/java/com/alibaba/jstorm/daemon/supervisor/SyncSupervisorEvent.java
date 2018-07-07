@@ -61,11 +61,10 @@ import java.util.Set;
 class SyncSupervisorEvent extends RunnableCallback {
     private static final Logger LOG = LoggerFactory.getLogger(SyncSupervisorEvent.class);
 
-    // private Supervisor supervisor;
-    private String supervisorId;
+    private String supervisorId; // 本地 supervisor 的 ID
     private EventManager syncSupEventManager;
-    private StormClusterState stormClusterState;
-    private LocalState localState;
+    private StormClusterState stormClusterState; // ZK 客户端实例
+    private LocalState localState; // 本地 KV 数据库
     private Map<Object, Object> conf;
     private SyncProcessEvent syncProcesses;
     private int lastTime;
