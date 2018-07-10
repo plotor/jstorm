@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>backtype.storm.tuple.ITuple</OriginalElement>
+  <nodes>
+    <node x="295.5" y="85.0">storm.trident.tuple.TridentTuple</node>
+    <node x="277.0" y="170.0">storm.trident.tuple.TridentTupleView</node>
+    <node x="57.75" y="255.0">backtype.storm.tuple.TupleImplExt</node>
+    <node x="144.0" y="170.0">backtype.storm.tuple.TupleExt</node>
+    <node x="86.25" y="85.0">backtype.storm.tuple.Tuple</node>
+    <node x="0.0" y="170.0">backtype.storm.tuple.TupleImpl</node>
+    <node x="178.5" y="0.0">backtype.storm.tuple.ITuple</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="backtype.storm.tuple.Tuple" target="backtype.storm.tuple.ITuple">
+      <point x="0.0" y="-17.5" />
+      <point x="131.25" y="60.0" />
+      <point x="202.25" y="60.0" />
+      <point x="-23.75" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.tuple.TupleImpl" target="backtype.storm.tuple.Tuple">
+      <point x="0.0" y="-17.5" />
+      <point x="62.0" y="145.0" />
+      <point x="108.75" y="145.0" />
+      <point x="-22.5" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.tuple.TupleExt" target="backtype.storm.tuple.Tuple">
+      <point x="0.0" y="-17.5" />
+      <point x="200.5" y="145.0" />
+      <point x="153.75" y="145.0" />
+      <point x="22.5" y="17.5" />
+    </edge>
+    <edge source="storm.trident.tuple.TridentTupleView" target="storm.trident.tuple.TridentTuple">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.tuple.TupleImplExt" target="backtype.storm.tuple.TupleImpl">
+      <point x="-36.75" y="-17.5" />
+      <point x="94.5" y="230.0" />
+      <point x="62.0" y="230.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.tuple.TupleImplExt" target="backtype.storm.tuple.TupleExt">
+      <point x="36.75" y="-17.5" />
+      <point x="168.0" y="230.0" />
+      <point x="200.5" y="230.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="storm.trident.tuple.TridentTuple" target="backtype.storm.tuple.ITuple">
+      <point x="0.0" y="-17.5" />
+      <point x="367.5" y="60.0" />
+      <point x="249.75" y="60.0" />
+      <point x="23.75" y="17.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="229.0" y="145.0" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

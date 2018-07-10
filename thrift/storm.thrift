@@ -20,8 +20,8 @@ struct NullStruct {
 }
 
 struct GlobalStreamId {
-  1: required string componentId; // 当前组件输入流来源哪个组件ID
-  2: required string streamId; // streamId 标识组件所输出的特定的流
+  1: required string componentId; // 当前组件输入流来源组件 ID
+  2: required string streamId; // 当前组件所输出的特定的流
   #Going to need to add an enum for the stream type (NORMAL or FAILURE)
 }
 

@@ -21,7 +21,7 @@ package backtype.storm.tuple;
 import backtype.storm.generated.GlobalStreamId;
 
 /**
- * Tuple 是 storm 的主要数据结构，storm 发送消息的过程中，每一条消息实际上都是一个 Tuple 对象
+ * 主要数据结构，storm 发送消息的过程中，每一条消息都会封装成为一个 Tuple 对象
  *
  * The tuple is the main data structure in Storm. A tuple is a named list of values, where each value can be any type.
  * Tuples are dynamically typed -- the types of the fields do not need to be declared.
@@ -38,26 +38,39 @@ public interface Tuple extends ITuple {
     /**
      * 获取与该消息对应的 GlobalStreamId
      *
+     * struct GlobalStreamId {
+     * 1: required string componentId; // 当前组件输入流来源组件 ID
+     * 2: required string streamId; // 当前组件所输出的特定的流
+     * }
+     *
      * Returns the global stream id (component + stream) of this tuple.
      */
     GlobalStreamId getSourceGlobalStreamId();
 
     /**
+     * 获取创建当前 tuple 的组件 ID
+     *
      * Gets the id of the component that created this tuple.
      */
     String getSourceComponent();
 
     /**
+     * 获取创建当前 tuple 的 taskId
+     *
      * Gets the id of the task that created this tuple.
      */
     int getSourceTask();
 
     /**
+     * 获取当前 tuple 被 emit 的目标 ID
+     *
      * Gets the id of the stream that this tuple was emitted to.
      */
     String getSourceStreamId();
 
     /**
+     * 获取当前 tuple 的消息序号（用来追踪消息是否被成功处理）
+     *
      * Gets the message id that associated with this tuple.
      */
     MessageId getMessageId();

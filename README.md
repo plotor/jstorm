@@ -2,11 +2,12 @@
 
 ### 计划篇章
 
-1. JStorm 编程基础
-2. Topology 构建
-3. Nimbus 运行机制
-4. Supervisor 运行机制
-5. Worker 运行机制
-6. 滑动与滚动窗口机制
-7. Ack 机制
-8. 异步循环线程模型
+- JStorm 整体架构
+- JStorm 编程基础
+- Topology 构建过程
+- 异步循环线程模型
+- Nimbus 启动与运行机制
+- Supervisor 启动与运行机制
+- Worker 启动与运行机制
+- 滑动与滚动窗口机制
+- Ack 机制

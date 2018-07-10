@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 属性名称集合，本质上就是一个 List
+ * 存储消息的字段名称集合，本质上就是一个 List
  */
 public class Fields implements Iterable<String>, Serializable {
 
@@ -35,6 +35,7 @@ public class Fields implements Iterable<String>, Serializable {
 
     private List<String> _fields;
 
+    /** [字段名称，索引值]，加快检索 */
     private Map<String, Integer> _index = new HashMap<>();
 
     public Fields(String... fields) {
@@ -42,7 +43,7 @@ public class Fields implements Iterable<String>, Serializable {
     }
 
     /**
-     * 构造一个属性集合，属性名称不允许重复
+     * 基于传递的 list 构造一个字段名称集合，字段名不允许重复
      *
      * @param fields
      */
@@ -54,12 +55,12 @@ public class Fields implements Iterable<String>, Serializable {
             }
             _fields.add(field);
         }
-        // 记录各个 <属性名称, 下标> 到 _index 中
+        // 记录 <属性名称, 索引> 的映射关系
         this.index();
     }
 
     /**
-     * 从 tuple 中选择指定属性的值返回
+     * 按照 Fields 中记录的字段名称，逐个从 tuple 中获取对应的属性值返回
      *
      * @param selector
      * @param tuple
@@ -74,7 +75,7 @@ public class Fields implements Iterable<String>, Serializable {
     }
 
     /**
-     * 返回指定属性名称对应的值
+     * 从 tuple 中获取指定字段对应的值
      *
      * @param selector
      * @param tuple
@@ -96,12 +97,13 @@ public class Fields implements Iterable<String>, Serializable {
         return _fields.get(index);
     }
 
+    @Override
     public Iterator<String> iterator() {
         return _fields.iterator();
     }
 
     /**
-     * 获取属性对应的下标
+     * 获取字段名称对应的下标
      */
     public int fieldIndex(String field) {
         Integer ret = _index.get(field);
@@ -112,14 +114,14 @@ public class Fields implements Iterable<String>, Serializable {
     }
 
     /**
-     * 判断属性是否存在
+     * 判断字段是否存在
      */
     public boolean contains(String field) {
         return _index.containsKey(field);
     }
 
     /**
-     * 记录各个属性对应的 index
+     * 记录 [字段名称 -> index]
      */
     private void index() {
         for (int i = 0; i < _fields.size(); i++) {
