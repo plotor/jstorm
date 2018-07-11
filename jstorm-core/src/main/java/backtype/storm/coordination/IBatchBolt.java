@@ -26,19 +26,26 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * IBatchBolt 主要用于 Storm 中的批处理，目前 Storm 主要基于该接口来实现可靠的消息传输，
- * 在这种情况下，批处理会比单一消息处理更为高效。
+ * IBatchBolt 主要用于 Storm 中的批处理，目前 Storm 主要基于该接口来实现可靠的消息传输，在这种情况下，批处理会比单一消息处理更为高效。
  *
  * Storm 的事务 Topology 和 Trident 主要基于 IBatchBolt 实现
  *
  * 使用 IBatchBolt，Storm 会自动帮用户进行 ack、fail 和 anchor 操作，用户不需要关心这一点
  *
+ * 使用 {@link BatchOutputCollector} 作为输出收集器
+ *
  * @param <T>
  */
 public interface IBatchBolt<T> extends Serializable, IComponent {
 
-    /* 使用 BatchOutputCollector 作为输出收集器 */
-
+    /**
+     * 用来初始化一个 Batch
+     *
+     * @param conf
+     * @param context
+     * @param collector
+     * @param id batch 的唯一标识
+     */
     void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, T id);
 
     void execute(Tuple tuple);

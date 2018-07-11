@@ -1461,6 +1461,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * FQCN of a class that implements {@code ITopologyActionNotifierPlugin}
+     *
      * @see backtype.storm.nimbus.ITopologyActionNotifierPlugin for details.
      */
     public static final String NIMBUS_TOPOLOGY_ACTION_NOTIFIER_PLUGIN = "nimbus.topology.action.notifier.plugin.class";

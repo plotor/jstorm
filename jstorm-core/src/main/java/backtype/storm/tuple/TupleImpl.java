@@ -36,6 +36,9 @@ import clojure.lang.Symbol;
 
 import java.util.List;
 
+/**
+ * {@link Tuple} impl
+ */
 public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed, IMeta, Tuple {
 
     private List<Object> values;
@@ -95,133 +98,164 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
         return _outAckVal;
     }
 
+    @Override
     public int size() {
         return values.size();
     }
 
+    @Override
     public int fieldIndex(String field) {
-        return getFields().fieldIndex(field);
+        return this.getFields().fieldIndex(field);
     }
 
+    @Override
     public boolean contains(String field) {
-        return getFields().contains(field);
+        return this.getFields().contains(field);
     }
 
+    @Override
     public Object getValue(int i) {
         return values.get(i);
     }
 
+    @Override
     public String getString(int i) {
         return (String) values.get(i);
     }
 
+    @Override
     public Integer getInteger(int i) {
         return (Integer) values.get(i);
     }
 
+    @Override
     public Long getLong(int i) {
         return (Long) values.get(i);
     }
 
+    @Override
     public Boolean getBoolean(int i) {
         return (Boolean) values.get(i);
     }
 
+    @Override
     public Short getShort(int i) {
         return (Short) values.get(i);
     }
 
+    @Override
     public Byte getByte(int i) {
         return (Byte) values.get(i);
     }
 
+    @Override
     public Double getDouble(int i) {
         return (Double) values.get(i);
     }
 
+    @Override
     public Float getFloat(int i) {
         return (Float) values.get(i);
     }
 
+    @Override
     public byte[] getBinary(int i) {
         return (byte[]) values.get(i);
     }
 
+    @Override
     public Object getValueByField(String field) {
-        return values.get(fieldIndex(field));
+        return values.get(this.fieldIndex(field));
     }
 
+    @Override
     public String getStringByField(String field) {
-        return (String) values.get(fieldIndex(field));
+        return (String) values.get(this.fieldIndex(field));
     }
 
+    @Override
     public Integer getIntegerByField(String field) {
-        return (Integer) values.get(fieldIndex(field));
+        return (Integer) values.get(this.fieldIndex(field));
     }
 
+    @Override
     public Long getLongByField(String field) {
-        return (Long) values.get(fieldIndex(field));
+        return (Long) values.get(this.fieldIndex(field));
     }
 
+    @Override
     public Boolean getBooleanByField(String field) {
-        return (Boolean) values.get(fieldIndex(field));
+        return (Boolean) values.get(this.fieldIndex(field));
     }
 
+    @Override
     public Short getShortByField(String field) {
-        return (Short) values.get(fieldIndex(field));
+        return (Short) values.get(this.fieldIndex(field));
     }
 
+    @Override
     public Byte getByteByField(String field) {
-        return (Byte) values.get(fieldIndex(field));
+        return (Byte) values.get(this.fieldIndex(field));
     }
 
+    @Override
     public Double getDoubleByField(String field) {
-        return (Double) values.get(fieldIndex(field));
+        return (Double) values.get(this.fieldIndex(field));
     }
 
+    @Override
     public Float getFloatByField(String field) {
-        return (Float) values.get(fieldIndex(field));
+        return (Float) values.get(this.fieldIndex(field));
     }
 
+    @Override
     public byte[] getBinaryByField(String field) {
-        return (byte[]) values.get(fieldIndex(field));
+        return (byte[]) values.get(this.fieldIndex(field));
     }
 
+    @Override
     public List<Object> getValues() {
         return values;
     }
 
+    @Override
     public Fields getFields() {
-        return context.getComponentOutputFields(getSourceComponent(), getSourceStreamId());
+        return context.getComponentOutputFields(this.getSourceComponent(), this.getSourceStreamId());
     }
 
+    @Override
     public List<Object> select(Fields selector) {
-        return getFields().select(selector, values);
+        return this.getFields().select(selector, values);
     }
 
+    @Override
     public GlobalStreamId getSourceGlobalStreamId() {
-        return new GlobalStreamId(getSourceComponent(), streamId);
+        return new GlobalStreamId(this.getSourceComponent(), streamId);
     }
 
+    @Override
     public String getSourceComponent() {
         return context.getComponentId(taskId);
     }
 
+    @Override
     public int getSourceTask() {
         return taskId;
     }
 
+    @Override
     public String getSourceStreamId() {
         return streamId;
     }
 
+    @Override
     public MessageId getMessageId() {
         return id;
     }
 
     @Override
     public String toString() {
-        return "source: " + getSourceComponent() + ":" + taskId + ", stream: " + streamId + ", id: " + id.toString() + ", " + values.toString();
+        return "source: " + this.getSourceComponent() + ":" + taskId + ", stream: " + streamId + ", id: " + id.toString() + ", " + values.toString();
     }
 
     @Override
@@ -243,9 +277,9 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
     public Object valAt(Object o) {
         try {
             if (o instanceof Keyword) {
-                return getValueByField(((Keyword) o).getName());
+                return this.getValueByField(((Keyword) o).getName());
             } else if (o instanceof String) {
-                return getValueByField((String) o);
+                return this.getValueByField((String) o);
             }
         } catch (IllegalArgumentException ignored) {
         }
@@ -253,9 +287,10 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
     }
 
     /* Seqable */
+    @Override
     public ISeq seq() {
         if (values.size() > 0) {
-            return new Seq(getFields().toList(), values, 0);
+            return new Seq(this.getFields().toList(), values, 0);
         }
         return null;
     }
@@ -280,10 +315,12 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
             this.i = i;
         }
 
+        @Override
         public Object first() {
             return new MapEntry(fields.get(i), values.get(i));
         }
 
+        @Override
         public ISeq next() {
             if (i + 1 < fields.size()) {
                 return new Seq(fields, values, i + 1);
@@ -291,18 +328,21 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
             return null;
         }
 
+        @Override
         public int count() {
             assert fields.size() - i >= 0 : "index out of bounds";
             // i being the position in the fields of this seq, the remainder of the seq is the size
             return fields.size() - i;
         }
 
+        @Override
         public Obj withMeta(IPersistentMap meta) {
             return new Seq(meta, fields, values, i);
         }
     }
 
     /* Indexed */
+    @Override
     public Object nth(int i) {
         if (i < values.size()) {
             return values.get(i);
@@ -311,8 +351,9 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
         }
     }
 
+    @Override
     public Object nth(int i, Object notfound) {
-        Object ret = nth(i);
+        Object ret = this.nth(i);
         if (ret == null) {
             ret = notfound;
         }
@@ -320,22 +361,24 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
     }
 
     /* Counted */
+    @Override
     public int count() {
         return values.size();
     }
 
     /* IMeta */
+    @Override
     public IPersistentMap meta() {
         if (_meta == null) {
-            _meta = new PersistentArrayMap(new Object[] {makeKeyword("stream"), getSourceStreamId(),
-                    makeKeyword("component"), getSourceComponent(), makeKeyword("task"), getSourceTask()});
+            _meta = new PersistentArrayMap(new Object[] {this.makeKeyword("stream"), this.getSourceStreamId(),
+                    this.makeKeyword("component"), this.getSourceComponent(), this.makeKeyword("task"), this.getSourceTask()});
         }
         return _meta;
     }
 
     private PersistentArrayMap toMap() {
         Object array[] = new Object[values.size() * 2];
-        List<String> fields = getFields().toList();
+        List<String> fields = this.getFields().toList();
         for (int i = 0; i < values.size(); i++) {
             array[i * 2] = fields.get(i);
             array[(i * 2) + 1] = values.get(i);
@@ -343,9 +386,10 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
         return new PersistentArrayMap(array);
     }
 
+    @Override
     public IPersistentMap getMap() {
         if (_map == null) {
-            setMap(toMap());
+            this.setMap(this.toMap());
         }
         return _map;
     }

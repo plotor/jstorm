@@ -27,6 +27,9 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * {@link TupleExt} impl
+ */
 public class TupleImplExt extends TupleImpl implements TupleExt {
 
     protected int targetTaskId;
@@ -83,19 +86,22 @@ public class TupleImplExt extends TupleImpl implements TupleExt {
         this.isBatchTuple = isBatchTuple;
     }
 
+    @Override
     public long getBatchId() {
         return batchId;
     }
 
+    @Override
     public void setBatchId(long batchId) {
         this.batchId = batchId;
     }
 
+    @Override
     public Iterator<List<Object>> valueIterator() {
         if (isBatchTuple) {
-            return new TupleValueIterator(getValues().iterator());
+            return new TupleValueIterator(this.getValues().iterator());
         } else {
-            return Lists.<List<Object>>newArrayList(getValues()).iterator();
+            return Lists.<List<Object>>newArrayList(this.getValues()).iterator();
         }
     }
 

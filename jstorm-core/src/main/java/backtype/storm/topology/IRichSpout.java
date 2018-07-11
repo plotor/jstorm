@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -21,8 +21,8 @@ package backtype.storm.topology;
 import backtype.storm.spout.ISpout;
 
 /**
- * When writing topologies using Java, {@link IRichBolt} and {@link IRichSpout} are the main
- * interfaces to use to implement components of the topology.
+ * When writing topologies using Java,
+ * {@link IRichBolt} and {@link IRichSpout} are the main interfaces to use to implement components of the topology.
  */
 public interface IRichSpout extends ISpout, IComponent {
 

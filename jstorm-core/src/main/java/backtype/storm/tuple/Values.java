@@ -15,12 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.tuple;
 
 import java.util.ArrayList;
 
 /**
  * A class that contains tuple values. use new Values("field1", 2, 3) syntax to add values.
+ *
+ * 与 {@link Fields} 相对应，用来按字段序存放字段值
  */
 public class Values extends ArrayList<Object> {
 
@@ -30,6 +33,7 @@ public class Values extends ArrayList<Object> {
     public static final int STRING = 1;
     public static final int INTEGER = 2;
 
+    /** 记录当前 values 集合中的元素类型 */
     public int type;
 
     public Values() {
@@ -38,7 +42,7 @@ public class Values extends ArrayList<Object> {
     public Values(Object... vals) {
         super(vals.length);
         for (Object val : vals) {
-            add(val);
+            this.add(val);
         }
         type = OBJECT;
     }
@@ -46,7 +50,7 @@ public class Values extends ArrayList<Object> {
     public Values(String... strs) {
         super(strs.length);
         for (String s : strs) {
-            add(s);
+            this.add(s);
         }
         type = STRING;
     }
@@ -54,7 +58,7 @@ public class Values extends ArrayList<Object> {
     public Values(Integer... ints) {
         super(ints.length);
         for (Integer i : ints) {
-            add(i);
+            this.add(i);
         }
         type = INTEGER;
     }

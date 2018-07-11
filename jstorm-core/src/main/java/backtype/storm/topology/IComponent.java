@@ -22,7 +22,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 /**
- * 组件接口
+ * 组件接口，主要用于构建 topology, 是对于 spout 和 bolt 的抽象
  *
  * Common methods for all possible components in a topology.
  * This interface is used when defining topologies using the Java API.
@@ -37,7 +37,7 @@ public interface IComponent extends Serializable {
     void declareOutputFields(OutputFieldsDeclarer declarer);
 
     /**
-     * 描述一些与组件相关的配置
+     * 获取与组件相关的配置
      *
      * Declare configuration specific to this component.
      * Only a subset of the "topology.*" configs can be overridden.

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.coordination;
 
 import backtype.storm.coordination.CoordinatedBolt.FinishedCallback;
@@ -26,12 +27,14 @@ import backtype.storm.topology.IRichBolt;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.Utils;
-import java.util.HashMap;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCallback {
+
     public static Logger LOG = LoggerFactory.getLogger(BatchBoltExecutor.class);
 
     byte[] _boltSer;
@@ -55,7 +58,7 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
     @Override
     public void execute(Tuple input) {
         Object id = input.getValue(0);
-        IBatchBolt bolt = getBatchBolt(id);
+        IBatchBolt bolt = this.getBatchBolt(id);
         try {
             bolt.execute(input);
             _collector.ack(input);
@@ -71,7 +74,7 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
 
     @Override
     public void finishedId(Object id) {
-        IBatchBolt bolt = getBatchBolt(id);
+        IBatchBolt bolt = this.getBatchBolt(id);
         _openTransactions.remove(id);
         bolt.finishBatch();
     }
@@ -83,18 +86,18 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        newTransactionalBolt().declareOutputFields(declarer);
+        this.newTransactionalBolt().declareOutputFields(declarer);
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        return newTransactionalBolt().getComponentConfiguration();
+        return this.newTransactionalBolt().getComponentConfiguration();
     }
 
     private IBatchBolt getBatchBolt(Object id) {
         IBatchBolt bolt = _openTransactions.get(id);
         if (bolt == null) {
-            bolt = newTransactionalBolt();
+            bolt = this.newTransactionalBolt();
             bolt.prepare(_conf, _context, _collector, id);
             _openTransactions.put(id, bolt);
         }

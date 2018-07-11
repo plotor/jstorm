@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -380,7 +380,7 @@ public class TopologyBuilder {
     }
 
     public void setStateSpout(String id, IRichStateSpout stateSpout, Number parallelism_hint) throws IllegalArgumentException {
-        validateUnusedId(id);
+        this.validateUnusedId(id);
         // TODO: finish
     }
 
@@ -573,70 +573,84 @@ public class TopologyBuilder {
             _boltId = boltId;
         }
 
+        @Override
         public BoltDeclarer fieldsGrouping(String componentId, Fields fields) {
-            return fieldsGrouping(componentId, Utils.DEFAULT_STREAM_ID, fields);
+            return this.fieldsGrouping(componentId, Utils.DEFAULT_STREAM_ID, fields);
         }
 
+        @Override
         public BoltDeclarer fieldsGrouping(String componentId, String streamId, Fields fields) {
-            return grouping(componentId, streamId, Grouping.fields(fields.toList()));
+            return this.grouping(componentId, streamId, Grouping.fields(fields.toList()));
         }
 
+        @Override
         public BoltDeclarer globalGrouping(String componentId) {
-            return globalGrouping(componentId, Utils.DEFAULT_STREAM_ID);
+            return this.globalGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer globalGrouping(String componentId, String streamId) {
-            return grouping(componentId, streamId, Grouping.fields(new ArrayList<String>()));
+            return this.grouping(componentId, streamId, Grouping.fields(new ArrayList<String>()));
         }
 
+        @Override
         public BoltDeclarer shuffleGrouping(String componentId) {
-            return shuffleGrouping(componentId, Utils.DEFAULT_STREAM_ID);
+            return this.shuffleGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer shuffleGrouping(String componentId, String streamId) {
-            return grouping(componentId, streamId, Grouping.shuffle(new NullStruct()));
+            return this.grouping(componentId, streamId, Grouping.shuffle(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer localOrShuffleGrouping(String componentId) {
-            return localOrShuffleGrouping(componentId, Utils.DEFAULT_STREAM_ID);
+            return this.localOrShuffleGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer localOrShuffleGrouping(String componentId, String streamId) {
-            return grouping(componentId, streamId, Grouping.local_or_shuffle(new NullStruct()));
+            return this.grouping(componentId, streamId, Grouping.local_or_shuffle(new NullStruct()));
         }
 
         @Override
         public BoltDeclarer localFirstGrouping(String componentId) {
-            return localFirstGrouping(componentId, Utils.DEFAULT_STREAM_ID);
+            return this.localFirstGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
         @Override
         public BoltDeclarer localFirstGrouping(String componentId, String streamId) {
-            return grouping(componentId, streamId, Grouping.localFirst(new NullStruct()));
+            return this.grouping(componentId, streamId, Grouping.localFirst(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer noneGrouping(String componentId) {
-            return noneGrouping(componentId, Utils.DEFAULT_STREAM_ID);
+            return this.noneGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer noneGrouping(String componentId, String streamId) {
-            return grouping(componentId, streamId, Grouping.none(new NullStruct()));
+            return this.grouping(componentId, streamId, Grouping.none(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer allGrouping(String componentId) {
-            return allGrouping(componentId, Utils.DEFAULT_STREAM_ID);
+            return this.allGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer allGrouping(String componentId, String streamId) {
-            return grouping(componentId, streamId, Grouping.all(new NullStruct()));
+            return this.grouping(componentId, streamId, Grouping.all(new NullStruct()));
         }
 
+        @Override
         public BoltDeclarer directGrouping(String componentId) {
-            return directGrouping(componentId, Utils.DEFAULT_STREAM_ID);
+            return this.directGrouping(componentId, Utils.DEFAULT_STREAM_ID);
         }
 
+        @Override
         public BoltDeclarer directGrouping(String componentId, String streamId) {
-            return grouping(componentId, streamId, Grouping.direct(new NullStruct()));
+            return this.grouping(componentId, streamId, Grouping.direct(new NullStruct()));
         }
 
         protected BoltDeclarer grouping(String componentId, String streamId, Grouping grouping) {
@@ -646,27 +660,27 @@ public class TopologyBuilder {
 
         @Override
         public BoltDeclarer partialKeyGrouping(String componentId, Fields fields) {
-            return customGrouping(componentId, new PartialKeyGrouping(fields));
+            return this.customGrouping(componentId, new PartialKeyGrouping(fields));
         }
 
         @Override
         public BoltDeclarer partialKeyGrouping(String componentId, String streamId, Fields fields) {
-            return customGrouping(componentId, streamId, new PartialKeyGrouping(fields));
+            return this.customGrouping(componentId, streamId, new PartialKeyGrouping(fields));
         }
 
         @Override
         public BoltDeclarer customGrouping(String componentId, CustomStreamGrouping grouping) {
-            return customGrouping(componentId, Utils.DEFAULT_STREAM_ID, grouping);
+            return this.customGrouping(componentId, Utils.DEFAULT_STREAM_ID, grouping);
         }
 
         @Override
         public BoltDeclarer customGrouping(String componentId, String streamId, CustomStreamGrouping grouping) {
-            return grouping(componentId, streamId, Grouping.custom_serialized(Utils.javaSerialize(grouping)));
+            return this.grouping(componentId, streamId, Grouping.custom_serialized(Utils.javaSerialize(grouping)));
         }
 
         @Override
         public BoltDeclarer grouping(GlobalStreamId id, Grouping grouping) {
-            return grouping(id.get_componentId(), id.get_streamId(), grouping);
+            return this.grouping(id.get_componentId(), id.get_streamId(), grouping);
         }
     }
 }
