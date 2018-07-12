@@ -15,12 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.serialization.KryoTupleDeserializer;
 import backtype.storm.utils.DisruptorQueue;
 import com.alibaba.jstorm.task.TaskReceiver;
 
-public interface IProtoBatchBolt extends IRichBatchBolt{
+public interface IProtoBatchBolt extends IRichBatchBolt {
+
     void protoExecute(TaskReceiver receiver, KryoTupleDeserializer deserializer, DisruptorQueue queue, byte[] data);
+
 }

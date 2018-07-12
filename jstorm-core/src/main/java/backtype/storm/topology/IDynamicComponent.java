@@ -15,15 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import java.io.Serializable;
 import java.util.Map;
 
-/*
+/**
  * This interface is used to notify the update of user configuration for bolts and spouts
  */
-
 public interface IDynamicComponent extends Serializable {
     void update(Map conf);
 }

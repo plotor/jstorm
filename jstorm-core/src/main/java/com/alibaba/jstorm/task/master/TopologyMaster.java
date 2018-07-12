@@ -16,19 +16,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.master;
 
-import static org.slf4j.LoggerFactory.getLogger;
-
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-
+import backtype.storm.task.IBolt;
+import backtype.storm.task.OutputCollector;
+import backtype.storm.task.TopologyContext;
+import backtype.storm.topology.IDynamicComponent;
+import backtype.storm.tuple.Tuple;
+import backtype.storm.utils.Utils;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.task.master.ctrlevent.CtrlEventDispatcher;
@@ -39,17 +35,19 @@ import com.alibaba.jstorm.task.master.metrics.MetricsMetaBroadcastEvent;
 import com.alibaba.jstorm.task.master.metrics.MetricsUpdater;
 import com.alibaba.jstorm.task.master.metrics.MetricsUploader;
 import com.alibaba.jstorm.task.master.timer.WorkerSetUpdater;
+import org.slf4j.Logger;
+import static org.slf4j.LoggerFactory.getLogger;
 
-import backtype.storm.task.IBolt;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IDynamicComponent;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.utils.Utils;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
- * Topology master is responsible for the process of general topology
- * information, e.g. task heartbeat update, metrics data update....
+ * Topology master is responsible(主管) for the process of general topology information,
+ * e.g. task heartbeat update, metrics data update....
  *
  * @author Basti Liu
  */
@@ -77,22 +75,8 @@ public class TopologyMaster implements IBolt, IDynamicComponent {
     private Map<String, TMHandler> handlers = new ConcurrentHashMap<>();
     private ScheduledExecutorService threadPools;
 
-
     public void createThreadPools(Map conf) {
-        // It can set thread pool size according to worker number
-//		this.threadPools = new ThreadPoolExecutor(THREAD_POOL_SIZE, 
-//		        2 * THREAD_POOL_SIZE, 60, TimeUnit.SECONDS, 
-//		        new ArrayBlockingQueue<Runnable>(1024),
-//		        new ThreadFactory() {
-//		    public static final String THREAD_POOL_NAME = "TM-ThreadPool-";
-//		    
-//		        private AtomicInteger threadCounter = new AtomicInteger();
-//                    @Override
-//                    public Thread newThread(Runnable r) {
-//                        return new Thread(r, THREAD_POOL_NAME + threadCounter.getAndIncrement());
-//                    }
-//		    
-//		});
+        // ${topology.master.thread.pool.size}, default is 16
         THREAD_POOL_SIZE = ConfigExtension.getTopologyMasterThreadPoolSize(conf);
         this.threadPools = Executors.newScheduledThreadPool(THREAD_POOL_SIZE);
 
@@ -141,7 +125,7 @@ public class TopologyMaster implements IBolt, IDynamicComponent {
         grayUpgradeHandler.init(tmContext);
         handlers.put("DUMMY", grayUpgradeHandler);
         threadPools.scheduleAtFixedRate((Runnable) grayUpgradeHandler, 15, 15, TimeUnit.SECONDS);
-        
+
         String udfStreamClass = ConfigExtension.getTMUdfStreamClass(tmContext.getConf());
         if (udfStreamClass != null) {
             TMHandler tmUdfHandler = (TMHandler) Utils.newInstance(udfStreamClass);
@@ -154,8 +138,8 @@ public class TopologyMaster implements IBolt, IDynamicComponent {
     @Override
     public void prepare(Map stormConf, TopologyContext context, final OutputCollector collector) {
         tmContext = new TopologyMasterContext(stormConf, context, collector);
-        createThreadPools(stormConf);
-        registerHandlers();
+        this.createThreadPools(stormConf);
+        this.registerHandlers();
     }
 
     @Override

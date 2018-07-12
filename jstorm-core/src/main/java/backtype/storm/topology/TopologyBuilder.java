@@ -57,26 +57,30 @@ import java.util.Set;
 
 /**
  * TopologyBuilder exposes the Java API for specifying a topology for Storm to execute.
- * Topologies are Thrift structures in the end, but since the Thrift API is
- * so verbose, TopologyBuilder greatly eases the process of creating topologies.
+ * Topologies are Thrift structures in the end, but since the Thrift API is so verbose,
+ * TopologyBuilder greatly eases the process of creating topologies.
  * The template for creating and submitting a topology looks something like:
+ *
+ * - 集群模式：
  *
  * <pre>
  * TopologyBuilder builder = new TopologyBuilder();
  *
- * builder.setSpout(&quot;1&quot;, new TestWordSpout(true), 5);
- * builder.setSpout(&quot;2&quot;, new TestWordSpout(true), 3);
- * builder.setBolt(&quot;3&quot;, new TestWordCounter(), 3).fieldsGrouping(&quot;1&quot;, new Fields(&quot;word&quot;)).fieldsGrouping(&quot;2&quot;, new Fields(&quot;word&quot;));
- * builder.setBolt(&quot;4&quot;, new TestGlobalCount()).globalGrouping(&quot;1&quot;);
+ * builder.setSpout("1", new TestWordSpout(true), 5);
+ * builder.setSpout("2", new TestWordSpout(true), 3);
+ * builder.setBolt("3", new TestWordCounter(), 3).fieldsGrouping("1", new Fields("word")).fieldsGrouping("2", new Fields("word"));
+ * builder.setBolt("4", new TestGlobalCount()).globalGrouping("1");
  *
  * Map conf = new HashMap();
  * conf.put(Config.TOPOLOGY_WORKERS, 4);
  *
- * StormSubmitter.submitTopology(&quot;mytopology&quot;, conf, builder.createTopology());
+ * StormSubmitter.submitTopology("mytopology", conf, builder.createTopology());
  * </pre>
  *
  * Running the exact same topology in local mode (in process), and configuring it to log all tuples emitted, looks like the following.
  * Note that it lets the topology run for 10 seconds before shutting down the local cluster.
+ *
+ * - 本地模式：
  *
  * <pre>
  * TopologyBuilder builder = new TopologyBuilder();
@@ -97,7 +101,7 @@ import java.util.Set;
  * </pre>
  *
  * <p>
- * The pattern for TopologyBuilder is to map component ids to components using the setSpout and setBolt methods.
+ * The pattern for TopologyBuilder is to map component ids to components using the <code>setSpout</code> and <code>setBolt</code> methods.
  * Those methods return objects that are then used to declare the inputs for that component.
  * </p>
  */
