@@ -65,9 +65,9 @@ struct ShellComponent {
 /**
  * 串行化后的 java 对象 or ShellComponent 对象 or java 对象
  **/
-union ComponentObject {
+union ComponentObject { // 联合体，三个属性同时只有一个被赋值
 
-  // 记录串行化后的 java 对象
+  // 记录序列化后的 java 对象
   1: binary serialized_java;
 
   // ShellComponent 对象
@@ -116,11 +116,10 @@ struct SpoutSpec {
 
 // BoltSpec
 struct Bolt {
-
-  // 实现具体 bolt 逻辑的对象
+  // 实现具体 bolt 逻辑的序列化对象
   1: required ComponentObject bolt_object;
 
-  // 描述其输入输出的 common 对象
+  // 描述其输入输出的 ComponentCommon 对象
   2: required ComponentCommon common;
 }
 
@@ -137,8 +136,8 @@ struct StateSpoutSpec {
 struct StormTopology {
   // ids must be unique across maps
   // #workers to use is in conf
-  1: required map<string, SpoutSpec> spouts;
-  2: required map<string, Bolt> bolts;
+  1: required map<string, SpoutSpec> spouts; // topology 中的 spout 集合
+  2: required map<string, Bolt> bolts; // topology 中的 bolt 集合
   3: required map<string, StateSpoutSpec> state_spouts;
 }
 

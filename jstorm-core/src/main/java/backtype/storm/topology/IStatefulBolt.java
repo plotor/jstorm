@@ -15,17 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.state.State;
 
 /**
- * A bolt abstraction for supporting stateful computation. The state of the bolt is
- * periodically checkpointed.
+ * A bolt abstraction for supporting stateful computation.
+ * The state of the bolt is periodically(定期的) checkpointed.
  *
- * <p>The framework provides at-least once guarantee for the
- * state updates. The stateful bolts are expected to anchor the tuples while emitting
- * and ack the input tuples once its processed.</p>
+ * <p>
+ * The framework provides at-least once guarantee for the state updates.
+ * The stateful bolts are expected to anchor the tuples while emitting and ack the input tuples once its processed.
+ * </p>
  */
 public interface IStatefulBolt<T extends State> extends IStatefulComponent<T>, IRichBolt {
 }

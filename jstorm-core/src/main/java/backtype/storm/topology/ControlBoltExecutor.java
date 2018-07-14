@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
+ * IControlBolt 到 IRichBolt 的适配器
+ *
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public class ControlBoltExecutor implements IRichBolt {
@@ -41,23 +43,28 @@ public class ControlBoltExecutor implements IRichBolt {
         _bolt = bolt;
     }
 
+    @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         _bolt.declareOutputFields(declarer);
     }
 
+    @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         _bolt.prepare(stormConf, context, new ControlOutputCollector(collector));
 
     }
 
+    @Override
     public void execute(Tuple input) {
         _bolt.execute(input);
     }
 
+    @Override
     public void cleanup() {
         _bolt.cleanup();
     }
 
+    @Override
     public Map<String, Object> getComponentConfiguration() {
         return _bolt.getComponentConfiguration();
     }

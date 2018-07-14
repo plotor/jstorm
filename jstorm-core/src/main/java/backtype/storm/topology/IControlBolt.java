@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
 
 import backtype.storm.task.TopologyContext;
@@ -26,6 +27,7 @@ import java.util.Map;
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public interface IControlBolt extends IComponent {
+
     void prepare(Map stormConf, TopologyContext context, ControlOutputCollector collector);
 
     /**
@@ -36,4 +38,5 @@ public interface IControlBolt extends IComponent {
     void execute(Tuple input);
 
     void cleanup();
+
 }

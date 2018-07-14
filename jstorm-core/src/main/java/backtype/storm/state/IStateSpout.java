@@ -15,13 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.state;
 
 import backtype.storm.task.TopologyContext;
+
 import java.io.Serializable;
 import java.util.Map;
 
 public interface IStateSpout extends Serializable {
+
     void open(Map conf, TopologyContext context);
 
     void close();
@@ -29,4 +32,5 @@ public interface IStateSpout extends Serializable {
     void nextTuple(StateSpoutOutputCollector collector);
 
     void synchronize(SynchronizeOutputCollector collector);
+
 }

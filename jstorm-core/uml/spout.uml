@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>backtype.storm.spout.ISpout</OriginalElement>
+  <nodes>
+    <node x="390.25" y="85.0">backtype.storm.topology.IRichSpout</node>
+    <node x="26.25" y="85.0">backtype.storm.topology.IRichStateSpout</node>
+    <node x="438.75" y="0.0">backtype.storm.spout.ISpout</node>
+    <node x="220.75" y="0.0">backtype.storm.topology.IComponent</node>
+    <node x="215.25" y="85.0">backtype.storm.topology.IControlSpout</node>
+    <node x="0.0" y="0.0">backtype.storm.state.IStateSpout</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="backtype.storm.topology.IRichStateSpout" target="backtype.storm.state.IStateSpout">
+      <point x="-42.25" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IRichStateSpout" target="backtype.storm.topology.IComponent">
+      <point x="42.25" y="-17.5" />
+      <point x="153.0" y="60.0" />
+      <point x="244.75" y="60.0" />
+      <point x="-48.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IRichSpout" target="backtype.storm.topology.IComponent">
+      <point x="-32.5" y="-17.5" />
+      <point x="422.75" y="60.0" />
+      <point x="340.75" y="60.0" />
+      <point x="48.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IControlSpout" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IRichSpout" target="backtype.storm.spout.ISpout">
+      <point x="32.5" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="49.0" y="17.5" />
+  <SelectedNodes>
+    <node>backtype.storm.topology.IRichSpout</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

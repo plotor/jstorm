@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
+ * IControlSpout 到 IRichSpout 的适配器
+ *
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public class ControlSpoutExecutor implements IRichSpout {

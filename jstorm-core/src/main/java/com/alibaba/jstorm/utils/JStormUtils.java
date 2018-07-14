@@ -1649,6 +1649,13 @@ public class JStormUtils {
         }
     }
 
+    /**
+     * 将两个参数中的值合并到一个 map 中，并以 json string 的形式返回
+     *
+     * @param into
+     * @param newMap
+     * @return
+     */
     public static String mergeIntoJson(Map into, Map newMap) {
         Map res = new HashMap(into);
         if (newMap != null) {

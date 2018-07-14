@@ -15,14 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import backtype.storm.generated.GlobalStreamId;
 import backtype.storm.spout.CheckPointState;
@@ -34,6 +28,12 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Wraps {@link IRichBolt} and forwards checkpoint tuples in a stateful topology.
@@ -43,7 +43,11 @@ import backtype.storm.tuple.Values;
  * can flow through the entire topology DAG.
  */
 public class CheckpointTupleForwarder implements IRichBolt {
+
+    private static final long serialVersionUID = -7909406051582400665L;
+
     private static final Logger LOG = LoggerFactory.getLogger(CheckpointTupleForwarder.class);
+
     private final IRichBolt bolt;
     private final Map<TransactionRequest, Integer> transactionRequestCount;
     private int checkPointInputTaskCount;
@@ -57,21 +61,21 @@ public class CheckpointTupleForwarder implements IRichBolt {
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        init(context, collector);
+        this.init(context, collector);
         bolt.prepare(stormConf, context, this.collector);
     }
 
     protected void init(TopologyContext context, OutputCollector collector) {
         this.collector = new AnchoringOutputCollector(collector);
-        this.checkPointInputTaskCount = getCheckpointInputTaskCount(context);
+        this.checkPointInputTaskCount = this.getCheckpointInputTaskCount(context);
     }
 
     @Override
     public void execute(Tuple input) {
         if (CheckpointSpout.isCheckpoint(input)) {
-            processCheckpoint(input);
+            this.processCheckpoint(input);
         } else {
-            handleTuple(input);
+            this.handleTuple(input);
         }
     }
 
@@ -97,8 +101,8 @@ public class CheckpointTupleForwarder implements IRichBolt {
      * with the logic for handling checkpoint tuple.
      *
      * @param checkpointTuple the checkpoint tuple
-     * @param action          the action (prepare, commit, rollback or initstate)
-     * @param txid            the transaction id.
+     * @param action the action (prepare, commit, rollback or initstate)
+     * @param txid the transaction id.
      */
     protected void handleCheckpoint(Tuple checkpointTuple, Action action, long txid) {
         collector.emit(CheckpointSpout.CHECKPOINT_STREAM_ID, checkpointTuple, new Values(txid, action));
@@ -126,11 +130,11 @@ public class CheckpointTupleForwarder implements IRichBolt {
     private void processCheckpoint(Tuple input) {
         Action action = (Action) input.getValueByField(CheckpointSpout.CHECKPOINT_FIELD_ACTION);
         long txid = input.getLongByField(CheckpointSpout.CHECKPOINT_FIELD_TXID);
-        if (shouldProcessTransaction(action, txid)) {
+        if (this.shouldProcessTransaction(action, txid)) {
             LOG.debug("Processing action {}, txid {}", action, txid);
             try {
                 if (txid >= lastTxid) {
-                    handleCheckpoint(input, action, txid);
+                    this.handleCheckpoint(input, action, txid);
                     if (action == CheckPointState.Action.ROLLBACK) {
                         lastTxid = txid - 1;
                     } else {
@@ -198,7 +202,7 @@ public class CheckpointTupleForwarder implements IRichBolt {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (o == null || this.getClass() != o.getClass()) return false;
 
             TransactionRequest that = (TransactionRequest) o;
 
@@ -222,7 +226,6 @@ public class CheckpointTupleForwarder implements IRichBolt {
                     '}';
         }
     }
-
 
     protected static class AnchoringOutputCollector extends OutputCollector {
         AnchoringOutputCollector(IOutputCollector delegate) {

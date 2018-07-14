@@ -107,17 +107,21 @@ import java.util.Set;
  */
 public class TopologyBuilder {
 
-    /** 存储所有的 Bolt 对象 */
+    /** 记录拓扑范围内所有的 Bolt 对象 */
     protected Map<String, IRichBolt> _bolts = new HashMap<>();
 
-    /** 存储所有的 Spout 对象 */
+    /** 记录拓扑范围内所有的 Spout 对象 */
     protected Map<String, IRichSpout> _spouts = new HashMap<>();
 
-    /** 存储所有的 Spout 和 Bolt 对象 */
+    /** 记录拓扑范围内封装所有的 Spout 和 Bolt 的 ComponentCommon 对象 */
     protected Map<String, ComponentCommon> _commons = new HashMap<>();
+
+    /** 标记当前拓扑是否存在 stateful-bolt */
     protected boolean hasStatefulBolt = false;
 
+    // 该属性暂时还未用到
     private Map<String, StateSpoutSpec> _stateSpouts = new HashMap<>();
+    // 该属性暂时还未用到
     private List<ByteBuffer> _workerHooks = new ArrayList<>();
 
     // configuration generated during topology building
@@ -131,17 +135,20 @@ public class TopologyBuilder {
     public StormTopology createTopology() {
         Map<String, Bolt> boltSpecs = new HashMap<>();
         Map<String, SpoutSpec> spoutSpecs = new HashMap<>();
+
+        // 如果当前 topology 中含有 stateful-bolt，就为 topology 自动添加一个 CheckpointSpout
         this.maybeAddCheckpointSpout();
 
-        // 遍历处理 bolt
+        // 遍历处理 bolt，封装 bolt 的序列化形式和 ComponentCommon 形式为 Bolt 对象，并记录到 boltSpecs 中
         for (String boltId : _bolts.keySet()) {
             IRichBolt bolt = _bolts.get(boltId);
+            // 如果当前 topology 中含有 stateful-bolt，那么针对 non-stateful bolt 都采用 CheckpointTupleForwarder 进行包装
             bolt = this.maybeAddCheckpointTupleForwarder(bolt);
             ComponentCommon common = this.getComponentCommon(boltId, bolt);
             try {
                 this.maybeAddCheckpointInputs(common);
                 this.maybeAddWatermarkInputs(common, bolt);
-                // 以序列化的方式进行记录
+                // 封装 bolt 的序列化形式和 ComponentCommon 形式为 Bolt 对象，并记录到 boltSpecs 中
                 boltSpecs.put(boltId, new Bolt(ComponentObject.serialized_java(Utils.javaSerialize(bolt)), common));
             } catch (RuntimeException wrapperCause) {
                 if (wrapperCause.getCause() != null && NotSerializableException.class.equals(wrapperCause.getCause().getClass())) {
@@ -159,7 +166,7 @@ public class TopologyBuilder {
             IRichSpout spout = _spouts.get(spoutId);
             ComponentCommon common = this.getComponentCommon(spoutId, spout);
             try {
-                // 以序列化的方式进行记录
+                // 封装 spout 的序列化形式和 ComponentCommon 形式为 SpoutSpec 对象，并记录到 spoutSpecs 中
                 spoutSpecs.put(spoutId, new SpoutSpec(ComponentObject.serialized_java(Utils.javaSerialize(spout)), common));
             } catch (RuntimeException wrapperCause) {
                 if (wrapperCause.getCause() != null && NotSerializableException.class.equals(wrapperCause.getCause().getClass())) {
@@ -172,6 +179,7 @@ public class TopologyBuilder {
             }
         }
 
+        // 封装成为 storm 对象返回
         StormTopology stormTopology = new StormTopology(spoutSpecs, boltSpecs, new HashMap<String, StateSpoutSpec>());
         //stormTopology.set_worker_hooks(_workerHooks);
         return stormTopology;
@@ -201,7 +209,7 @@ public class TopologyBuilder {
     public BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelism_hint) throws IllegalArgumentException {
         // 保证 id 在 topology 范围内的全局唯一
         this.validateUnusedId(id);
-        // 初始化并记录组件信息到 _commons 集合中
+        // 以 ComponentCommon 的形式封装组件，并记录到 _commons 中
         this.initCommon(id, bolt, parallelism_hint);
         // 记录 bolt 到 _bolt 集合中
         _bolts.put(id, bolt);
@@ -209,10 +217,9 @@ public class TopologyBuilder {
     }
 
     /**
-     * Define a new bolt in this topology. This defines a basic bolt, which is a
-     * simpler to use but more restricted kind of bolt. Basic bolts are intended
-     * for non-aggregation processing and automate the anchoring/acking process to
-     * achieve proper reliability in the topology.
+     * Define a new bolt in this topology.
+     * This defines a basic bolt, which is a simpler to use but more restricted kind of bolt.
+     * Basic bolts are intended for non-aggregation processing and automate the anchoring/acking process to achieve proper reliability in the topology.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the basic bolt
@@ -224,10 +231,9 @@ public class TopologyBuilder {
     }
 
     /**
-     * Define a new bolt in this topology. This defines a basic bolt, which is a
-     * simpler to use but more restricted kind of bolt. Basic bolts are intended
-     * for non-aggregation processing and automate the anchoring/acking process to
-     * achieve proper reliability in the topology.
+     * Define a new bolt in this topology.
+     * This defines a basic bolt, which is a simpler to use but more restricted kind of bolt.
+     * Basic bolts are intended for non-aggregation processing and automate the anchoring/acking process to achieve proper reliability in the topology.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the basic bolt
@@ -240,9 +246,8 @@ public class TopologyBuilder {
     }
 
     /**
-     * Define a new bolt in this topology. This defines a windowed bolt, intended
-     * for windowing operations. The {@link IWindowedBolt#execute(TupleWindow)} method
-     * is triggered for each window interval with the list of current events in the window.
+     * Define a new bolt in this topology. This defines a windowed bolt, intended for windowing operations.
+     * The {@link IWindowedBolt#execute(TupleWindow)} method is triggered for each window interval with the list of current events in the window.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the windowed bolt
@@ -259,8 +264,7 @@ public class TopologyBuilder {
     }
 
     /**
-     * Define a new bolt in this topology. This defines a windowed bolt, intended
-     * for windowing operations.
+     * Define a new bolt in this topology. This defines a windowed bolt, intended for windowing operations.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the windowed bolt
@@ -277,8 +281,28 @@ public class TopologyBuilder {
     }
 
     /**
-     * Define a new bolt in this topology. This defines a stateful bolt, that requires its
-     * state (of computation) to be saved. When this bolt is initialized, the {@link IStatefulBolt#initState(State)} method
+     * Define a new bolt in this topology.
+     * This defines a control bolt, which is a simpler to use but more restricted kind of bolt.
+     * Control bolts are intended for making sending control message more simply
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the control bolt
+     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somwehere around
+     * the cluster.
+     * @return use the returned object to declare the inputs to this component
+     */
+    public BoltDeclarer setBolt(String id, IControlBolt bolt, Number parallelism_hint) {
+        return this.setBolt(id, new ControlBoltExecutor(bolt), parallelism_hint);
+    }
+
+    public BoltDeclarer setBolt(String id, IControlBolt bolt) {
+        return this.setBolt(id, bolt, null);
+    }
+
+    /**
+     * Define a new bolt in this topology.
+     * This defines a stateful bolt, that requires its state (of computation) to be saved.
+     * When this bolt is initialized, the {@link IStatefulBolt#initState(State)} method
      * is invoked after {@link IStatefulBolt#prepare(Map, TopologyContext, OutputCollector)} but before {@link IStatefulBolt#execute(Tuple)}
      * with its previously saved state.
      * <p>
@@ -294,14 +318,14 @@ public class TopologyBuilder {
      */
     public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt, Number parallelism_hint) throws IllegalArgumentException {
         hasStatefulBolt = true;
-        return this.setBolt(id, new StatefulBoltExecutor<T>(bolt), parallelism_hint);
+        return this.setBolt(id, new StatefulBoltExecutor<>(bolt), parallelism_hint);
     }
 
     /**
-     * Define a new bolt in this topology. This defines a stateful windowed bolt, intended for stateful
-     * windowing operations. The {@link IStatefulWindowedBolt#execute(TupleWindow)} method is triggered
-     * for each window interval with the list of current events in the window. During initialization of
-     * this bolt {@link IStatefulWindowedBolt#initState(State)} is invoked with its previously saved state.
+     * Define a new bolt in this topology.
+     * This defines a stateful windowed bolt, intended for stateful windowing operations.
+     * The {@link IStatefulWindowedBolt#execute(TupleWindow)} method is triggered for each window interval with the list of current events in the window.
+     * During initialization of this bolt {@link IStatefulWindowedBolt#initState(State)} is invoked with its previously saved state.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the stateful windowed bolt
@@ -312,7 +336,7 @@ public class TopologyBuilder {
      */
     public <T extends State> BoltDeclarer setBolt(String id, IStatefulWindowedBolt<T> bolt, Number parallelism_hint) throws IllegalArgumentException {
         hasStatefulBolt = true;
-        return this.setBolt(id, new StatefulBoltExecutor<T>(new StatefulWindowedBoltExecutor<T>(bolt)), parallelism_hint);
+        return this.setBolt(id, new StatefulBoltExecutor<>(new StatefulWindowedBoltExecutor<>(bolt)), parallelism_hint);
     }
 
     /**
@@ -327,9 +351,9 @@ public class TopologyBuilder {
     }
 
     /**
-     * Define a new spout in this topology with the specified parallelism. If the spout declares
-     * itself as non-distributed, the parallelism_hint will be ignored and only one task
-     * will be allocated to this component.
+     * Define a new spout in this topology with the specified parallelism.
+     * If the spout declares itself as non-distributed, the parallelism_hint
+     * will be ignored and only one task will be allocated to this component.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
      * @param parallelism_hint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a process somewhere around the cluster.
@@ -339,7 +363,7 @@ public class TopologyBuilder {
     public SpoutDeclarer setSpout(String id, IRichSpout spout, Number parallelism_hint) throws IllegalArgumentException {
         // 保证 id 在 topology 范围内的全局唯一
         this.validateUnusedId(id);
-        // 初始化并记录组件信息到 _commons 集合中
+        // 以 ComponentCommon 的形式封装组件，并记录到 _commons 中
         this.initCommon(id, spout, parallelism_hint);
         // 记录组件到 _spout 集合中
         _spouts.put(id, spout);
@@ -347,8 +371,9 @@ public class TopologyBuilder {
     }
 
     /**
-     * Define a new bolt in this topology. This defines a control spout, which is a simpler to use but more restricted kind of bolt. Control spouts are intended for
-     * making sending control message more simply
+     * Define a new bolt in this topology.
+     * This defines a control spout, which is a simpler to use but more restricted kind of bolt.
+     * Control spouts are intended for making sending control message more simply
      *
      * @param id the id of this component.
      * @param spout the control spout
@@ -359,24 +384,6 @@ public class TopologyBuilder {
 
     public SpoutDeclarer setSpout(String id, IControlSpout spout, Number parallelism_hint) {
         return this.setSpout(id, new ControlSpoutExecutor(spout), parallelism_hint);
-    }
-
-    /**
-     * Define a new bolt in this topology. This defines a control bolt, which is a simpler to use but more restricted kind of bolt. Control bolts are intended for
-     * making sending control message more simply
-     *
-     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
-     * @param bolt the control bolt
-     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somwehere around
-     * the cluster.
-     * @return use the returned object to declare the inputs to this component
-     */
-    public BoltDeclarer setBolt(String id, IControlBolt bolt, Number parallelism_hint) {
-        return this.setBolt(id, new ControlBoltExecutor(bolt), parallelism_hint);
-    }
-
-    public BoltDeclarer setBolt(String id, IControlBolt bolt) {
-        return this.setBolt(id, bolt, null);
     }
 
     public void setStateSpout(String id, IRichStateSpout stateSpout) throws IllegalArgumentException {
@@ -418,8 +425,9 @@ public class TopologyBuilder {
     }
 
     /**
-     * If the topology has at least one stateful bolt
-     * add a {@link CheckpointSpout} component to the topology.
+     * If the topology has at least one stateful bolt, add a {@link CheckpointSpout} component to the topology.
+     *
+     * 如果当前 topology 中含有 stateful-bolt，就为 topology 添加一个 {@link CheckpointSpout}
      */
     private void maybeAddCheckpointSpout() {
         if (hasStatefulBolt) {
@@ -444,17 +452,14 @@ public class TopologyBuilder {
             }
 
             for (String comp : comps) {
-                common.put_to_inputs(
-                        new GlobalStreamId(comp, Common.WATERMARK_STREAM_ID),
-                        Grouping.all(new NullStruct()));
+                common.put_to_inputs(new GlobalStreamId(comp, Common.WATERMARK_STREAM_ID), Grouping.all(new NullStruct()));
             }
         }
     }
 
     /**
-     * If the topology has at least one stateful bolt all the non-stateful bolts
-     * are wrapped in {@link CheckpointTupleForwarder} so that the checkpoint
-     * tuples can flow through the topology.
+     * If the topology has at least one stateful bolt all the non-stateful bolts are wrapped in {@link CheckpointTupleForwarder}
+     * so that the checkpoint tuples can flow through the topology.
      */
     private IRichBolt maybeAddCheckpointTupleForwarder(IRichBolt bolt) {
         if (hasStatefulBolt && !(bolt instanceof StatefulBoltExecutor)) {
@@ -464,17 +469,18 @@ public class TopologyBuilder {
     }
 
     /**
-     * For bolts that has incoming streams from spouts (the root bolts),
-     * add checkpoint stream from checkpoint spout to its input. For other bolts,
-     * add checkpoint stream from the previous bolt to its input.
+     * For bolts that has incoming streams from spouts (the root bolts), add checkpoint stream from checkpoint spout to its input.
+     * For other bolts, add checkpoint stream from the previous bolt to its input.
      */
     private void addCheckPointInputs(ComponentCommon component) {
         Set<GlobalStreamId> checkPointInputs = new HashSet<>();
         for (GlobalStreamId inputStream : component.get_inputs().keySet()) {
             String sourceId = inputStream.get_componentId();
             if (_spouts.containsKey(sourceId)) {
+                // 如果前置节点是 spout
                 checkPointInputs.add(new GlobalStreamId(CheckpointSpout.CHECKPOINT_COMPONENT_ID, CheckpointSpout.CHECKPOINT_STREAM_ID));
             } else {
+                // 否则前置节点是 bolt
                 checkPointInputs.add(new GlobalStreamId(sourceId, CheckpointSpout.CHECKPOINT_STREAM_ID));
             }
         }
@@ -484,7 +490,7 @@ public class TopologyBuilder {
     }
 
     /**
-     * 获取组件对应的 {@link ComponentCommon} 对象
+     * 构造指定组件对应的 {@link ComponentCommon} 对象，同时定义组件输出的 Schema
      *
      * @param id
      * @param component
@@ -492,37 +498,39 @@ public class TopologyBuilder {
      */
     private ComponentCommon getComponentCommon(String id, IComponent component) {
         ComponentCommon ret = new ComponentCommon(_commons.get(id));
-
         OutputFieldsGetter getter = new OutputFieldsGetter();
         component.declareOutputFields(getter);
         // declare watermark stream for all components
-        getter.declareStream(Common.WATERMARK_STREAM_ID, new Fields("watermark"));
+        getter.declareStream(Common.WATERMARK_STREAM_ID, new Fields("watermark")); // WATERMARK
         ret.set_streams(getter.getFieldsDeclaration());
         return ret;
     }
 
     /**
-     * 初始化并记录组件信息到 _commons 集合中
+     * 以 {@link ComponentCommon} 的形式封装组件，并记录到 _commons 中
      *
-     * @param id
-     * @param component
+     * @param id component_id
+     * @param component spout or bolt
      * @param parallelism
      * @throws IllegalArgumentException
      */
     protected void initCommon(String id, IComponent component, Number parallelism) throws IllegalArgumentException {
         ComponentCommon common = new ComponentCommon();
         common.set_inputs(new HashMap<GlobalStreamId, Grouping>());
+
+        // 设置并行度
         if (parallelism != null) {
             int dop = parallelism.intValue();
             if (dop < 1) {
                 throw new IllegalArgumentException("Parallelism must be positive.");
             }
-            common.set_parallelism_hint(dop);
+            common.set_parallelism_hint(dop); // 设置组件并行度
         } else {
-            // 默认设置并行度为 1
+            // 如果没有设置的话，默认设置并行度为 1
             common.set_parallelism_hint(1);
         }
-        // 获取组件相关的配置
+
+        // 获取组件相关的配置并以 json 的形式记录到 ComponentCommon 对象中
         Map conf = component.getComponentConfiguration();
         if (conf != null) common.set_json_conf(JSONValue.toJSONString(conf));
         _commons.put(id, common);
@@ -552,16 +560,18 @@ public class TopologyBuilder {
         @Override
         @SuppressWarnings("unchecked")
         public T addConfigurations(Map conf) {
-            if (conf != null && conf.containsKey(Config.TOPOLOGY_KRYO_REGISTER)) {
+            if (conf != null && conf.containsKey(Config.TOPOLOGY_KRYO_REGISTER)) { // ${topology.kryo.register}
                 // 在通常的非事务流处理中，不允许设置组件的序列化方式
                 throw new IllegalArgumentException("Cannot set serializations for a component using fluent API");
             }
             String currConf = _commons.get(_id).get_json_conf();
+            // 将 currConf 与 conf 的配置项合并，并以 json string 的形式记录到对应组件的 json_conf 字段中
             _commons.get(_id).set_json_conf(JStormUtils.mergeIntoJson(JStormUtils.parseJson(currConf), conf));
             return (T) this;
         }
-    }
+    } // ~ end ConfigGetter
 
+    // TODO by zhenchao 2018-07-14 17:14:33
     protected class SpoutGetter extends ConfigGetter<SpoutDeclarer> implements SpoutDeclarer {
         public SpoutGetter(String id) {
             super(id);

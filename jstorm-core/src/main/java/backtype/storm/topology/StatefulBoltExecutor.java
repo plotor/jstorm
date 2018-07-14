@@ -15,17 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import backtype.storm.spout.CheckPointState.Action;
 import backtype.storm.spout.CheckpointSpout;
@@ -35,12 +26,25 @@ import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * Wraps a {@link IStatefulBolt} and manages the state of the bolt.
  */
 public class StatefulBoltExecutor<T extends State> extends CheckpointTupleForwarder {
+
+    private static final long serialVersionUID = 119012272629901687L;
+
     private static final Logger LOG = LoggerFactory.getLogger(StatefulBoltExecutor.class);
+
     private final IStatefulBolt<T> bolt;
     private State state;
     private boolean boltInitialized = false;
@@ -57,12 +61,12 @@ public class StatefulBoltExecutor<T extends State> extends CheckpointTupleForwar
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         // get the last successfully committed state from state store
         String namespace = context.getThisComponentId() + "-" + context.getThisTaskId();
-        prepare(stormConf, context, collector, StateFactory.getState(namespace, stormConf, context));
+        this.prepare(stormConf, context, collector, StateFactory.getState(namespace, stormConf, context));
     }
 
     // package access for unit tests
     void prepare(Map stormConf, TopologyContext context, OutputCollector collector, State state) {
-        init(context, collector);
+        this.init(context, collector);
         this.collector = new AckTrackingOutputCollector(collector);
         bolt.prepare(stormConf, context, this.collector);
         this.state = state;
@@ -80,7 +84,7 @@ public class StatefulBoltExecutor<T extends State> extends CheckpointTupleForwar
                 /*
                  * May be the task restarted in the middle and the state needs be initialized.
                  * Fail fast and trigger recovery.
-                  */
+                 */
                 LOG.debug("Failing checkpointTuple, PREPARE received when bolt state is not initialized.");
                 collector.fail(checkpointTuple);
                 return;
@@ -88,24 +92,24 @@ public class StatefulBoltExecutor<T extends State> extends CheckpointTupleForwar
         } else if (action == Action.COMMIT) {
             bolt.preCommit(txid);
             state.commit(txid);
-            ack(preparedTuples);
+            this.ack(preparedTuples);
         } else if (action == Action.ROLLBACK) {
             bolt.preRollback();
             state.rollback();
-            fail(preparedTuples);
-            fail(collector.ackedTuples());
+            this.fail(preparedTuples);
+            this.fail(collector.ackedTuples());
         } else if (action == Action.INITSTATE) {
             if (!boltInitialized) {
                 bolt.initState((T) state);
                 boltInitialized = true;
                 LOG.debug("{} pending tuples to process", pendingTuples.size());
                 for (Tuple tuple : pendingTuples) {
-                    doExecute(tuple);
+                    this.doExecute(tuple);
                 }
                 pendingTuples.clear();
             } else {
                 LOG.debug("Bolt state is already initialized, ignoring tuple {}, action {}, txid {}",
-                          checkpointTuple, action, txid);
+                        checkpointTuple, action, txid);
             }
         }
         collector.emit(CheckpointSpout.CHECKPOINT_STREAM_ID, checkpointTuple, new Values(txid, action));
@@ -115,7 +119,7 @@ public class StatefulBoltExecutor<T extends State> extends CheckpointTupleForwar
     @Override
     protected void handleTuple(Tuple input) {
         if (boltInitialized) {
-            doExecute(input);
+            this.doExecute(input);
         } else {
             LOG.debug("Bolt state not initialized, adding tuple {} to pending tuples", input);
             pendingTuples.add(input);
@@ -159,7 +163,7 @@ public class StatefulBoltExecutor<T extends State> extends CheckpointTupleForwar
         List<Tuple> ackedTuples() {
             List<Tuple> result = new ArrayList<>();
             Iterator<Tuple> it = ackedTuples.iterator();
-            while(it.hasNext()) {
+            while (it.hasNext()) {
                 result.add(it.next());
                 it.remove();
             }

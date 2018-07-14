@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>backtype.storm.task.IBolt</OriginalElement>
+  <nodes>
+    <node x="375.00000000000006" y="95.0">backtype.storm.topology.IWindowedBolt</node>
+    <node x="500.32500000000005" y="180.0">backtype.storm.topology.IStatefulWindowedBolt</node>
+    <node x="701.0" y="95.0">backtype.storm.topology.IStatefulComponent</node>
+    <node x="968.75" y="0.0">backtype.storm.task.IBolt</node>
+    <node x="560.0" y="95.0">backtype.storm.topology.IBasicBolt</node>
+    <node x="924.0" y="95.0">backtype.storm.topology.IRichBolt</node>
+    <node x="215.00000000000006" y="95.0">backtype.storm.topology.IControlBolt</node>
+    <node x="0.0" y="95.0">com.alibaba.jstorm.window.BaseWindowedBolt</node>
+    <node x="467.00000000000006" y="0.0">backtype.storm.topology.IComponent</node>
+    <node x="848.1750000000001" y="180.0">backtype.storm.topology.IStatefulBolt</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="backtype.storm.topology.IRichBolt" target="backtype.storm.task.IBolt">
+      <point x="28.75" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.window.BaseWindowedBolt" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="97.5" y="55.0" />
+      <point x="479.00000000000006" y="55.0" />
+      <point x="-60.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IControlBolt" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="285.00000000000006" y="65.0" />
+      <point x="503.00000000000006" y="65.0" />
+      <point x="-36.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IStatefulComponent" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="802.5" y="65.0" />
+      <point x="575.0" y="65.0" />
+      <point x="36.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IRichBolt" target="backtype.storm.topology.IComponent">
+      <point x="-28.75" y="-17.5" />
+      <point x="952.75" y="55.0" />
+      <point x="599.0" y="55.0" />
+      <point x="60.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IStatefulBolt" target="backtype.storm.topology.IStatefulComponent">
+      <point x="-35.5" y="-17.5" />
+      <point x="883.6750000000001" y="155.0" />
+      <point x="853.25" y="155.0" />
+      <point x="50.75" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IStatefulWindowedBolt" target="backtype.storm.topology.IWindowedBolt">
+      <point x="-56.0" y="-17.5" />
+      <point x="556.325" y="155.0" />
+      <point x="457.50000000000006" y="155.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IBasicBolt" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="620.5" y="75.0" />
+      <point x="551.0" y="75.0" />
+      <point x="12.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IStatefulWindowedBolt" target="backtype.storm.topology.IStatefulComponent">
+      <point x="56.0" y="-17.5" />
+      <point x="668.325" y="155.0" />
+      <point x="751.75" y="155.0" />
+      <point x="-50.75" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IWindowedBolt" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="457.50000000000006" y="75.0" />
+      <point x="527.0" y="75.0" />
+      <point x="-12.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IStatefulBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="35.5" y="-17.5" />
+      <point x="954.6750000000001" y="155.0" />
+      <point x="981.5" y="155.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="266.0" y="60.0" />
+  <SelectedNodes>
+    <node>backtype.storm.task.IBolt</node>
+  </SelectedNodes>
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

@@ -25,8 +25,7 @@ import com.alibaba.jstorm.utils.JStormUtils;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class BaseConfigurationDeclarer<T extends ComponentConfigurationDeclarer>
-        implements ComponentConfigurationDeclarer<T> {
+public abstract class BaseConfigurationDeclarer<T extends ComponentConfigurationDeclarer> implements ComponentConfigurationDeclarer<T> {
 
     private Map conf = Utils.readStormConfig();
 
@@ -68,7 +67,7 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
 
     @Override
     public T setMemoryLoad(Number onHeap) {
-        return setMemoryLoad(onHeap, JStormUtils.parseDouble(conf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)));
+        return this.setMemoryLoad(onHeap, JStormUtils.parseDouble(conf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)));
     }
 
     @Override

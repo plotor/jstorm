@@ -35,9 +35,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 /**
- * Emits checkpoint tuples which is used to save the state of the {@link org.apache.storm.topology.IStatefulComponent}
- * across the topology. If a topology contains Stateful bolts, Checkpoint spouts are automatically added
- * to the topology. There is only one Checkpoint task per topology.
+ * Emits checkpoint tuples which is used to save the state of the {@link org.apache.storm.topology.IStatefulComponent} across the topology.
+ * If a topology contains Stateful bolts, Checkpoint spouts are automatically added to the topology. There is only one Checkpoint task per topology.
  * Checkpoint spout stores its internal state in a {@link KeyValueState}.
  *
  * @see CheckPointState

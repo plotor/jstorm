@@ -15,15 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.generated.GlobalStreamId;
@@ -34,12 +27,22 @@ import backtype.storm.task.OutputCollector;
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.windowing.WindowLifecycleListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Wraps a {@link IStatefulWindowedBolt} and handles the execution. Saves the last expired
  * and evaluated states of the window during checkpoint and restores the state during recovery.
  */
 public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltExecutor implements IStatefulBolt<T> {
+
+    private static final long serialVersionUID = -1129642347393019906L;
+
     private static final Logger LOG = LoggerFactory.getLogger(StatefulWindowedBoltExecutor.class);
     private final IStatefulWindowedBolt<T> statefulWindowedBolt;
     private transient String msgIdFieldName;
@@ -60,13 +63,13 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        prepare(stormConf, context, collector, getWindowState(stormConf, context));
+        this.prepare(stormConf, context, collector, this.getWindowState(stormConf, context));
     }
 
     // package access for unit tests
     void prepare(Map stormConf, TopologyContext context, OutputCollector collector,
                  KeyValueState<TaskStream, WindowState> windowState) {
-        init(stormConf, context, collector, windowState);
+        this.init(stormConf, context, collector, windowState);
         super.prepare(stormConf, context, collector);
     }
 
@@ -88,10 +91,10 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
 
     @Override
     public void execute(Tuple input) {
-        if (!isStateInitialized()) {
+        if (!this.isStateInitialized()) {
             throw new IllegalStateException("execute invoked before initState with input tuple " + input);
-        } else if (isRecovering()) {
-            handleRecovery(input);
+        } else if (this.isRecovering()) {
+            this.handleRecovery(input);
         } else {
             super.execute(input);
         }
@@ -99,7 +102,7 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
 
     @Override
     protected void start() {
-        if (!isStateInitialized() || isRecovering()) {
+        if (!this.isStateInitialized() || this.isRecovering()) {
             LOG.debug("Will invoke start after recovery is complete.");
         } else {
             super.start();
@@ -107,7 +110,7 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
     }
 
     private void handleRecovery(Tuple input) {
-        long msgId = getMsgId(input);
+        long msgId = this.getMsgId(input);
         TaskStream taskStream = TaskStream.fromTuple(input);
         WindowState state = recoveryStates.get(taskStream);
         LOG.debug("handleRecovery, recoveryStates {}", recoveryStates);
@@ -122,7 +125,7 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
                 LOG.debug("Tuple msg id {} > lastEvaluated id {}, adding to pendingTuples and clearing recovery state " +
                         "for taskStream {}", msgId, state.lastEvaluated, taskStream);
                 pendingTuples.add(input);
-                clearRecoveryState(taskStream);
+                this.clearRecoveryState(taskStream);
             }
         } else {
             pendingTuples.add(input);
@@ -131,7 +134,7 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
 
     private void clearRecoveryState(TaskStream stream) {
         recoveryStates.remove(stream);
-        if (!isRecovering()) {
+        if (!this.isRecovering()) {
             super.start();
             LOG.debug("Recovery complete, processing {} pending tuples", pendingTuples.size());
             for (Tuple tuple : pendingTuples) {
@@ -166,12 +169,12 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
         }
         LOG.debug("recoveryStates {}", recoveryStates);
         stateInitialized = true;
-        start();
+        this.start();
     }
 
     @Override
     public void preCommit(long txid) {
-        if (!isStateInitialized() || (!isRecovering() && prePrepared)) {
+        if (!this.isStateInitialized() || (!this.isRecovering() && prePrepared)) {
             LOG.debug("Commit streamState, txid {}", txid);
             streamState.commit(txid);
         } else {
@@ -181,9 +184,9 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
 
     @Override
     public void prePrepare(long txid) {
-        if (!isStateInitialized()) {
+        if (!this.isStateInitialized()) {
             LOG.warn("Cannot prepare before initState");
-        } else if (!isRecovering()) {
+        } else if (!this.isRecovering()) {
             LOG.debug("Prepare streamState, txid {}", txid);
             streamState.prepareCommit(txid);
             prePrepared = true;
@@ -209,14 +212,14 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
 
             @Override
             public void onActivation(List<Tuple> events, List<Tuple> newEvents, List<Tuple> expired) {
-                if (isRecovering()) {
+                if (StatefulWindowedBoltExecutor.this.isRecovering()) {
                     String msg = String.format("Unexpected activation with events %s, newEvents %s, expired %s in recovering state. " +
                             "recoveryStates %s ", events, newEvents, expired, recoveryStates);
                     LOG.error(msg);
                     throw new IllegalStateException(msg);
                 } else {
                     parentListener.onActivation(events, newEvents, expired);
-                    updateWindowState(expired, newEvents);
+                    StatefulWindowedBoltExecutor.this.updateWindowState(expired, newEvents);
                 }
             }
         };
@@ -225,9 +228,9 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
     private void updateWindowState(List<Tuple> expired, List<Tuple> newEvents) {
         LOG.debug("Update window state, {} expired, {} new events", expired.size(), newEvents.size());
         Map<TaskStream, WindowState> state = new HashMap<>();
-        updateState(state, expired, false);
-        updateState(state, newEvents, true);
-        updateStreamState(state);
+        this.updateState(state, expired, false);
+        this.updateState(state, newEvents, true);
+        this.updateStreamState(state);
     }
 
     private void updateState(Map<TaskStream, WindowState> state, List<Tuple> tuples, boolean newEvents) {
@@ -235,7 +238,7 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
             TaskStream taskStream = TaskStream.fromTuple(tuple);
             WindowState curState = state.get(taskStream);
             WindowState newState;
-            if ((newState = getUpdatedState(curState, getMsgId(tuple), newEvents)) != null) {
+            if ((newState = this.getUpdatedState(curState, this.getMsgId(tuple), newEvents)) != null) {
                 state.put(taskStream, newState);
             }
         }
@@ -301,7 +304,7 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (o == null || this.getClass() != o.getClass()) return false;
 
             WindowState that = (WindowState) o;
 
@@ -342,7 +345,7 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (o == null || this.getClass() != o.getClass()) return false;
 
             TaskStream that = (TaskStream) o;
 
