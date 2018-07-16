@@ -3,31 +3,105 @@
   <ID>JAVA</ID>
   <OriginalElement>backtype.storm.topology.ComponentConfigurationDeclarer</OriginalElement>
   <nodes>
-    <node x="0.0" y="170.0">backtype.storm.topology.BaseConfigurationDeclarer</node>
-    <node x="272.0" y="170.0">backtype.storm.topology.BoltDeclarer</node>
-    <node x="35.0" y="85.0">backtype.storm.topology.ComponentConfigurationDeclarer</node>
-    <node x="99.0" y="0.0">backtype.storm.topology.ResourceDeclarer</node>
+    <node x="11.013988095238062" y="425.0">com.alibaba.jstorm.transactional.TransactionTopologyBuilder.TransactionBoltDeclarer</node>
+    <node x="176.75" y="170.0">backtype.storm.topology.BaseConfigurationDeclarer</node>
+    <node x="413.75" y="85.0">storm.trident.operation.DefaultResourceDeclarer</node>
+    <node x="85.75" y="85.0">backtype.storm.topology.ComponentConfigurationDeclarer</node>
+    <node x="295.75" y="0.0">backtype.storm.topology.ResourceDeclarer</node>
+    <node x="0.0" y="255.0">backtype.storm.topology.BoltDeclarer</node>
+    <node x="99.57142857142856" y="340.0">backtype.storm.topology.TopologyBuilder.BoltGetter</node>
+    <node x="161.0" y="255.0">backtype.storm.topology.TopologyBuilder.ConfigGetter</node>
+    <node x="299.4306547619048" y="340.0">backtype.storm.topology.TopologyBuilder.SpoutGetter</node>
+    <node x="361.25" y="255.0">backtype.storm.topology.SpoutDeclarer</node>
   </nodes>
   <notes />
   <edges>
-    <edge source="backtype.storm.topology.BaseConfigurationDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
-      <point x="63.0" y="-17.5" />
-      <point x="0.0" y="17.5" />
+    <edge source="storm.trident.operation.DefaultResourceDeclarer" target="backtype.storm.topology.ResourceDeclarer">
+      <point x="0.0" y="-17.5" />
+      <point x="531.75" y="60.0" />
+      <point x="430.75" y="60.0" />
+      <point x="45.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.TopologyBuilder.SpoutGetter" target="backtype.storm.topology.TopologyBuilder.ConfigGetter">
+      <point x="-52.875" y="-17.5" />
+      <point x="317.0556547619048" y="320.0" />
+      <point x="252.875" y="320.0" />
+      <point x="18.375" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.TopologyBuilder.BoltGetter" target="backtype.storm.topology.BoltDeclarer">
+      <point x="-15.749999999999972" y="-17.5" />
+      <point x="146.82142857142858" y="310.0" />
+      <point x="117.5" y="310.0" />
+      <point x="47.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.TopologyBuilder.ConfigGetter" target="backtype.storm.topology.ComponentConfigurationDeclarer">
+      <point x="-36.75" y="-17.5" />
+      <point x="197.75" y="230.0" />
+      <point x="166.25" y="230.0" />
+      <point x="166.25" y="150.0" />
+      <point x="178.14999999999998" y="150.0" />
+      <point x="-61.60000000000002" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.TopologyBuilder.BoltGetter" target="backtype.storm.topology.TopologyBuilder.ConfigGetter">
+      <point x="15.750000000000028" y="-17.5" />
+      <point x="178.32142857142858" y="320.0" />
+      <point x="179.375" y="320.0" />
+      <point x="-55.125" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.TopologyBuilder.SpoutGetter" target="backtype.storm.topology.SpoutDeclarer">
+      <point x="17.625" y="-17.5" />
+      <point x="387.5556547619048" y="320.0" />
+      <point x="400.25" y="320.0" />
+      <point x="-39.0" y="17.5" />
     </edge>
     <edge source="backtype.storm.topology.BoltDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
       <point x="0.0" y="-17.5" />
-      <point x="342.5" y="145.0" />
-      <point x="291.6666666666667" y="145.0" />
-      <point x="102.66666666666669" y="17.5" />
+      <point x="70.5" y="150.0" />
+      <point x="116.55000000000001" y="150.0" />
+      <point x="-123.19999999999999" y="17.5" />
     </edge>
     <edge source="backtype.storm.topology.ComponentConfigurationDeclarer" target="backtype.storm.topology.ResourceDeclarer">
       <point x="0.0" y="-17.5" />
+      <point x="239.75" y="60.0" />
+      <point x="340.75" y="60.0" />
+      <point x="-45.0" y="17.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.transactional.TransactionTopologyBuilder.TransactionBoltDeclarer" target="backtype.storm.topology.TopologyBuilder.BoltGetter">
+      <point x="76.33333333333331" y="-17.5" />
+      <point x="201.84732142857138" y="400.0" />
+      <point x="194.07142857142856" y="400.0" />
+      <point x="31.5" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.TopologyBuilder.ConfigGetter" target="backtype.storm.topology.BaseConfigurationDeclarer">
+      <point x="36.75" y="-17.5" />
+      <point x="271.25" y="230.0" />
+      <point x="302.75" y="230.0" />
       <point x="0.0" y="17.5" />
     </edge>
+    <edge source="com.alibaba.jstorm.transactional.TransactionTopologyBuilder.TransactionBoltDeclarer" target="backtype.storm.topology.BoltDeclarer">
+      <point x="-76.33333333333331" y="-17.5" />
+      <point x="49.18065476190475" y="400.0" />
+      <point x="35.39077380952381" y="400.0" />
+      <point x="35.39077380952381" y="320.0" />
+      <point x="23.5" y="320.0" />
+      <point x="-47.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.BaseConfigurationDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
+      <point x="-63.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.SpoutDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
+      <point x="0.0" y="-17.5" />
+      <point x="439.25" y="140.0" />
+      <point x="362.95" y="140.0" />
+      <point x="123.19999999999999" y="17.5" />
+    </edge>
   </edges>
-  <settings layout="Hierarchic Group" zoom="1.0" x="206.5" y="102.5" />
+  <settings layout="Hierarchic Group" zoom="1.0" x="325.0" y="230.0" />
   <SelectedNodes />
-  <Categories />
+  <Categories>
+    <Category>Inner Classes</Category>
+  </Categories>
   <SCOPE>All</SCOPE>
   <VISIBILITY>private</VISIBILITY>
 </Diagram>
