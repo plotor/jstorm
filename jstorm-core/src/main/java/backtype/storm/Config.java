@@ -1114,18 +1114,18 @@ public class Config extends HashMap<String, Object> {
     public static final Object TOPOLOGY_METRICS_CONSUMER_REGISTER_SCHEMA = ConfigValidation.MapsValidator;
 
     /**
-     * The maximum parallelism allowed for a component in this topology. This configuration is typically used in testing to limit the number of threads spawned
-     * in local mode.
+     * The maximum parallelism allowed for a component in this topology.
+     * This configuration is typically used in testing to limit the number of threads spawned in local mode.
      */
     public static final String TOPOLOGY_MAX_TASK_PARALLELISM = "topology.max.task.parallelism";
     public static final Object TOPOLOGY_MAX_TASK_PARALLELISM_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
-     * The maximum number of tuples that can be pending on a spout task at any given time. This config applies to individual tasks, not to spouts or topologies
-     * as a whole.
+     * The maximum number of tuples that can be pending on a spout task at any given time.
+     * This config applies to individual tasks, not to spouts or topologies as a whole.
      * <p/>
-     * A pending tuple is one that has been emitted from a spout but has not been acked or failed yet. Note that this config parameter has no effect for
-     * unreliable spouts that don't tag their tuples with a message id.
+     * A pending tuple is one that has been emitted from a spout but has not been acked or failed yet.
+     * Note that this config parameter has no effect for unreliable spouts that don't tag their tuples with a message id.
      */
     public static final String TOPOLOGY_MAX_SPOUT_PENDING = "topology.max.spout.pending";
     public static final Object TOPOLOGY_MAX_SPOUT_PENDING_SCHEMA = ConfigValidation.IntegerValidator;
