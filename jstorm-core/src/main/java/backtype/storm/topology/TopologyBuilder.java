@@ -571,12 +571,11 @@ public class TopologyBuilder {
         }
     } // ~ end ConfigGetter
 
-    // TODO by zhenchao 2018-07-14 17:14:33
     protected class SpoutGetter extends ConfigGetter<SpoutDeclarer> implements SpoutDeclarer {
         public SpoutGetter(String id) {
             super(id);
         }
-    }
+    } // ~ end SpoutGetter
 
     protected class BoltGetter extends ConfigGetter<BoltDeclarer> implements BoltDeclarer {
 

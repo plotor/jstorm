@@ -15,19 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package storm.trident.operation;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import com.alibaba.jstorm.utils.JStormUtils;
 
 import backtype.storm.Config;
 import backtype.storm.topology.ResourceDeclarer;
 import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.utils.JStormUtils;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
- * @param T Must always be the type of the extending class. i.e.
+ * <code>T</code> Must always be the type of the extending class. i.e.
  * public class SubResourceDeclarer extends DefaultResourceDeclarer<SubResourceDeclarer> {...}
  */
 public class DefaultResourceDeclarer<T extends DefaultResourceDeclarer> implements ResourceDeclarer<T>, ITridentResource {
@@ -37,7 +37,8 @@ public class DefaultResourceDeclarer<T extends DefaultResourceDeclarer> implemen
 
     @Override
     public T setMemoryLoad(Number onHeap) {
-        return setMemoryLoad(onHeap, JStormUtils.parseDouble(conf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)));
+        // ${topology.component.resources.offheap.memory.mb}
+        return this.setMemoryLoad(onHeap, JStormUtils.parseDouble(conf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)));
     }
 
     @Override
@@ -46,24 +47,24 @@ public class DefaultResourceDeclarer<T extends DefaultResourceDeclarer> implemen
             onHeap = onHeap.doubleValue();
             resources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, onHeap);
         }
-        if (offHeap!=null) {
+        if (offHeap != null) {
             offHeap = offHeap.doubleValue();
             resources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, offHeap);
         }
-        return (T)this;
+        return (T) this;
     }
 
     @Override
     public T setCPULoad(Number amount) {
-        if(amount != null) {
+        if (amount != null) {
             amount = amount.doubleValue();
             resources.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, amount);
         }
-        return (T)this;
+        return (T) this;
     }
 
     @Override
     public Map<String, Number> getResources() {
-        return new HashMap<String, Number>(resources);
+        return new HashMap<>(resources);
     }
 }

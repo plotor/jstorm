@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>backtype.storm.topology.ComponentConfigurationDeclarer</OriginalElement>
+  <nodes>
+    <node x="0.0" y="170.0">backtype.storm.topology.BaseConfigurationDeclarer</node>
+    <node x="272.0" y="170.0">backtype.storm.topology.BoltDeclarer</node>
+    <node x="35.0" y="85.0">backtype.storm.topology.ComponentConfigurationDeclarer</node>
+    <node x="99.0" y="0.0">backtype.storm.topology.ResourceDeclarer</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="backtype.storm.topology.BaseConfigurationDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
+      <point x="63.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.BoltDeclarer" target="backtype.storm.topology.ComponentConfigurationDeclarer">
+      <point x="0.0" y="-17.5" />
+      <point x="342.5" y="145.0" />
+      <point x="291.6666666666667" y="145.0" />
+      <point x="102.66666666666669" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.ComponentConfigurationDeclarer" target="backtype.storm.topology.ResourceDeclarer">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="206.5" y="102.5" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+
