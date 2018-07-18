@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm;
 
 import backtype.storm.generated.*;
@@ -55,8 +56,9 @@ public class LocalCluster implements ILocalCluster {
     protected static LocalCluster instance = null;
 
     public static synchronized LocalCluster getInstance() {
-        if (instance == null)
+        if (instance == null) {
             instance = new LocalCluster();
+        }
         return instance;
     }
 
@@ -71,8 +73,9 @@ public class LocalCluster implements ILocalCluster {
         setLogger();
         setEnv();
         this.state = LocalUtils.prepareLocalCluster();
-        if (this.state == null)
+        if (this.state == null) {
             throw new RuntimeException("prepareLocalCluster error");
+        }
     }
 
     @Override
@@ -83,8 +86,9 @@ public class LocalCluster implements ILocalCluster {
     @SuppressWarnings("unchecked")
     @Override
     public void submitTopologyWithOpts(String topologyName, Map conf, StormTopology topology, SubmitOptions submitOpts) {
-        if (!Utils.isValidConf(conf))
+        if (!Utils.isValidConf(conf)) {
             throw new RuntimeException("Topology conf is not json-serializable");
+        }
 
         conf.putAll(LocalUtils.getLocalBaseConf());
         conf.putAll(Utils.readCommandLineOpts());

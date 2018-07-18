@@ -24,7 +24,7 @@ import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.tuple.Fields;
 
 /**
- * 定义了多种分组方式
+ * 定义了多种消息分组方式
  *
  * @param <T>
  */

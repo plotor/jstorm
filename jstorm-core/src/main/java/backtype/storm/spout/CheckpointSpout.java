@@ -66,12 +66,11 @@ public class CheckpointSpout extends BaseRichSpout {
 
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-        open(context, collector, loadCheckpointInterval(conf), loadCheckpointState(conf, context));
+        this.open(context, collector, loadCheckpointInterval(conf), loadCheckpointState(conf, context));
     }
 
     // package access for unit test
-    void open(TopologyContext context, SpoutOutputCollector collector,
-              int checkpointInterval, KeyValueState<String, CheckPointState> checkpointState) {
+    void open(TopologyContext context, SpoutOutputCollector collector, int checkpointInterval, KeyValueState<String, CheckPointState> checkpointState) {
         this.context = context;
         this.collector = collector;
         this.checkpointInterval = checkpointInterval;

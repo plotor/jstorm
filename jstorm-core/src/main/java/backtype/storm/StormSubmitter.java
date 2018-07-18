@@ -42,8 +42,7 @@ import java.util.Map;
 
 /**
  * Use this class to submit topologies to run on the Storm cluster.
- * You should run your program with the "storm jar" command from the command-line, and then use
- * this class to submit your topologies.
+ * You should run your program with the "storm jar" command from the command-line, and then use this class to submit your topologies.
  */
 @SuppressWarnings("unchecked")
 public class StormSubmitter {
@@ -57,7 +56,7 @@ public class StormSubmitter {
     }
 
     /**
-     * Submits a topology to run on the cluster. A topology runs forever or until explicitly killed.
+     * Submits a topology to run on the cluster. A topology runs forever or until explicitly(明确的) killed.
      *
      * @param name the name of the storm.
      * @param stormConf the topology-specific configuration. See {@link Config}.
@@ -91,8 +90,7 @@ public class StormSubmitter {
         submitTopology(name, stormConf, topology, opts);
     }
 
-    public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts, ProgressListener listener)
-            throws AlreadyAliveException, InvalidTopologyException {
+    public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts, ProgressListener listener) throws AlreadyAliveException, InvalidTopologyException {
         submitTopology(name, stormConf, topology, opts);
     }
 
@@ -105,8 +103,7 @@ public class StormSubmitter {
      * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
-    public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts)
-            throws AlreadyAliveException, InvalidTopologyException {
+    public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts) throws AlreadyAliveException, InvalidTopologyException {
         if (!Utils.isValidConf(stormConf)) {
             throw new IllegalArgumentException("Storm conf is not valid. Must be json-serializable");
         }
@@ -178,8 +175,7 @@ public class StormSubmitter {
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
 
-    public static void submitTopologyWithProgressBar(String name, Map stormConf, StormTopology topology)
-            throws AlreadyAliveException, InvalidTopologyException {
+    public static void submitTopologyWithProgressBar(String name, Map stormConf, StormTopology topology) throws AlreadyAliveException, InvalidTopologyException {
         submitTopologyWithProgressBar(name, stormConf, topology, null);
     }
 
@@ -194,8 +190,7 @@ public class StormSubmitter {
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
 
-    public static void submitTopologyWithProgressBar(String name, Map stormConf, StormTopology topology, SubmitOptions opts)
-            throws AlreadyAliveException, InvalidTopologyException {
+    public static void submitTopologyWithProgressBar(String name, Map stormConf, StormTopology topology, SubmitOptions opts) throws AlreadyAliveException, InvalidTopologyException {
         /**
          * progress bar is removed in jstorm
          */

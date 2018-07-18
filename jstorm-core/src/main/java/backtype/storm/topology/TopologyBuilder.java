@@ -588,7 +588,7 @@ public class TopologyBuilder {
 
         @Override
         public BoltDeclarer fieldsGrouping(String componentId, Fields fields) {
-            return this.fieldsGrouping(componentId, Utils.DEFAULT_STREAM_ID, fields);
+            return this.fieldsGrouping(componentId, Utils.DEFAULT_STREAM_ID, fields); // default
         }
 
         @Override
@@ -666,6 +666,14 @@ public class TopologyBuilder {
             return this.grouping(componentId, streamId, Grouping.direct(new NullStruct()));
         }
 
+        /**
+         * 记录消息分组方式到 ComponentCommon 对象中
+         *
+         * @param componentId
+         * @param streamId
+         * @param grouping
+         * @return
+         */
         protected BoltDeclarer grouping(String componentId, String streamId, Grouping grouping) {
             _commons.get(_boltId).put_to_inputs(new GlobalStreamId(componentId, streamId), grouping);
             return this;

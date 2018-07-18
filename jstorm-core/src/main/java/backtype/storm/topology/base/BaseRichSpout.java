@@ -19,12 +19,12 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package backtype.storm.topology.base;
 
 import backtype.storm.topology.IRichSpout;
 
 /**
- * 
  * @author nathan
  */
 public abstract class BaseRichSpout extends BaseComponent implements IRichSpout {
