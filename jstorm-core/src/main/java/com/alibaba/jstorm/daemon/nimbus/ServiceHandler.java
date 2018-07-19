@@ -264,7 +264,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
                     NimbusUtils.transitionName(data, topologyName, true, StatusType.kill, 0);
                     KillTopologyEvent.pushEvent(topologyId);
-                    notifyTopologyActionListener(topologyName, "killTopology");
+                    this.notifyTopologyActionListener(topologyName, "killTopology");
                     //wait all workers' are killed
                     final long timeoutSeconds = ConfigExtension.getTaskCleanupTimeoutSec(oldConf);
                     ConcurrentHashMap<String, Semaphore> topologyIdtoSem = data.getTopologyIdtoSem();
@@ -322,12 +322,12 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             StormClusterState stormClusterState = data.getStormClusterState();
 
             // create /local-dir/nimbus/topologyId/xxxx files
-            setupStormCode(topologyId, uploadedJarLocation, stormConf, normalizedTopology, false);
+            this.setupStormCode(topologyId, uploadedJarLocation, stormConf, normalizedTopology, false);
             // wait for blob replication before activate topology
-            waitForDesiredCodeReplication(conf, topologyId);
+            this.waitForDesiredCodeReplication(conf, topologyId);
             // generate TaskInfo for every bolt or spout in ZK
             // /ZK/tasks/topoologyId/xxx
-            setupZkTaskInfo(conf, topologyId, stormClusterState);
+            this.setupZkTaskInfo(conf, topologyId, stormClusterState);
 
             //mkdir topology error directory
             String path = Cluster.taskerror_storm_root(topologyId);
@@ -340,7 +340,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
             // make assignments for a topology
             LOG.info("Submit topology {} with conf {}", topologyName, serializedConf);
-            makeAssignment(topologyName, topologyId, options.get_initial_status());
+            this.makeAssignment(topologyName, topologyId, options.get_initial_status());
 
             // push start event after startup
             double metricsSampleRate = ConfigExtension.getMetricSampleRate(stormConf);
@@ -427,7 +427,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     public void activate(String topologyName) throws TException {
         try {
             NimbusUtils.transitionName(data, topologyName, true, StatusType.activate);
-            notifyTopologyActionListener(topologyName, "activate");
+            this.notifyTopologyActionListener(topologyName, "activate");
         } catch (NotAliveException e) {
             String errMsg = "Activate Error, topology " + topologyName + " is not alive!";
             LOG.error(errMsg, e);
@@ -446,7 +446,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     public void deactivate(String topologyName) throws TException {
         try {
             NimbusUtils.transitionName(data, topologyName, true, StatusType.inactivate);
-            notifyTopologyActionListener(topologyName, "inactivate");
+            this.notifyTopologyActionListener(topologyName, "inactivate");
         } catch (NotAliveException e) {
             String errMsg = "Deactivate Error, no this topology " + topologyName;
             LOG.error(errMsg, e);
@@ -467,7 +467,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     @Override
     public void rebalance(String topologyName, RebalanceOptions options) throws TException {
         try {
-            checkTopologyActive(data, topologyName, true);
+            this.checkTopologyActive(data, topologyName, true);
             Integer wait_amt = null;
             String jsonConf = null;
             Boolean reassign = false;
@@ -490,7 +490,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
             NimbusUtils.transitionName(data, topologyName, true, StatusType.rebalance, wait_amt, reassign, conf);
 
-            notifyTopologyActionListener(topologyName, "rebalance");
+            this.notifyTopologyActionListener(topologyName, "rebalance");
         } catch (NotAliveException e) {
             String errMsg = "Rebalance error, topology " + topologyName + " is not alive!";
             LOG.error(errMsg, e);
@@ -523,7 +523,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
         // Restart the topology: Deactivate -> Kill -> Submit
         // 2. Deactivate
-        deactivate(name);
+        this.deactivate(name);
         JStormUtils.sleepMs(5000);
         LOG.info("Deactivate " + name);
 
@@ -544,10 +544,10 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             topologyCodeLocation = parent + PathUtils.SEPARATOR + topologyId;
             FileUtils.forceMkdir(new File(topologyCodeLocation));
             FileUtils.cleanDirectory(new File(topologyCodeLocation));
-            copyBackToInbox(topologyId, topologyCodeLocation);
+            this.copyBackToInbox(topologyId, topologyCodeLocation);
 
             LOG.info("Successfully read old jar/conf/topology " + name);
-            notifyTopologyActionListener(name, "restart");
+            this.notifyTopologyActionListener(name, "restart");
         } catch (Exception e) {
             LOG.error("Failed to read old jar/conf/topology", e);
             if (topologyCodeLocation != null) {
@@ -572,7 +572,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         // 5. submit
         try {
             topologyConf.remove(ConfigExtension.TOPOLOGY_UPGRADE_FLAG);
-            submitTopology(name, topologyCodeLocation, JStormUtils.to_json(topologyConf), topology);
+            this.submitTopology(name, topologyCodeLocation, JStormUtils.to_json(topologyConf), topology);
         } catch (AlreadyAliveException e) {
             LOG.info("Failed to kill topology" + name);
             throw new TException("Failed to kill topology" + name);
@@ -1005,12 +1005,12 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     @Override
     public SupervisorWorkers getSupervisorWorkers(String host) throws TException {
-        return getSupervisorWorkersByHostOrId(host, null);
+        return this.getSupervisorWorkersByHostOrId(host, null);
     }
 
     @Override
     public SupervisorWorkers getSupervisorWorkersById(String id) throws TException {
-        return getSupervisorWorkersByHostOrId(null, id);
+        return this.getSupervisorWorkersByHostOrId(null, id);
     }
 
     /**
@@ -1102,7 +1102,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
                     workerSummary.set_uptime(TimeUtils.time_delta(earliest));
 
-                    String workerSlotName = getWorkerSlotName(ip, port);
+                    String workerSlotName = this.getWorkerSlotName(ip, port);
                     List<MetricInfo> workerMetricInfoList = this.data.getMetricCache().getMetricData(topologyId, MetaType.WORKER);
                     if (workerMetricInfoList.size() > 0) {
                         MetricInfo workerMetricInfo = workerMetricInfoList.get(0);
@@ -1146,6 +1146,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     /**
      * Get TopologyInfo, it contain all topology running data
+     *
      * 获取一个 topology 的运行信息
      *
      * @return TopologyInfo
@@ -1324,15 +1325,15 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     @Override
     public TopologyInfo getTopologyInfoByName(String topologyName) throws TException {
-        String topologyId = getTopologyId(topologyName);
-        return getTopologyInfo(topologyId);
+        String topologyId = this.getTopologyId(topologyName);
+        return this.getTopologyInfo(topologyId);
     }
 
     @Override
     public Map<Integer, String> getTopologyTasksToSupervisorIds(String topologyName)
             throws TException {
         StormClusterState stormClusterState = data.getStormClusterState();
-        String topologyId = getTopologyId(topologyName);
+        String topologyId = this.getTopologyId(topologyName);
         Map<Integer, String> ret = new HashMap<>();
         try {
             Assignment assignment = stormClusterState.assignment_info(topologyId, null);
@@ -1353,7 +1354,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     public Map<String, Map<String, String>> getTopologyWorkersToSupervisorIds(String topologyName)
             throws NotAliveException, TException {
         StormClusterState stormClusterState = data.getStormClusterState();
-        String topologyId = getTopologyId(topologyName);
+        String topologyId = this.getTopologyId(topologyName);
         Map<String, Map<String, String>> ret = new HashMap<>();
         try {
             Assignment assignment = stormClusterState.assignment_info(topologyId, null);
@@ -1539,14 +1540,14 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
         // in local mode there is no jar
         if (tmpJarLocation != null) {
-            setupJar(tmpJarLocation, topologyId, update);
+            this.setupJar(tmpJarLocation, topologyId, update);
         }
 
         if (update) {
-            backupBlob(codeKey, codeKeyBak, topologyId);
+            this.backupBlob(codeKey, codeKeyBak, topologyId);
         }
-        createOrUpdateBlob(confKey, Utils.serialize(stormConf), update, topologyId);
-        createOrUpdateBlob(codeKey, Utils.serialize(topology), update, topologyId);
+        this.createOrUpdateBlob(confKey, Utils.serialize(stormConf), update, topologyId);
+        this.createOrUpdateBlob(codeKey, Utils.serialize(topology), update, topologyId);
     }
 
     public void setupJar(String tmpJarLocation, String topologyId, boolean update) throws Exception {
@@ -1560,7 +1561,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
                 for (File jar : libJars) {
                     if (jar.isFile()) {
                         String libJarKey = StormConfig.master_stormlib_key(topologyId, jar.getName());
-                        createOrUpdateBlob(libJarKey, new FileInputStream(jar), update, topologyId);
+                        this.createOrUpdateBlob(libJarKey, new FileInputStream(jar), update, topologyId);
                     }
                 }
             }
@@ -1591,9 +1592,9 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         String jarKey = StormConfig.master_stormjar_key(topologyId);
         String jarKeyBak = StormConfig.master_stormjar_bak_key(topologyId);
         if (update) {
-            backupBlob(jarKey, jarKeyBak, topologyId);
+            this.backupBlob(jarKey, jarKeyBak, topologyId);
         }
-        createOrUpdateBlob(jarKey, new FileInputStream(jarPath), update, topologyId);
+        this.createOrUpdateBlob(jarKey, new FileInputStream(jarPath), update, topologyId);
         PathUtils.rmr(tmpJarLocation);
     }
 
@@ -1656,14 +1657,14 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             for (String key : blobKeys) {
                 blobKeysToReplicationCount.put(key, 0);
             }
-            refreshBlobReplicationCount(blobKeysToReplicationCount, minReplicationCount);
+            this.refreshBlobReplicationCount(blobKeysToReplicationCount, minReplicationCount);
             int totalWaitTime = 0;
-            while (isNeedWait(minReplicationCount, maxWaitTime, blobKeysToReplicationCount, totalWaitTime)) {
+            while (this.isNeedWait(minReplicationCount, maxWaitTime, blobKeysToReplicationCount, totalWaitTime)) {
                 Thread.sleep(1);
                 LOG.info("waiting for desired replication to be achieved. min-replication-count = {}, " +
                                 "max-replication-wait-time = {}, total-wait-time = {}, current key to replication count = {}",
                         minReplicationCount, maxWaitTime, blobKeysToReplicationCount);
-                refreshBlobReplicationCount(blobKeysToReplicationCount, minReplicationCount);
+                this.refreshBlobReplicationCount(blobKeysToReplicationCount, minReplicationCount);
                 totalWaitTime++;
             }
             boolean isAllAchieved = true;
@@ -1715,7 +1716,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
      * generate TaskInfo for every bolt or spout in ZK /ZK/tasks/topoologyId/xxx
      */
     public void setupZkTaskInfo(Map<Object, Object> conf, String topologyId, StormClusterState stormClusterState) throws Exception {
-        Map<Integer, TaskInfo> taskToTaskInfo = mkTaskComponentAssignments(conf, topologyId);
+        Map<Integer, TaskInfo> taskToTaskInfo = this.mkTaskComponentAssignments(conf, topologyId);
 
         // mkdir /ZK/taskbeats/topoologyId
         int masterId = NimbusUtils.getTopologyMasterId(taskToTaskInfo);
@@ -1832,7 +1833,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     @Override
     public int getNettyMetricSizeByHost(String topologyId, String host) throws TException {
-        return getNettyMetricsByHost(topologyId, host).get_metrics_size();
+        return this.getNettyMetricsByHost(topologyId, host).get_metrics_size();
     }
 
     @Override
@@ -1867,7 +1868,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     @Override
     public MetricInfo getTaskMetrics(String topologyId, String component) throws TException {
-        List<MetricInfo> taskMetricList = getMetrics(topologyId, MetaType.TASK.getT());
+        List<MetricInfo> taskMetricList = this.getMetrics(topologyId, MetaType.TASK.getT());
         if (taskMetricList != null && taskMetricList.size() > 0) {
             MetricInfo metricInfo = taskMetricList.get(0);
             Map<String, Map<Integer, MetricSnapshot>> metrics = metricInfo.get_metrics();
@@ -1886,8 +1887,8 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     @Override
     public List<MetricInfo> getTaskAndStreamMetrics(String topologyId, int taskId) throws TException {
-        List<MetricInfo> taskMetricList = getMetrics(topologyId, MetaType.TASK.getT());
-        List<MetricInfo> streamMetricList = getMetrics(topologyId, MetaType.STREAM.getT());
+        List<MetricInfo> taskMetricList = this.getMetrics(topologyId, MetaType.TASK.getT());
+        List<MetricInfo> streamMetricList = this.getMetrics(topologyId, MetaType.STREAM.getT());
 
         String taskIdStr = taskId + "";
         MetricInfo taskMetricInfo;
@@ -1931,7 +1932,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     public void updateTopology(String name, String uploadedLocation, String updateConf) throws TException {
         try {
             // update jar and conf first
-            checkTopologyActive(data, name, true);
+            this.checkTopologyActive(data, name, true);
             String topologyId;
             StormClusterState stormClusterState = data.getStormClusterState();
             topologyId = Cluster.get_topology_id(stormClusterState, name);
@@ -1939,7 +1940,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
                 throw new NotAliveException(name);
             }
             if (uploadedLocation != null) {
-                setupJar(uploadedLocation, topologyId, true);
+                this.setupJar(uploadedLocation, topologyId, true);
             }
 
             Map topoConf = StormConfig.read_nimbus_topology_conf(topologyId, data.getBlobStore());
@@ -1947,11 +1948,11 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             topoConf.putAll(config);
 
             String confKey = StormConfig.master_stormconf_key(topologyId);
-            createOrUpdateBlob(confKey, Utils.serialize(topoConf), true, topologyId);
+            this.createOrUpdateBlob(confKey, Utils.serialize(topoConf), true, topologyId);
 
             NimbusUtils.transitionName(data, name, true, StatusType.update_topology, config);
             LOG.info("updated topology " + name + " successfully");
-            notifyTopologyActionListener(name, "updateTopology");
+            this.notifyTopologyActionListener(name, "updateTopology");
         } catch (NotAliveException e) {
             String errMsg = "Error: topology " + name + " is not alive.";
             LOG.error(errMsg, e);
@@ -2036,14 +2037,14 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     @Override
     public void grayUpgrade(String topologyName, String component, List<String> workers, int workerNum)
             throws TException {
-        String topologyId = getTopologyId(topologyName);
+        String topologyId = this.getTopologyId(topologyName);
         if (topologyId == null) {
             throw new NotAliveException(topologyName);
         }
 
         Set<String> workerSet = (workers == null) ? Sets.<String>newHashSet() : Sets.<String>newHashSet(workers);
         try {
-            grayUpgrade(topologyId, null, null, Maps.newHashMap(), component, workerSet, workerNum);
+            this.grayUpgrade(topologyId, null, null, Maps.newHashMap(), component, workerSet, workerNum);
         } catch (Exception ex) {
             LOG.error("Failed to upgrade", ex);
             throw new TException(ex);
@@ -2053,8 +2054,8 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     @Override
     public void rollbackTopology(String topologyName) throws TException {
         try {
-            checkTopologyActive(data, topologyName, true);
-            String topologyId = getTopologyId(topologyName);
+            this.checkTopologyActive(data, topologyName, true);
+            String topologyId = this.getTopologyId(topologyName);
 
             StormClusterState clusterState = data.getStormClusterState();
             StormBase stormBase = clusterState.storm_base(topologyId, null);
@@ -2073,7 +2074,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     @Override
     public void completeUpgrade(String topologyName) throws TException {
-        String topologyId = getTopologyId(topologyName);
+        String topologyId = this.getTopologyId(topologyName);
         if (topologyId == null) {
             throw new NotAliveException(topologyName);
         }
@@ -2162,7 +2163,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             upgradeConfig = new GrayUpgradeConfig();
             upgradeConfig.setUpgradeExpireTime(System.currentTimeMillis() + tpTtl);
 
-            setupStormCode(topologyId, uploadedLocation, stormConf, topology, true);
+            this.setupStormCode(topologyId, uploadedLocation, stormConf, topology, true);
 
             Map topoConf = StormConfig.read_nimbus_topology_conf(topologyId, data.getBlobStore());
             topoConf.putAll(stormConf);

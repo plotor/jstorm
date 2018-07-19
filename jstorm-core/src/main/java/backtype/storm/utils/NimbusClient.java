@@ -50,6 +50,11 @@ public class NimbusClient extends ThriftClient {
         return getConfiguredClientAs(conf, null, asUser);
     }
 
+    /**
+     * 客户端与服务端版本匹配校验
+     *
+     * @param client
+     */
     public static void checkVersion(NimbusClient client) {
         String serverVersion;
         try {
@@ -65,15 +70,16 @@ public class NimbusClient extends ThriftClient {
 
     public static NimbusClient getConfiguredClientAs(Map conf, Integer timeout, String asUser) {
         try {
-            if (conf.containsKey(Config.STORM_DO_AS_USER)) {
+            if (conf.containsKey(Config.STORM_DO_AS_USER)) { // storm.doAsUser
                 if (asUser != null && !asUser.isEmpty()) {
-                    LOG.warn("You have specified a doAsUser as param {} and a doAsParam as config, " +
-                            "config will take precedence.", asUser, conf.get(Config.STORM_DO_AS_USER));
+                    LOG.warn("You have specified a doAsUser as param {} and a doAsParam as config, config will take precedence.",
+                            asUser, conf.get(Config.STORM_DO_AS_USER));
                 }
+                // 配置中的 ${storm.doAsUser} 优先级高于参数
                 asUser = (String) conf.get(Config.STORM_DO_AS_USER);
             }
-
             NimbusClient client = new NimbusClient(conf, null, null, timeout, asUser);
+            // 验证客户端与服务端版本是否一致
             checkVersion(client);
             return client;
         } catch (Exception ex) {

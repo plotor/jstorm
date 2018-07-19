@@ -161,7 +161,7 @@ public class TopologyBuilder {
             }
         }
 
-        // 遍历处理 spout
+        // 遍历处理 spout，封装 spout 的序列化形式和 ComponentCommon 形式为 SpoutSpec 对象，并记录到 spoutSpecs 中
         for (String spoutId : _spouts.keySet()) {
             IRichSpout spout = _spouts.get(spoutId);
             ComponentCommon common = this.getComponentCommon(spoutId, spout);

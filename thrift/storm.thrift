@@ -467,6 +467,8 @@ service Nimbus {
   SupervisorWorkers getSupervisorWorkersById(1: string id) throws (1: NotAliveException e);
 
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e);
+
+  // 获取指定名称的 topology 信息
   TopologyInfo getTopologyInfoByName(1: string topologyName) throws (1: NotAliveException e);
   map<i32, string> getTopologyTasksToSupervisorIds(1: string topologyName) throws (1: NotAliveException e);
   map<string, map<string,string>> getTopologyWorkersToSupervisorIds(1: string topologyName) throws (1: NotAliveException e);

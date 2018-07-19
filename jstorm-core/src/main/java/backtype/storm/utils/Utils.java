@@ -256,11 +256,22 @@ public class Utils {
         return (T) javaDeserializeWithCL(serialized, WorkerClassLoader.getInstance());
     }
 
+    /**
+     * 将对象转换成 json 字符串
+     *
+     * @param m
+     * @return
+     */
     public static String to_json(Object m) {
-        // return JSON.toJSONString(m);
         return JSONValue.toJSONString(m);
     }
 
+    /**
+     * 将 json 字符串转换成对象
+     *
+     * @param json
+     * @return
+     */
     public static Object from_json(String json) {
         if (json == null) {
             return null;
@@ -509,6 +520,10 @@ public class Utils {
         return !to_json(sortedOld).equals(to_json(sortedNew));
     }
 
+    /**
+     * @param conf
+     * @return
+     */
     private static Object normalizeConf(Object conf) {
         if (conf == null) {
             return new HashMap();
