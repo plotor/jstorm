@@ -234,7 +234,7 @@ public class StormSubmitter {
     private static String path = null;
 
     /**
-     * 上传 jar 到 nimbus
+     * 上传 jar 到 nimbus 对应目录
      *
      * @param client
      * @param conf
@@ -244,11 +244,13 @@ public class StormSubmitter {
             try {
                 LOG.info("Jar not uploaded to master yet. Submitting jar...");
                 String localJar = System.getProperty("storm.jar");
+                // 为待上传的 jar 包创建存储路径和 Channel，并返回路径值
+                // ${storm.local.dir}/nimbus/inbox/${key}/stormjar-${key}.jar
                 path = client.getClient().beginFileUpload();
                 String[] pathCache = path.split("/");
                 String uploadLocation = path + "/stormjar-" + pathCache[pathCache.length - 1] + ".jar";
-                List<String> lib = (List<String>) conf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
-                Map<String, String> libPath = (Map<String, String>) conf.get(GenericOptionsParser.TOPOLOGY_LIB_PATH);
+                List<String> lib = (List<String>) conf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME); // topology.lib.name
+                Map<String, String> libPath = (Map<String, String>) conf.get(GenericOptionsParser.TOPOLOGY_LIB_PATH); // topology.lib.path
                 if (lib != null && lib.size() != 0) {
                     for (String libName : lib) {
                         String jarPath = path + "/lib/" + libName;
@@ -278,8 +280,7 @@ public class StormSubmitter {
 
     public static String submitJar(Map conf, String localJar, String uploadLocation, NimbusClient client) {
         if (localJar == null) {
-            throw new RuntimeException("Must submit topologies using the 'jstorm' client script so that " +
-                    "StormSubmitter knows which jar to upload.");
+            throw new RuntimeException("Must submit topologies using the 'jstorm' client script so that StormSubmitter knows which jar to upload.");
         }
 
         try {
