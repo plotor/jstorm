@@ -15,23 +15,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.PrintStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.LinkedHashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -39,7 +25,22 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * GenericOptionsParser is a utility class to parse command line arguments generic to Storm.
@@ -170,8 +171,9 @@ public class GenericOptionsParser {
 
     void processGeneralOptions(Config conf, CommandLine commandLine) throws ParseException {
         for (Map.Entry<String, OptionProcessor> e : optionProcessors.entrySet())
-            if (commandLine.hasOption(e.getKey()))
+            if (commandLine.hasOption(e.getKey())) {
                 e.getValue().process(conf, commandLine);
+            }
     }
 
     static List<File> validateFiles(String pathList) throws IOException {
@@ -179,8 +181,9 @@ public class GenericOptionsParser {
 
         for (String s : pathList.split(",")) {
             File file = new File(s);
-            if (!file.exists())
+            if (!file.exists()) {
                 throw new FileNotFoundException("File `" + file.getAbsolutePath() + "' does not exist");
+            }
 
             l.add(file);
         }
@@ -189,7 +192,7 @@ public class GenericOptionsParser {
     }
 
     public static void printGenericCommandUsage(PrintStream out) {
-        String[] strs = new String[]{
+        String[] strs = new String[] {
                 "Generic options supported are", "  -conf <conf.xml>                            load configurations from",
                 "                                              <conf.xml>", "  -conf <conf.yaml>                           load configurations from",
                 "                                              <conf.yaml>",
@@ -233,8 +236,9 @@ public class GenericOptionsParser {
         public void process(Config conf, CommandLine commandLine) throws ParseException {
             for (String s : commandLine.getOptionValues("D")) {
                 String[] keyval = s.split("=", 2);
-                if (keyval.length != 2)
+                if (keyval.length != 2) {
                     throw new ParseException("Invalid option value `" + s + "'");
+                }
 
                 conf.putAll((Map) yaml.load(keyval[0] + ": " + keyval[1]));
             }
@@ -251,14 +255,16 @@ public class GenericOptionsParser {
                 reader = new InputStreamReader(fis, UTF8);
                 return (Map) yaml.load(reader);
             } finally {
-                if (reader != null)
+                if (reader != null) {
                     reader.close();
+                }
             }
         }
 
         static Map loadConf(String f) throws IOException {
-            if (f.endsWith(".yaml"))
+            if (f.endsWith(".yaml")) {
                 return loadYamlConf(f);
+            }
             throw new IOException("Unknown configuration file type: " + f + " does not end with either .yaml");
         }
 
@@ -267,8 +273,9 @@ public class GenericOptionsParser {
             try {
                 for (String f : commandLine.getOptionValues("conf")) {
                     Map m = loadConf(f);
-                    if (m == null)
+                    if (m == null) {
                         throw new ParseException("Empty configuration file " + f);
+                    }
                     conf.putAll(m);
                 }
             } catch (IOException e) {

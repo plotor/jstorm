@@ -176,9 +176,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     }
 
     @Override
-    public String submitTopology(
-            String name, String uploadedJarLocation, String jsonConf, StormTopology topology)
-            throws TException, TopologyAssignException {
+    public String submitTopology(String name, String uploadedJarLocation, String jsonConf, StormTopology topology) throws TException, TopologyAssignException {
         SubmitOptions options = new SubmitOptions(TopologyInitialStatus.ACTIVE);
         return this.submitTopologyWithOpts(name, uploadedJarLocation, jsonConf, topology, options);
     }
@@ -188,15 +186,13 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
      *
      * @param topologyName String: topology name
      * @param uploadedJarLocation String: already uploaded jar path
-     * @param jsonConf String: jsonConf serialize all toplogy configuration to
-     * Json
+     * @param jsonConf String: jsonConf serialize all toplogy configuration to Json
      * @param topology StormTopology: topology Object
      */
     @SuppressWarnings("unchecked")
     @Override
     public String submitTopologyWithOpts(
-            String topologyName, String uploadedJarLocation, String jsonConf, StormTopology topology, SubmitOptions options)
-            throws TException {
+            String topologyName, String uploadedJarLocation, String jsonConf, StormTopology topology, SubmitOptions options) throws TException {
         LOG.info("Received topology: " + topologyName + ", uploadedJarLocation:" + uploadedJarLocation);
 
         long start = System.nanoTime();
@@ -639,7 +635,6 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             FileUtils.forceMkdir(new File(path));
             FileUtils.cleanDirectory(new File(path));
             fileLoc = path + "/stormjar-" + key + ".jar"; // ${storm.local.dir}/nimbus/inbox/${key}/stormjar-${key}.jar
-
             data.getUploaders().put(fileLoc, Channels.newChannel(new FileOutputStream(fileLoc)));
             LOG.info("Begin upload file from client to " + fileLoc);
             return path;
@@ -654,6 +649,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     /**
      * upload topology jar data
+     *
      * 基于文件路径从 uploaders 中找到对应的 WritableByteChannel，并将 ByteBuffer 中的数据写入其中，最后更新回 uploaders 中
      */
     @Override
