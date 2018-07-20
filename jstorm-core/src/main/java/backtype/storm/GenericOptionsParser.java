@@ -108,6 +108,7 @@ import java.util.Map;
  */
 
 public class GenericOptionsParser {
+
     private static final Logger LOG = LoggerFactory.getLogger(GenericOptionsParser.class);
 
     static final Charset UTF8 = Charset.forName("UTF-8");

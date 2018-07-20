@@ -177,12 +177,13 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     @Override
     public String submitTopology(String name, String uploadedJarLocation, String jsonConf, StormTopology topology) throws TException, TopologyAssignException {
+        // 默认初始状态为 ACTIVE
         SubmitOptions options = new SubmitOptions(TopologyInitialStatus.ACTIVE);
         return this.submitTopologyWithOpts(name, uploadedJarLocation, jsonConf, topology, options);
     }
 
     /**
-     * Submit a topology，提交一个新的 topology
+     * 提交一个新的 topology 任务
      *
      * @param topologyName String: topology name
      * @param uploadedJarLocation String: already uploaded jar path
@@ -207,9 +208,12 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             LOG.error("Failed to serialize configuration");
             throw new InvalidTopologyException("Failed to serialize topology configuration");
         }
+        // 校验用户配置与集群配置是否一致
         Common.confValidate(serializedConf, data.getConf());
 
+        // ${topology.hot.deploy.enable}
         boolean enableDeploy = ConfigExtension.getTopologyHotDeplogyEnable(serializedConf);
+        // ${topology.upgrade}
         boolean isUpgrade = ConfigExtension.isUpgradeTopology(serializedConf);
 
         try {
@@ -1153,12 +1157,13 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         StormClusterState stormClusterState = data.getStormClusterState();
 
         try {
-            // get topology's StormBase
+            // 获取指定 topology 的基本信息
             StormBase base = stormClusterState.storm_base(topologyId, null);
             if (base == null) {
                 throw new NotAliveException("No topology of " + topologyId);
             }
 
+            // 获取指定 topology 的任务分配信息
             Assignment assignment = stormClusterState.assignment_info(topologyId, null);
             if (assignment == null) {
                 throw new NotAliveException("No topology of " + topologyId);

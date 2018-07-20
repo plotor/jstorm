@@ -1309,7 +1309,7 @@ public class ConfigExtension {
     public static final String TOPOLOGY_UPGRADE_FLAG = "topology.upgrade";
 
     public static boolean isUpgradeTopology(Map conf) {
-        return JStormUtils.parseBoolean(conf.get(TOPOLOGY_UPGRADE_FLAG), false);
+        return JStormUtils.parseBoolean(conf.get(TOPOLOGY_UPGRADE_FLAG), false); // topology.upgrade
     }
 
     public static String TASK_CLEANUP_TIMEOUT_SEC = "task.cleanup.timeout.sec";

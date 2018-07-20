@@ -85,8 +85,10 @@ public class StormSubmitter {
             names.add(f.getName());
         }
         LOG.info("Files: " + names + " will be loaded");
-        stormConf.put(GenericOptionsParser.TOPOLOGY_LIB_PATH, jars);
-        stormConf.put(GenericOptionsParser.TOPOLOGY_LIB_NAME, names);
+        // <jar_name, jar_path>
+        stormConf.put(GenericOptionsParser.TOPOLOGY_LIB_PATH, jars); // topology.lib.path
+        // <jar_name>
+        stormConf.put(GenericOptionsParser.TOPOLOGY_LIB_NAME, names); // topology.lib.name
         submitTopology(name, stormConf, topology, opts);
     }
 
@@ -103,7 +105,10 @@ public class StormSubmitter {
      * @throws AlreadyAliveException    if a topology with this name is already running
      * @throws InvalidTopologyException if an invalid topology was submitted
      */
-    public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts) throws AlreadyAliveException, InvalidTopologyException {
+    public static void submitTopology(String name, Map stormConf, StormTopology topology, SubmitOptions opts)
+            throws AlreadyAliveException, InvalidTopologyException {
+
+        // 验证配置是否为 json 格式
         if (!Utils.isValidConf(stormConf)) {
             throw new IllegalArgumentException("Storm conf is not valid. Must be json-serializable");
         }
@@ -120,18 +125,32 @@ public class StormSubmitter {
         putUserInfo(conf, stormConf);
 
         try {
+            /*
+             * {
+             *   "topology.acker.executors": 2,
+             *   "nimbus.host": "10.38.164.192",
+             *   "topology.workers": 8,
+             *   "exclude.jars": "",
+             *   "user.group": null,
+             *   "topology.max.spout.pending": 200,
+             *   "user.name": null,
+             *   "topology.trident.batch.emit.interval.millis": 200,
+             *   "user.password": null
+             * }
+             */
+
             String serConf = Utils.to_json(userTotalConf); // 转换成 json 形式
             if (localNimbus != null) {
-                // 本地提交
+                // 本地模式
                 LOG.info("Submitting topology " + name + " in local mode");
                 localNimbus.submitTopology(name, null, serConf, topology);
             } else {
-                // 集群提交
+                // 集群模式
                 NimbusClient client = NimbusClient.getConfiguredClient(conf);
                 try {
-                    // 是否允许热部署？${topology.hot.deploy.enable}
+                    // 是否允许热部署 ${topology.hot.deploy.enable}
                     boolean enableDeploy = ConfigExtension.getTopologyHotDeplogyEnable(userTotalConf);
-                    // ${topology.upgrade}
+                    // 是否是灰度发布 ${topology.upgrade}
                     boolean isUpgrade = ConfigExtension.isUpgradeTopology(userTotalConf);
                     // 是否允许动态更新
                     boolean dynamicUpdate = enableDeploy || isUpgrade;
@@ -141,7 +160,7 @@ public class StormSubmitter {
                             // 动态更新，但是对应的 topology 不存在
                             throw new RuntimeException("Topology with name `" + name + "` does not exist on cluster");
                         } else {
-                            // 提交 topology，但是对应的 topology 已经存在
+                            // 提交新任务，但是对应的 topology 已经存在
                             throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
                         }
                     }
@@ -153,8 +172,12 @@ public class StormSubmitter {
                      * 2066 [main] INFO  backtype.storm.StormSubmitter - Submitting topology zhenchao-demo-topology in distributed mode with conf {"topology.acker.executors":2,"nimbus.host":"10.38.164.192","topology.workers":8,"exclude.jars":"","user.group":null,"topology.max.spout.pending":200,"user.name":null,"topology.trident.batch.emit.interval.millis":200,"user.password":null}
                      * 2189 [main] INFO  backtype.storm.StormSubmitter - Finished submitting topology: zhenchao-demo-topology
                      */
+
+                    // 上传 jar 包
                     submitJar(client, conf);
                     LOG.info("Submitting topology " + name + " in distributed mode with conf " + serConf);
+
+                    // 提交任务
                     if (opts != null) {
                         client.getClient().submitTopologyWithOpts(name, path, serConf, topology, opts);
                     } else {
@@ -207,9 +230,7 @@ public class StormSubmitter {
      */
 
     public static void submitTopologyWithProgressBar(String name, Map stormConf, StormTopology topology, SubmitOptions opts) throws AlreadyAliveException, InvalidTopologyException {
-        /**
-         * progress bar is removed in jstorm
-         */
+        // progress bar (进度条) is removed in jstorm
         submitTopology(name, stormConf, topology, opts);
     }
 
@@ -243,12 +264,16 @@ public class StormSubmitter {
         if (submittedJar == null) {
             try {
                 LOG.info("Jar not uploaded to master yet. Submitting jar...");
+                // 获取对应的 client jar 名称：jstorm-1.0.0-SNAPSHOT.jar
                 String localJar = System.getProperty("storm.jar");
                 // 为待上传的 jar 包创建存储路径和 Channel，并返回路径值
                 // ${storm.local.dir}/nimbus/inbox/${key}/stormjar-${key}.jar
-                path = client.getClient().beginFileUpload();
+                path = client.getClient().beginFileUpload(); // /home/work/data/jstorm/nimbus/inbox/c3a569f2-203c-4f9d-844c-112e587b6680
                 String[] pathCache = path.split("/");
+                // /home/work/data/jstorm/nimbus/inbox/c3a569f2-203c-4f9d-844c-112e587b6680/stormjar-c3a569f2-203c-4f9d-844c-112e587b6680.jar
                 String uploadLocation = path + "/stormjar-" + pathCache[pathCache.length - 1] + ".jar";
+
+                // 上传 client jar 对应的依赖
                 List<String> lib = (List<String>) conf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME); // topology.lib.name
                 Map<String, String> libPath = (Map<String, String>) conf.get(GenericOptionsParser.TOPOLOGY_LIB_PATH); // topology.lib.path
                 if (lib != null && lib.size() != 0) {
@@ -278,12 +303,20 @@ public class StormSubmitter {
         }
     }
 
+    /**
+     * @param conf
+     * @param localJar
+     * @param uploadLocation
+     * @param client
+     * @return
+     */
     public static String submitJar(Map conf, String localJar, String uploadLocation, NimbusClient client) {
         if (localJar == null) {
             throw new RuntimeException("Must submit topologies using the 'jstorm' client script so that StormSubmitter knows which jar to upload.");
         }
 
         try {
+            // Uploading topology jar jstorm-1.0.0-SNAPSHOT.jar to assigned location: /home/work/data/jstorm/nimbus/inbox/c3a569f2-203c-4f9d-844c-112e587b6680/stormjar-c3a569f2-203c-4f9d-844c-112e587b6680.jar
             LOG.info("Uploading topology jar " + localJar + " to assigned location: " + uploadLocation);
             int bufferSize = 512 * 1024;
             Object maxBufSizeObject = conf.get(Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE);
@@ -291,6 +324,7 @@ public class StormSubmitter {
                 bufferSize = Utils.getInt(maxBufSizeObject) / 2;
             }
 
+            // 执行上传
             BufferFileInputStream is = new BufferFileInputStream(localJar, bufferSize);
             while (true) {
                 byte[] toSubmit = is.read();
@@ -299,6 +333,8 @@ public class StormSubmitter {
                 }
                 client.getClient().uploadChunk(uploadLocation, ByteBuffer.wrap(toSubmit));
             }
+
+            // 关闭指定路径文件对应的传输通道
             client.getClient().finishFileUpload(uploadLocation);
             LOG.info("Successfully uploaded topology jar to assigned location: " + uploadLocation);
             return uploadLocation;

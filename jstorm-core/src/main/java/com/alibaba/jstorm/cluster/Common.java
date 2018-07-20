@@ -889,6 +889,14 @@ public class Common {
         return componentId.equals(Acker.ACKER_COMPONENT_ID) || componentId.equals(Common.TOPOLOGY_MASTER_COMPONENT_ID);
     }
 
+    /**
+     * 校验用户配置与集群配置是否一致
+     *
+     * @param userConf
+     * @param clusterConf
+     * @return
+     * @throws TException
+     */
     public static boolean confValidate(Map userConf, Map clusterConf) throws TException {
         Set<String> validateConfig = new HashSet<>();
         validateConfig.add(Config.STORM_LOCAL_DIR);
