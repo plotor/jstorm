@@ -146,6 +146,7 @@ public class StormSubmitter {
                 localNimbus.submitTopology(name, null, serConf, topology);
             } else {
                 // 集群模式
+                // 创建 Thrift 客户端
                 NimbusClient client = NimbusClient.getConfiguredClient(conf);
                 try {
                     // 是否允许热部署 ${topology.hot.deploy.enable}
@@ -267,13 +268,14 @@ public class StormSubmitter {
                 // 获取对应的 client jar 名称：jstorm-1.0.0-SNAPSHOT.jar
                 String localJar = System.getProperty("storm.jar");
                 // 为待上传的 jar 包创建存储路径和 Channel，并返回路径值
-                // ${storm.local.dir}/nimbus/inbox/${key}/stormjar-${key}.jar
+                // ${storm.local.dir}/nimbus/inbox/${key}
                 path = client.getClient().beginFileUpload(); // /home/work/data/jstorm/nimbus/inbox/c3a569f2-203c-4f9d-844c-112e587b6680
                 String[] pathCache = path.split("/");
+                // ${storm.local.dir}/nimbus/inbox/${key}/stormjar-${key}.jar
                 // /home/work/data/jstorm/nimbus/inbox/c3a569f2-203c-4f9d-844c-112e587b6680/stormjar-c3a569f2-203c-4f9d-844c-112e587b6680.jar
                 String uploadLocation = path + "/stormjar-" + pathCache[pathCache.length - 1] + ".jar";
 
-                // 上传 client jar 对应的依赖
+                // 如果设置了 lib jar 则先上传 lib jar
                 List<String> lib = (List<String>) conf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME); // topology.lib.name
                 Map<String, String> libPath = (Map<String, String>) conf.get(GenericOptionsParser.TOPOLOGY_LIB_PATH); // topology.lib.path
                 if (lib != null && lib.size() != 0) {
@@ -289,6 +291,7 @@ public class StormSubmitter {
                     }
                 }
 
+                // 上传 client jar
                 if (localJar != null) {
                     submittedJar = submitJar(conf, localJar, uploadLocation, client);
                 } else {

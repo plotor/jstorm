@@ -37,7 +37,9 @@ import java.util.Map;
 import javax.security.auth.login.Configuration;
 
 public class ThriftClient {
+
     private static final Logger LOG = LoggerFactory.getLogger(ThriftClient.class);
+
     private TTransport _transport;
     protected TProtocol _protocol;
     private String hostPort;
@@ -76,7 +78,6 @@ public class ThriftClient {
 
     public ThriftClient(Map conf, ThriftConnectionType type, String host, Integer port, Integer timeout, String asUser) {
         // create a socket with server
-
         this.timeout = timeout;
         this.conf = conf;
         this.type = type;
@@ -125,7 +126,6 @@ public class ThriftClient {
             try {
                 hostPort = ThriftClient.getMasterByZk(conf);
             } catch (Exception e) {
-                // TODO Auto-generated catch block
                 String errMsg = "Failed to get master.\n\n" + e.getMessage();
                 errMsg += "\n\n\nConfiguration is " + conf.toString();
                 throw new RuntimeException(errMsg, e);

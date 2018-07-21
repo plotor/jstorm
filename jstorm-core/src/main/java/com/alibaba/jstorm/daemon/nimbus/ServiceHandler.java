@@ -187,7 +187,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
      *
      * @param topologyName String: topology name
      * @param uploadedJarLocation String: already uploaded jar path
-     * @param jsonConf String: jsonConf serialize all toplogy configuration to Json
+     * @param jsonConf String: jsonConf serialize all topology configuration to json
      * @param topology StormTopology: topology Object
      */
     @SuppressWarnings("unchecked")
@@ -203,6 +203,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             throw new InvalidTopologyException(topologyName + " is not a valid topology name");
         }
 
+        // 将 json 字符串配置转换成 map 对象
         Map<Object, Object> serializedConf = (Map<Object, Object>) JStormUtils.from_json(jsonConf);
         if (serializedConf == null) {
             LOG.error("Failed to serialize configuration");
