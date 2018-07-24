@@ -136,6 +136,11 @@ public class Common {
 
     }
 
+    /**
+     * @param topologyName
+     * @param counter
+     * @return
+     */
     public static String topologyNameToId(String topologyName, int counter) {
         return topologyName + "-" + counter + "-" + TimeUtils.current_time_secs();
     }

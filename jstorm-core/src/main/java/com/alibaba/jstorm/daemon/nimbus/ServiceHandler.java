@@ -212,13 +212,13 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         // 校验用户配置与集群配置是否一致
         Common.confValidate(serializedConf, data.getConf());
 
-        // ${topology.hot.deploy.enable}
+        // 是否允许热部署，${topology.hot.deploy.enable}
         boolean enableDeploy = ConfigExtension.getTopologyHotDeplogyEnable(serializedConf);
-        // ${topology.upgrade}
+        // 是否是灰度发布，${topology.upgrade}
         boolean isUpgrade = ConfigExtension.isUpgradeTopology(serializedConf);
 
         try {
-            // 保证没有同名的 topology 在运行
+            // 检查当前 topology 状态是否满足部署要求
             this.checkTopologyActive(data, topologyName, enableDeploy || isUpgrade);
         } catch (AlreadyAliveException e) {
             LOG.info(topologyName + " already exists ");
@@ -232,42 +232,51 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         }
 
         try {
-            if (isUpgrade || enableDeploy) {
+            if (isUpgrade || enableDeploy) { // 更新 topology
                 LOG.info("start to deploy the topology");
                 String topologyId = this.getTopologyId(topologyName); // 基于 topology_name 获取 topology_id
                 if (topologyId == null) {
                     throw new NotAliveException(topologyName);
                 }
 
-                if (isUpgrade) {
+                if (isUpgrade) { // 灰度发布
+
+                    // 获取指定 topology 的运行数据
                     TopologyInfo topologyInfo = this.getTopologyInfo(topologyId);
                     if (topologyInfo == null) {
                         throw new TException("Failed to get topology info");
                     }
 
+                    // 获取指定的 worker 数目
                     int workerNum = ConfigExtension.getUpgradeWorkerNum(serializedConf);
+                    // 获取指定的 component
                     String component = ConfigExtension.getUpgradeComponent(serializedConf);
+                    // 获取指定的 worker 列表
                     Set<String> workers = ConfigExtension.getUpgradeWorkers(serializedConf);
 
+                    // 判定 topology master 是不是单独的 worker
                     if (!ConfigExtension.isTmSingleWorker(serializedConf, topologyInfo.get_topology().get_numWorkers())) {
                         throw new TException("Gray upgrade requires that topology master to be a single worker, cannot perform the upgrade!");
                     }
 
+                    // 灰度更新
                     return this.grayUpgrade(topologyId, uploadedJarLocation, topology, serializedConf, component, workers, workerNum);
-                } else {
+                } else { // 热部署
                     LOG.info("start to kill old topology {}", topologyId);
-                    Map oldConf = new HashMap();
-                    oldConf.putAll(conf);
+                    Map oldConf = new HashMap(conf);
+                    // 从 nimbus 本地获取指定 topology 的配置信息
                     Map killedStormConf = StormConfig.read_nimbus_topology_conf(topologyId, data.getBlobStore());
                     if (killedStormConf != null) {
                         oldConf.putAll(killedStormConf);
                     }
 
+                    // 将当前 topology 状态切换成 KILL
                     NimbusUtils.transitionName(data, topologyName, true, StatusType.kill, 0);
+                    // 发布对指定 topology 的 kill 事件
                     KillTopologyEvent.pushEvent(topologyId);
                     this.notifyTopologyActionListener(topologyName, "killTopology");
-                    //wait all workers' are killed
-                    final long timeoutSeconds = ConfigExtension.getTaskCleanupTimeoutSec(oldConf);
+                    // 等待 topology 相关的所有 worker 被 killed
+                    final long timeoutSeconds = ConfigExtension.getTaskCleanupTimeoutSec(oldConf); // ${task.cleanup.timeout.sec}
                     ConcurrentHashMap<String, Semaphore> topologyIdtoSem = data.getTopologyIdtoSem();
                     if (!topologyIdtoSem.contains(topologyId)) {
                         topologyIdtoSem.putIfAbsent(topologyId, new Semaphore(0));
@@ -287,15 +296,17 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         }
 
         String topologyId;
+        // 避免期间有相同名称的 topology 被提交
         synchronized (data) {
-            // avoid same topologies from being submitted at the same time
+            // 获取已提交待分配资源的 topologyId 列表
             Set<String> pendingTopologies = data.getPendingSubmitTopologies().buildMap().keySet();
             Pattern topologyPattern = Pattern.compile("^" + topologyName + "-\\d+-\\d+$");
             for (String cachedTopologyId : pendingTopologies) {
                 if (topologyPattern.matcher(cachedTopologyId).matches()) {
-                    throw new AlreadyAliveException(topologyName + "  were submitted");
+                    throw new AlreadyAliveException(topologyName + " were submitted");
                 }
             }
+            // 集群 topology 数目加 1
             int counter = data.getSubmittedCount().incrementAndGet();
             topologyId = Common.topologyNameToId(topologyName, counter);
             data.getPendingSubmitTopologies().put(topologyId, null);
@@ -1507,8 +1518,10 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     public void checkTopologyActive(NimbusData nimbus, String topologyName, boolean bActive) throws Exception {
         if (this.isTopologyActive(nimbus.getStormClusterState(), topologyName) != bActive) {
             if (bActive) {
+                // 如果是更新操作（热部署、灰度发布），但是对应的 topology 不是活跃状态
                 throw new NotAliveException(topologyName + " is not alive");
             } else {
+                // 当前为提交新 topology，但是对应的 topology 已经存在且处于活跃状态
                 throw new AlreadyAliveException(topologyName + " is already alive");
             }
         }
@@ -2097,8 +2110,27 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         }
     }
 
-    private String grayUpgrade(String topologyId, String uploadedLocation,
-                               StormTopology topology, Map stormConf,
+    /**
+     * 灰度发布内部流程：
+     *
+     * 1. client 以提交拓扑的形式提交灰度发布命令（因为需要重新生成 storm code，因此复用submitTopology接口）， 指定topology.upgrade=true，并上传新的jar包。
+     * 2. nimbus 收到请求后，设置灰度发布配置 GrayUpgradeConfig，写入到zk中/gray_upgrade/topo-id/节点下，设置 config.continueUpgrading=true
+     * 3. TM 有一个定时线程GrayUpgradeHandler，读取该节点的配置，检测到灰度发布配置且continueUpgrading=true时， 将分配指定workerNum的worker数，添加到zk的/gray_upgrade/topo-id/upgrading_workers节点下。 并将continueUpgrading设置为false（防止自动进行后续的灰度发布）。注意使用单独的upgrading_workers和upgraded_workers的设计， 主要是避免同步问题。如果将这些信息写在upgrade config类中，那可能会涉及到多个supervisor同时更新workers的情况，这样是会有同步问题的。 而使用单独的节点，我们只需要在这个节点下添加/删除子节点，不会有同步问题。
+     * 4. SyncSupervisorEvent会定时检查每个拓扑的这个节点，一旦有数据，就和自身的IP和port list进行对比，如果有属于该supervisor的灰度发布， 就下载最新的storm code和storm jar，然后重启worker。然后将worker添加到zk的upgraded_workers节点下。
+     * 5. GrayUpgradeHandler检测ZK，如果upgraded_workers的worker数>=当前总worker数-1（减去TM本身），则认为此次灰度发布已经完成， 删除zk上的GrayUpgradeConfig、upgrading_workers、upgraded_workers。
+     * 6. 如果只想升级部分worker或特定component，可以用complete_upgrade强制完成升级。
+     *
+     * @param topologyId
+     * @param uploadedLocation
+     * @param topology
+     * @param stormConf
+     * @param component
+     * @param workers
+     * @param workerNum
+     * @return
+     * @throws Exception
+     */
+    private String grayUpgrade(String topologyId, String uploadedLocation, StormTopology topology, Map stormConf,
                                String component, Set<String> workers, int workerNum) throws Exception {
         StormClusterState stormClusterState = data.getStormClusterState();
 
@@ -2106,11 +2138,14 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
         // update jar and conf first
         boolean isNewUpgrade = false;
+        // 从 gray_upgrade/${topology_id} 获取数据
         GrayUpgradeConfig upgradeConfig = (GrayUpgradeConfig) stormClusterState.get_gray_upgrade_conf(topologyId);
         StormBase stormBase = stormClusterState.storm_base(topologyId, null);
 
+        // 获取指定 topology 的任务分配信息
         Assignment assignment = stormClusterState.assignment_info(topologyId, null);
         if (upgradeConfig != null) {
+            // 当前 topology 在 ZK 上存在对应的灰度发布信息，说明之前灰度发布过
             LOG.info("Got existing gray upgrade config:{}", upgradeConfig);
             Set<String> upgradingWorkers = Sets.newHashSet(stormClusterState.get_upgrading_workers(topologyId));
             Set<String> upgradedWorkers = Sets.newHashSet(stormClusterState.get_upgraded_workers(topologyId));
@@ -2150,9 +2185,9 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             }
         } else {
             if (uploadedLocation == null) {
-                throw new RuntimeException("Failed to find a related upgrade conf, please specify a jar to " +
-                        "start a new upgrade!");
+                throw new RuntimeException("Failed to find a related upgrade conf, please specify a jar to start a new upgrade!");
             } else {
+                // ZK 上没有 topology 对应的灰度发布信息，标记当前为新灰度发布
                 isNewUpgrade = true;
             }
         }

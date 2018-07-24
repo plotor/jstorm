@@ -1084,10 +1084,18 @@ public class ConfigExtension {
         conf.put(TOPOLOGY_MASTER_SINGLE_WORKER, singleWorker);
     }
 
+    /**
+     * 判定 topology master 是不是单独的 worker
+     *
+     * @param conf
+     * @param workerNum
+     * @return
+     */
     public static boolean isTmSingleWorker(Map conf, int workerNum) {
         if (workerNum > 10) {
             return true;
         }
+        // 获取 ${topology.master.single.worker}
         Boolean singleWorker = getTopologyMasterSingleWorker(conf);
         if (singleWorker != null) {
             return singleWorker;

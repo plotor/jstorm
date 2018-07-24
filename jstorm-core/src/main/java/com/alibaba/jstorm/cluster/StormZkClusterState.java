@@ -901,6 +901,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public Object get_gray_upgrade_conf(String topologyId) throws Exception {
+        // 获取 gray_upgrade/${topology_id} 信息
         return this.getObject(Cluster.gray_upgrade_conf_path(topologyId), false);
     }
 

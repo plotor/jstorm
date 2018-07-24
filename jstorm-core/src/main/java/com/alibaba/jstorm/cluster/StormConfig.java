@@ -561,7 +561,7 @@ public class StormConfig {
 
     /**
      * 读取指定 topology 的配置信息
-     * 位于：jstorm-local/nimbus/stormlist/{topology_id}/stormconf.ser
+     * ${jstorm-local/nimbus/stormlist/{topology_id}/stormconf.ser}
      *
      * @param topologyId
      * @param blobStore

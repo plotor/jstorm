@@ -90,7 +90,7 @@ public class NimbusUtils {
     }
 
     /**
-     * Normalize stormConf
+     * Normalize（规范化） stormConf
      *
      * @param conf cluster conf
      * @param stormConf storm topology conf
@@ -110,16 +110,13 @@ public class NimbusUtils {
 
         Object totalRegister = totalConf.get(Config.TOPOLOGY_KRYO_REGISTER);
         if (totalRegister != null) {
-            LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", TOPOLOGY_KRYO_REGISTER" +
-                    totalRegister.getClass().getName());
-
+            LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", TOPOLOGY_KRYO_REGISTER" + totalRegister.getClass().getName());
             JStormUtils.mergeList(kryoRegisterList, totalRegister);
         }
 
         Object totalDecorator = totalConf.get(Config.TOPOLOGY_KRYO_DECORATORS);
         if (totalDecorator != null) {
-            LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", TOPOLOGY_KRYO_DECORATOR" +
-                    totalDecorator.getClass().getName());
+            LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", TOPOLOGY_KRYO_DECORATOR" + totalDecorator.getClass().getName());
             JStormUtils.mergeList(kryoDecoratorList, totalDecorator);
         }
 
@@ -453,7 +450,7 @@ public class NimbusUtils {
     }
 
     /**
-     * 对指定 topology 实施状态转移
+     * 对指定 topology 实施状态转换
      *
      * @param data
      * @param topologyName

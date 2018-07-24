@@ -154,6 +154,12 @@ public class Cluster {
         return METRIC_SUBTREE + ZK_SEPARATOR + topology_id;
     }
 
+    /**
+     * gray_upgrade/${topology_id}
+     *
+     * @param topology_id
+     * @return
+     */
     public static String gray_upgrade_base_path(String topology_id) {
         return GRAY_UPGRADE_SUBTREE + ZK_SEPARATOR + topology_id;
     }
@@ -162,6 +168,12 @@ public class Cluster {
         return gray_upgrade_base_path(topologyId) + ZK_SEPARATOR + CONF;
     }
 
+    /**
+     * gray_upgrade/${topology_id}/upgrading_workers
+     *
+     * @param topologyId
+     * @return
+     */
     public static String gray_upgrade_upgrading_workers_path(String topologyId) {
         return Cluster.gray_upgrade_base_path(topologyId) + ZK_SEPARATOR + UPGRADING_WORKERS;
     }

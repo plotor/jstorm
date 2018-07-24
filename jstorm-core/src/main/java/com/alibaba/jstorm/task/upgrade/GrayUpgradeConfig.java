@@ -15,13 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.upgrade;
 
 import com.alibaba.jstorm.utils.TimeUtils;
-import java.io.Serializable;
-import java.util.Set;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
+
+import java.io.Serializable;
+import java.util.Set;
 
 /**
  * @author wange
