@@ -326,22 +326,27 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
             StormTopology normalizedTopology = NimbusUtils.normalizeTopology(stormConf, topology, true);
 
-            // this validates the structure of the topology
+            /*
+             * 验证 topology 的基本结构信息：
+             * 1. 验证 topologyName，组件 ID 是否合法
+             * 2. 验证是否存在缺失 input 声明的 spout
+             * 3. 验证 woker 和 acker 数目参数配置
+             */
             Common.validate_basic(normalizedTopology, totalStormConf, topologyId);
-            // don't need generate real topology, so skip Common.system_topology
-            // Common.system_topology(totalStormConf, topology);
 
             StormClusterState stormClusterState = data.getStormClusterState();
 
-            // create /local-dir/nimbus/topologyId/xxxx files
+            // 创建 /local-dir/nimbus/topologyId/xxxx 文件，并将元数据同步到 ZK
             this.setupStormCode(topologyId, uploadedJarLocation, stormConf, normalizedTopology, false);
+
             // wait for blob replication before activate topology
             this.waitForDesiredCodeReplication(conf, topologyId);
+
             // generate TaskInfo for every bolt or spout in ZK
             // /ZK/tasks/topoologyId/xxx
             this.setupZkTaskInfo(conf, topologyId, stormClusterState);
 
-            //mkdir topology error directory
+            // mkdir topology error directory
             String path = Cluster.taskerror_storm_root(topologyId);
             stormClusterState.mkdir(path);
 
@@ -1546,11 +1551,13 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     /**
      * create local topology files in blobstore and sync metadata to zk
      */
-    private void setupStormCode(String topologyId, String tmpJarLocation,
-                                Map<Object, Object> stormConf, StormTopology topology, boolean update)
-            throws Exception {
+    private void setupStormCode(
+            String topologyId, String tmpJarLocation, Map<Object, Object> stormConf, StormTopology topology, boolean update) throws Exception {
+        // ${topology_id}-stormcode.ser
         String codeKey = StormConfig.master_stormcode_key(topologyId);
+        // ${topology_id}-stormconf.ser
         String confKey = StormConfig.master_stormconf_key(topologyId);
+        // ${topology_id}-stormcode.ser.bak
         String codeKeyBak = StormConfig.master_stormcode_bak_key(topologyId);
 
         // in local mode there is no jar
@@ -1663,7 +1670,9 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     }
 
     private void waitForDesiredCodeReplication(Map conf, String topologyId) {
+        // ${topology.min.replication.count}
         int minReplicationCount = JStormUtils.parseInt(conf.get(Config.TOPOLOGY_MIN_REPLICATION_COUNT), 1);
+        // ${topology.max.replication.wait.time.sec}
         int maxWaitTime = JStormUtils.parseInt(conf.get(Config.TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC), 0);
 
         try {

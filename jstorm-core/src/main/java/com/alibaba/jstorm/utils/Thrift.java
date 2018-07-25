@@ -15,10 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.utils;
 
-import backtype.storm.generated.*;
+import backtype.storm.generated.Bolt;
+import backtype.storm.generated.ComponentCommon;
+import backtype.storm.generated.ComponentObject;
+import backtype.storm.generated.GlobalStreamId;
+import backtype.storm.generated.Grouping;
+import backtype.storm.generated.JavaObject;
+import backtype.storm.generated.JavaObjectArg;
+import backtype.storm.generated.NullStruct;
+import backtype.storm.generated.StormTopology;
 import backtype.storm.generated.StormTopology._Fields;
+import backtype.storm.generated.StreamInfo;
+import backtype.storm.generated.TopologyInitialStatus;
 import backtype.storm.grouping.CustomStreamGrouping;
 import backtype.storm.task.IBolt;
 import backtype.storm.utils.Utils;

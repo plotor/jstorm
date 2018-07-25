@@ -310,14 +310,32 @@ public class StormConfig {
         return topologyId + "-stormjar.jar.bak";
     }
 
+    /**
+     * ${topology_id}-stormcode.ser
+     *
+     * @param topologyId
+     * @return
+     */
     public static String master_stormcode_key(String topologyId) {
         return topologyId + "-stormcode.ser";
     }
 
+    /**
+     * ${topology_id}-stormcode.ser.bak
+     *
+     * @param topologyId
+     * @return
+     */
     public static String master_stormcode_bak_key(String topologyId) {
         return topologyId + "-stormcode.ser.bak";
     }
 
+    /**
+     * ${topology_id}-stormconf.ser
+     *
+     * @param topologyId
+     * @return
+     */
     public static String master_stormconf_key(String topologyId) {
         return topologyId + "-stormconf.ser";
     }

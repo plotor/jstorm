@@ -107,6 +107,12 @@ public class Common {
         return Utils.isSystemId(id);
     }
 
+    /**
+     * 校验 obj 是不是 spout 或者 bolt，如果是的话验证 id 是否合法
+     *
+     * @param obj
+     * @throws InvalidTopologyException
+     */
     private static void validate_component(Object obj) throws InvalidTopologyException {
         if (obj instanceof StateSpoutSpec) {
             StateSpoutSpec spec = (StateSpoutSpec) obj;
@@ -156,8 +162,9 @@ public class Common {
     }
 
     /**
-     * 由 topology_name 获取 topology_id，topology_id = topology_name-counter-timstamp
-     * eg. passport-risk-compute-trident-topology -> passport-risk-compute-trident-topology-308-1528967840
+     * 由 topology_id 获取对应的 topology_name
+     * topology_id = topology_name-counter-timstamp
+     * eg. passport-risk-compute-trident-topology-308-1528967840 -> passport-risk-compute-trident-topology
      */
     public static String topologyIdToName(String topologyId) throws InvalidTopologyException {
         String ret;
@@ -200,8 +207,10 @@ public class Common {
      */
     @SuppressWarnings("unchecked")
     public static void validate_ids(StormTopology topology, String topologyId) throws InvalidTopologyException {
+        // 由 topology_id 获取对应的 topology_name
         String topologyName = topologyIdToName(topologyId);
         if (!charValidate(topologyName)) {
+            // 名称包含非法字符
             throw new InvalidTopologyException(topologyName + " is not a valid topology name. " + nameErrorInfo);
         }
 
@@ -213,11 +222,13 @@ public class Common {
                 Set<String> commids = obj_map.keySet();
 
                 for (String id : commids) {
+                    // 不允许以 “__” 开头，不允许包含非法字符
                     if (system_id(id) || !charComponentValidate(id)) {
                         throw new InvalidTopologyException(id + " is not a valid component id. " + compErrorInfo);
                     }
                 }
 
+                // 验证组件类型和 ID
                 for (Object obj : obj_map.values()) {
                     validate_component(obj);
                 }
@@ -226,12 +237,19 @@ public class Common {
             }
         }
 
+        // 验证组件 ID 是否重复
         List<String> offending = JStormUtils.getRepeat(list);
         if (!offending.isEmpty()) {
             throw new InvalidTopologyException("Duplicate component ids: " + offending);
         }
     }
 
+    /**
+     * 验证是否存在 spout 的输入字段缺失
+     *
+     * @param obj
+     * @throws InvalidTopologyException
+     */
     private static void validate_component_inputs(Object obj) throws InvalidTopologyException {
         if (obj instanceof StateSpoutSpec) {
             StateSpoutSpec spec = (StateSpoutSpec) obj;
@@ -249,14 +267,18 @@ public class Common {
     }
 
     /**
-     * Validate the topology 1. component id name is valid or not 2. check some spout's input is empty or not
+     * Validate the topology:
+     *
+     * 1. component id name is valid or not
+     * 2. check some spout's input is empty or not
      *
      * @throws InvalidTopologyException
      */
-    public static void validate_basic(StormTopology topology, Map<Object, Object> totalStormConf,
-                                      String topologyId) throws InvalidTopologyException {
+    public static void validate_basic(StormTopology topology, Map<Object, Object> totalStormConf, String topologyId) throws InvalidTopologyException {
+        // 验证 topology 名、组件 ID 是否合法
         validate_ids(topology, topologyId);
 
+        // 验证是否存在缺失 input 声明的 spout
         for (StormTopology._Fields field : Thrift.SPOUT_FIELDS) {
             Object value = topology.getFieldValue(field);
             if (value != null) {
@@ -267,12 +289,14 @@ public class Common {
             }
         }
 
+        // 验证 topology worker 数目配置
         Integer workerNum = JStormUtils.parseInt(totalStormConf.get(Config.TOPOLOGY_WORKERS));
         if (workerNum == null || workerNum <= 0) {
             String errMsg = "There is no Config.TOPOLOGY_WORKERS in configuration of " + topologyId;
             throw new InvalidParameterException(errMsg);
         }
 
+        // 验证 topology acker 数目配置
         Integer ackerNum = JStormUtils.parseInt(totalStormConf.get(Config.TOPOLOGY_ACKER_EXECUTORS));
         if (ackerNum != null && ackerNum < 0) {
             String errMsg = "Invalid Config.TOPOLOGY_ACKERS in configuration of " + topologyId;
