@@ -31,10 +31,17 @@ import java.util.Set;
 
 @SuppressWarnings("unchecked")
 public class ThriftTopologyUtils {
+
+    /**
+     * 获取 topology 所有组件的 ID
+     *
+     * @param topology
+     * @return
+     */
     public static Set<String> getComponentIds(StormTopology topology) {
         Set<String> ret = new HashSet<>();
-        for (StormTopology._Fields f : StormTopology.metaDataMap.keySet()) {
-            Map<String, Object> componentMap = (Map<String, Object>) topology.getFieldValue(f);
+        for (StormTopology._Fields fields : StormTopology.metaDataMap.keySet()) {
+            Map<String, Object> componentMap = (Map<String, Object>) topology.getFieldValue(fields);
             ret.addAll(componentMap.keySet());
         }
         return ret;

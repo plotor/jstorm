@@ -209,7 +209,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             LOG.error("Failed to serialize configuration");
             throw new InvalidTopologyException("Failed to serialize topology configuration");
         }
-        // 校验用户配置与集群配置是否一致
+        // 校验用户配置与 nimbus 集群配置是否一致
         Common.confValidate(serializedConf, data.getConf());
 
         // 是否允许热部署，${topology.hot.deploy.enable}
@@ -295,8 +295,10 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             throw new TException(errMsg);
         }
 
-        String topologyId;
+        // 对于热部署，被 kill 掉之后也相当于一次新任务提交
+
         // 避免期间有相同名称的 topology 被提交
+        String topologyId;
         synchronized (data) {
             // 获取已提交待分配资源的 topologyId 列表
             Set<String> pendingTopologies = data.getPendingSubmitTopologies().buildMap().keySet();
@@ -312,13 +314,13 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             data.getPendingSubmitTopologies().put(topologyId, null);
         }
 
+        // conf: nimbus 集群配置，serializedConf: topology 配置
+
         try {
             serializedConf.put(Config.TOPOLOGY_ID, topologyId);
             serializedConf.put(Config.TOPOLOGY_NAME, topologyName);
 
-            Map<Object, Object> stormConf;
-
-            stormConf = NimbusUtils.normalizeConf(conf, serializedConf, topology);
+            Map<Object, Object> stormConf = NimbusUtils.normalizeConf(conf, serializedConf, topology);
             LOG.info("Normalized configuration:" + stormConf);
 
             Map<Object, Object> totalStormConf = new HashMap<>(conf);

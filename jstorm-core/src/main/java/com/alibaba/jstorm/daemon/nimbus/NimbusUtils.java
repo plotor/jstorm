@@ -92,8 +92,8 @@ public class NimbusUtils {
     /**
      * Normalize（规范化） stormConf
      *
-     * @param conf cluster conf
-     * @param stormConf storm topology conf
+     * @param conf cluster conf: nimbus 集群配置
+     * @param stormConf storm topology conf: 拓扑配置
      * @param topology storm topology
      * @return normalized conf
      * @throws Exception
@@ -104,31 +104,38 @@ public class NimbusUtils {
         List kryoRegisterList = new ArrayList();
         List kryoDecoratorList = new ArrayList();
 
+        // 合并集群配置和拓扑配置
         Map totalConf = new HashMap();
         totalConf.putAll(conf);
         totalConf.putAll(stormConf);
 
+        // topology.kryo.register
         Object totalRegister = totalConf.get(Config.TOPOLOGY_KRYO_REGISTER);
         if (totalRegister != null) {
             LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", TOPOLOGY_KRYO_REGISTER" + totalRegister.getClass().getName());
             JStormUtils.mergeList(kryoRegisterList, totalRegister);
         }
 
+        // topology.kryo.decorators
         Object totalDecorator = totalConf.get(Config.TOPOLOGY_KRYO_DECORATORS);
         if (totalDecorator != null) {
             LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", TOPOLOGY_KRYO_DECORATOR" + totalDecorator.getClass().getName());
             JStormUtils.mergeList(kryoDecoratorList, totalDecorator);
         }
 
+        // 获取当前 topology 所有组件的 ID
         Set<String> cids = ThriftTopologyUtils.getComponentIds(topology);
         for (Iterator it = cids.iterator(); it.hasNext(); ) {
-            String componentId = (String) it.next();
+            String componentId = (String) it.next(); // 组件 ID
 
+            // 获取一个组件的 ComponentCommon 对象
             ComponentCommon common = ThriftTopologyUtils.getComponentCommon(topology, componentId);
+            // 获取组件的配置信息
             String json = common.get_json_conf();
             if (json == null) {
                 continue;
             }
+            // 将组件配置转换成 map 格式
             Map mtmp = (Map) JStormUtils.from_json(json);
             if (mtmp == null) {
                 StringBuilder sb = new StringBuilder();
@@ -140,11 +147,9 @@ public class NimbusUtils {
             }
 
             Object componentKryoRegister = mtmp.get(Config.TOPOLOGY_KRYO_REGISTER);
-
             if (componentKryoRegister != null) {
                 LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", componentId:" + componentId +
                         ", TOPOLOGY_KRYO_REGISTER" + componentKryoRegister.getClass().getName());
-
                 JStormUtils.mergeList(kryoRegisterList, componentKryoRegister);
             }
 
@@ -155,6 +160,7 @@ public class NimbusUtils {
                 JStormUtils.mergeList(kryoDecoratorList, componentDecorator);
             }
 
+            // transaction.topology
             boolean isTransactionTopo = JStormUtils.parseBoolean(mtmp.get(ConfigExtension.TRANSACTION_TOPOLOGY), false);
             if (isTransactionTopo) {
                 stormConf.put(ConfigExtension.TRANSACTION_TOPOLOGY, true);

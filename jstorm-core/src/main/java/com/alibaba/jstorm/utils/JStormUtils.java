@@ -1143,6 +1143,13 @@ public class JStormUtils {
         return ret;
     }
 
+    /**
+     * 将 add 添加到集合 result 中
+     *
+     * @param result
+     * @param add
+     * @return
+     */
     public static List<Object> mergeList(List<Object> result, Object add) {
         if (add instanceof Collection) {
             for (Object o : (Collection) add) {

@@ -1073,9 +1073,9 @@ public class Config extends HashMap<String, Object> {
     public static final Object TOPOLOGY_MESSAGE_TIMEOUT_SECS_SCHEMA = ConfigValidation.IntegerValidator;
 
     /**
-     * A list of serialization registrations for Kryo ( http://code.google.com/p/kryo/ ), the underlying serialization framework for Storm. A serialization can
-     * either be the name of a class (in which case Kryo will automatically create a serializer for the class that saves all the object's fields), or an
-     * implementation of com.esotericsoftware.kryo.Serializer.
+     * A list of serialization registrations for Kryo ( http://code.google.com/p/kryo/ ), the underlying serialization framework for Storm.
+     * A serialization can either be the name of a class (in which case Kryo will automatically create a serializer for the class that saves all the object's fields),
+     * or an implementation of com.esotericsoftware.kryo.Serializer.
      * <p/>
      * See Kryo's documentation for more information about writing custom serializers.
      */
@@ -1083,8 +1083,10 @@ public class Config extends HashMap<String, Object> {
     public static final Object TOPOLOGY_KRYO_REGISTER_SCHEMA = ConfigValidation.KryoRegValidator;
 
     /**
-     * A list of classes that customize storm's kryo instance during start-up. Each listed class name must implement IKryoDecorator. During start-up the listed
-     * class is instantiated with 0 arguments, then its 'decorate' method is called with storm's kryo instance as the only argument.
+     * A list of classes that customize storm's kryo instance during start-up.
+     * Each listed class name must implement IKryoDecorator.
+     * During start-up the listed class is instantiated with 0 arguments,
+     * then its 'decorate' method is called with storm's kryo instance as the only argument.
      */
     public static final String TOPOLOGY_KRYO_DECORATORS = "topology.kryo.decorators";
     public static final Object TOPOLOGY_KRYO_DECORATORS_SCHEMA = ConfigValidation.StringsValidator;
