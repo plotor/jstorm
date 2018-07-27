@@ -146,6 +146,7 @@ public class NimbusUtils {
                 throw new Exception(sb.toString());
             }
 
+            // 获取序列化实现
             Object componentKryoRegister = mtmp.get(Config.TOPOLOGY_KRYO_REGISTER);
             if (componentKryoRegister != null) {
                 LOG.info("topology:" + stormConf.get(Config.TOPOLOGY_NAME) + ", componentId:" + componentId +
@@ -174,7 +175,7 @@ public class NimbusUtils {
 
         Map rtn = new HashMap();
         //ensure to be cluster_mode
-        rtn.put(Config.STORM_CLUSTER_MODE, conf.get(Config.STORM_CLUSTER_MODE));
+        rtn.put(Config.STORM_CLUSTER_MODE, conf.get(Config.STORM_CLUSTER_MODE)); // storm.cluster.mode
         rtn.putAll(stormConf);
         rtn.put(Config.TOPOLOGY_KRYO_DECORATORS, decoratorList);
         rtn.put(Config.TOPOLOGY_KRYO_REGISTER, kryoRegisterMap);
@@ -184,6 +185,13 @@ public class NimbusUtils {
         return rtn;
     }
 
+    /**
+     * 保证组件并行度不超过当前 topology 允许的最大并行度
+     *
+     * @param stormConf 规范化后的 topology 配置
+     * @param common
+     * @return
+     */
     public static Integer componentParalism(Map stormConf, ComponentCommon common) {
         Map mergeMap = new HashMap();
         mergeMap.putAll(stormConf);
@@ -194,27 +202,15 @@ public class NimbusUtils {
             mergeMap.putAll(componentMap);
         }
 
+        // 获取组件设置的并行度
         Integer taskNum = common.get_parallelism_hint();
 
-        // don't get taskNum from component configuraiton
-        // skip .setTaskNum
-        // Integer taskNum = null;
-        // Object taskNumObject = mergeMap.get(Config.TOPOLOGY_TASKS);
-        // if (taskNumObject != null) {
-        // taskNum = JStormUtils.parseInt(taskNumObject);
-        // } else {
-        // taskNum = common.get_parallelism_hint();
-        // if (taskNum == null) {
-        // taskNum = Integer.valueOf(1);
-        // }
-        // }
-
+        // 获取最大并行度
         Object maxTaskParalismObject = mergeMap.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM);
         if (maxTaskParalismObject == null) {
             return taskNum;
         } else {
             int maxTaskParalism = JStormUtils.parseInt(maxTaskParalismObject);
-
             return Math.min(maxTaskParalism, taskNum);
         }
 
@@ -222,23 +218,25 @@ public class NimbusUtils {
 
     /**
      * finalize component's task parallelism
+     * 确定组件并行度，保证不超过当前 topology 允许的最大值
      *
-     * @param stormConf storm conf
+     * @param stormConf storm conf: 规范化后的 topology 配置
      * @param topology storm topology
-     * @param fromConf means if the parallelism is read from conf file instead of reading from topology code
+     * @param fromConf 是否采用配置中的并行度来代替代码中的，means if the parallelism is read from conf file instead of reading from topology code
      * @return normalized topology
      */
     public static StormTopology normalizeTopology(Map stormConf, StormTopology topology, boolean fromConf) {
         StormTopology ret = topology.deepCopy();
 
+        // 获取当前 topology 的所有组件信息
         Map<String, Object> rawComponents = ThriftTopologyUtils.getComponents(topology);
-
+        // 获取拷贝得到的 topology 的所有组件信息
         Map<String, Object> components = ThriftTopologyUtils.getComponents(ret);
 
+        // 拷贝前后组件不一致
         if (!rawComponents.keySet().equals(components.keySet())) {
             String errMsg = "Failed to normalize topology binary!";
             LOG.info(errMsg + " raw components:" + rawComponents.keySet() + ", normalized " + components.keySet());
-
             throw new InvalidParameterException(errMsg);
         }
 
@@ -246,6 +244,7 @@ public class NimbusUtils {
             Object component = entry.getValue();
             String componentName = entry.getKey();
 
+            // 如果指定了 fromConf = true，则尝试用配置中的并行度配置取代代码中指定的
             ComponentCommon common = null;
             if (component instanceof Bolt) {
                 common = ((Bolt) component).get_common();
@@ -278,20 +277,18 @@ public class NimbusUtils {
                 }
             }
 
-            Map componentMap = new HashMap();
-
+            Map componentMap = new HashMap(); // 存放组件的配置
             String jsonConfString = common.get_json_conf();
             if (jsonConfString != null) {
                 componentMap.putAll((Map) JStormUtils.from_json(jsonConfString));
             }
 
+            // 保证组件并行度不超过当前 topology 允许的最大并行度
             Integer taskNum = componentParalism(stormConf, common);
-
             componentMap.put(Config.TOPOLOGY_TASKS, taskNum);
             // change the executor's task number
             common.set_parallelism_hint(taskNum);
             LOG.info("Set " + componentName + " parallelism " + taskNum);
-
             common.set_json_conf(JStormUtils.to_json(componentMap));
         }
 
@@ -684,6 +681,12 @@ public class NimbusUtils {
         }
     }
 
+    /**
+     * 获取 topology master 的 taskId
+     *
+     * @param tasksInfo
+     * @return
+     */
     public static int getTopologyMasterId(Map<Integer, TaskInfo> tasksInfo) {
         int ret = 0;
         for (Entry<Integer, TaskInfo> entry : tasksInfo.entrySet()) {
@@ -692,7 +695,6 @@ public class NimbusUtils {
                 break;
             }
         }
-
         return ret;
     }
 }

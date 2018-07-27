@@ -852,8 +852,7 @@ public class Common {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public static Integer mkTaskMaker(Map<Object, Object> stormConf, Map<String, ?> cidSpec,
-                                      Map<Integer, TaskInfo> rtn, Integer cnt) {
+    public static Integer mkTaskMaker(Map<Object, Object> stormConf, Map<String, ?> cidSpec, Map<Integer, TaskInfo> rtn, Integer cnt) {
         if (cidSpec == null) {
             LOG.warn("Component map is empty");
             return cnt;
@@ -901,8 +900,7 @@ public class Common {
         return cnt;
     }
 
-    public static Map<Integer, TaskInfo> mkTaskInfo(Map<Object, Object> stormConf,
-                                                    StormTopology sysTopology, String topologyid) {
+    public static Map<Integer, TaskInfo> mkTaskInfo(Map<Object, Object> stormConf, StormTopology sysTopology, String topologyid) {
         // use TreeMap to make task as sequence
         Map<Integer, TaskInfo> rtn = new TreeMap<>();
 

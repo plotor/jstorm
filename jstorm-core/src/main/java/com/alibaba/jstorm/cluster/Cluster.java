@@ -125,6 +125,12 @@ public class Cluster {
         return ASSIGNMENTS_SUBTREE + ZK_SEPARATOR + id;
     }
 
+    /**
+     * topology/${topology_id}
+     *
+     * @param id
+     * @return
+     */
     public static String storm_path(String id) {
         return STORMS_SUBTREE + ZK_SEPARATOR + id;
     }
@@ -138,6 +144,12 @@ public class Cluster {
         return TASKBEATS_SUBTREE + ZK_SEPARATOR + topology_id;
     }
 
+    /**
+     * taskerrors/${topology_id}
+     *
+     * @param topology_id
+     * @return
+     */
     public static String taskerror_storm_root(String topology_id) {
         return TASKERRORS_SUBTREE + ZK_SEPARATOR + topology_id;
     }
@@ -178,6 +190,12 @@ public class Cluster {
         return Cluster.gray_upgrade_base_path(topologyId) + ZK_SEPARATOR + UPGRADING_WORKERS;
     }
 
+    /**
+     * gray_upgrade/${topology_id}/upgraded_workers
+     *
+     * @param topologyId
+     * @return
+     */
     public static String gray_upgrade_upgraded_workers_path(String topologyId) {
         return Cluster.gray_upgrade_base_path(topologyId) + ZK_SEPARATOR + UPGRADED_WORKERS;
     }
@@ -200,6 +218,12 @@ public class Cluster {
         return ASSIGNMENTS_BAK_SUBTREE + ZK_SEPARATOR + id; // assignments_bak/{topology_name}
     }
 
+    /**
+     * 获取 blobstore/${key}
+     *
+     * @param key
+     * @return
+     */
     public static String blobstore_path(String key) {
         return BLOBSTORE_SUBTREE + ZK_SEPARATOR + key;
     }

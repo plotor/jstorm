@@ -247,11 +247,11 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
                         throw new TException("Failed to get topology info");
                     }
 
-                    // 获取指定的 worker 数目
+                    // 获取指定的 worker 数目：${topology.upgrade.worker.num}
                     int workerNum = ConfigExtension.getUpgradeWorkerNum(serializedConf);
-                    // 获取指定的 component
+                    // 获取指定的 component：${topology.upgrade.component}
                     String component = ConfigExtension.getUpgradeComponent(serializedConf);
-                    // 获取指定的 worker 列表
+                    // 获取指定的 worker 列表：${topology.upgrade.workers}
                     Set<String> workers = ConfigExtension.getUpgradeWorkers(serializedConf);
 
                     // 判定 topology master 是不是单独的 worker
@@ -320,12 +320,15 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             serializedConf.put(Config.TOPOLOGY_ID, topologyId);
             serializedConf.put(Config.TOPOLOGY_NAME, topologyName);
 
+            //  对当前 topology 配置进行规范化，并附加一些必要的配置
             Map<Object, Object> stormConf = NimbusUtils.normalizeConf(conf, serializedConf, topology);
             LOG.info("Normalized configuration:" + stormConf);
 
+            // 合并集群配置和拓扑配置
             Map<Object, Object> totalStormConf = new HashMap<>(conf);
             totalStormConf.putAll(stormConf);
 
+            // 确定 topology 中各个组件的并行度，保证不超过当前 topology 允许的最大值
             StormTopology normalizedTopology = NimbusUtils.normalizeTopology(stormConf, topology, true);
 
             /*
@@ -338,23 +341,25 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
             StormClusterState stormClusterState = data.getStormClusterState();
 
-            // 创建 /local-dir/nimbus/topologyId/xxxx 文件，并将元数据同步到 ZK
+            // 创建 /local-dir/nimbus/${topology_id}/xxxx 文件，并将元数据同步到 ZK
             this.setupStormCode(topologyId, uploadedJarLocation, stormConf, normalizedTopology, false);
 
             // wait for blob replication before activate topology
             this.waitForDesiredCodeReplication(conf, topologyId);
 
-            // generate TaskInfo for every bolt or spout in ZK
-            // /ZK/tasks/topoologyId/xxx
+            // generate TaskInfo for every bolt or spout in ZK : /ZK/tasks/topoologyId/xxx
+            // 为当前 topology 在 ZK 上生成 task 信息：/tasks/${topology_id}
             this.setupZkTaskInfo(conf, topologyId, stormClusterState);
 
-            // mkdir topology error directory
+            // mkdir topology error directory : taskerrors/${topology_id}
             String path = Cluster.taskerror_storm_root(topologyId);
             stormClusterState.mkdir(path);
 
-            String grayUpgradeBasePath = Cluster.gray_upgrade_base_path(topologyId);
+            String grayUpgradeBasePath = Cluster.gray_upgrade_base_path(topologyId); // gray_upgrade/${topology_id}
             stormClusterState.mkdir(grayUpgradeBasePath);
+            // gray_upgrade/${topology_id}/upgraded_workers
             stormClusterState.mkdir(Cluster.gray_upgrade_upgraded_workers_path(topologyId));
+            // gray_upgrade/${topology_id}/upgrading_workers
             stormClusterState.mkdir(Cluster.gray_upgrade_upgrading_workers_path(topologyId));
 
             // make assignments for a topology
@@ -362,7 +367,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             this.makeAssignment(topologyName, topologyId, options.get_initial_status());
 
             // push start event after startup
-            double metricsSampleRate = ConfigExtension.getMetricSampleRate(stormConf);
+            double metricsSampleRate = ConfigExtension.getMetricSampleRate(stormConf); // ${topology.metric.sample.rate}，默认是 0.05
             StartTopologyEvent.pushEvent(topologyId, metricsSampleRate);
 
             this.notifyTopologyActionListener(topologyName, "submitTopology");
@@ -385,8 +390,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         return topologyId;
     }
 
-    private void makeAssignment(String topologyName, String topologyId, TopologyInitialStatus status)
-            throws FailedAssignTopologyException {
+    private void makeAssignment(String topologyName, String topologyId, TopologyInitialStatus status) throws FailedAssignTopologyException {
         TopologyAssignEvent assignEvent = new TopologyAssignEvent();
         assignEvent.setTopologyId(topologyId);
         assignEvent.setScratch(false);
@@ -1552,6 +1556,13 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
     /**
      * create local topology files in blobstore and sync metadata to zk
+     *
+     * @param topologyId
+     * @param tmpJarLocation 之前上传 jar 文件的存储路径
+     * @param stormConf
+     * @param topology
+     * @param update
+     * @throws Exception
      */
     private void setupStormCode(
             String topologyId, String tmpJarLocation, Map<Object, Object> stormConf, StormTopology topology, boolean update) throws Exception {
@@ -1564,6 +1575,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
         // in local mode there is no jar
         if (tmpJarLocation != null) {
+            // 创建或更新对应的 blobstore 信息
             this.setupJar(tmpJarLocation, topologyId, update);
         }
 
@@ -1574,17 +1586,25 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         this.createOrUpdateBlob(codeKey, Utils.serialize(topology), update, topologyId);
     }
 
+    /**
+     * @param tmpJarLocation 之前上传 jar 文件的存储路径
+     * @param topologyId
+     * @param update
+     * @throws Exception
+     */
     public void setupJar(String tmpJarLocation, String topologyId, boolean update) throws Exception {
         // setup lib files
-        boolean existLibs = true;
-        String srcLibPath = StormConfig.stormlib_path(tmpJarLocation);
+        boolean existLibs = true; // 表示是否存在 lib
+        String srcLibPath = StormConfig.stormlib_path(tmpJarLocation); // ${jar_dir}/lib
         File srcFile = new File(srcLibPath);
         if (srcFile.exists()) {
             File[] libJars = srcFile.listFiles();
             if (libJars != null) {
                 for (File jar : libJars) {
                     if (jar.isFile()) {
+                        // ${topology_id}-lib-${jar_name}
                         String libJarKey = StormConfig.master_stormlib_key(topologyId, jar.getName());
+                        // 创建或更新 ${libJarKey} 对应的 blob 信息
                         this.createOrUpdateBlob(libJarKey, new FileInputStream(jar), update, topologyId);
                     }
                 }
@@ -1595,7 +1615,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         }
 
         // find storm jar path
-        String jarPath = null;
+        String jarPath = null; // client jar 所在路径
         List<String> files = PathUtils.read_dir_contents(tmpJarLocation);
         for (String file : files) {
             if (file.endsWith(".jar")) {
@@ -1613,8 +1633,8 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         }
 
         // setup storm jar
-        String jarKey = StormConfig.master_stormjar_key(topologyId);
-        String jarKeyBak = StormConfig.master_stormjar_bak_key(topologyId);
+        String jarKey = StormConfig.master_stormjar_key(topologyId); // ${topology_id}-stormjar.jar
+        String jarKeyBak = StormConfig.master_stormjar_bak_key(topologyId); // ${topology_id}-stormjar.jar.bak
         if (update) {
             this.backupBlob(jarKey, jarKeyBak, topologyId);
         }
@@ -1633,6 +1653,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         blobStore.createBlob(newKey, oldStream, new SettableBlobMeta());
 
         if (blobStore instanceof LocalFsBlobStore) {
+            // 如果是 Nimbus 本地存储，则同步信息到 ZK
             clusterState.setup_blobstore(newKey, nimbusInfo, BlobStoreUtils.getVersionForKey(newKey, nimbusInfo, conf));
         }
     }
@@ -1654,6 +1675,15 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         }
     }
 
+    /**
+     * 创建或者更新指定 key 的 blob 信息
+     *
+     * @param key
+     * @param stream
+     * @param update
+     * @param topologyId
+     * @throws Exception
+     */
     private void createOrUpdateBlob(String key, InputStream stream, boolean update, String topologyId) throws Exception {
         StormClusterState clusterState = data.getStormClusterState();
         BlobStore blobStore = data.getBlobStore();
@@ -1671,6 +1701,12 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         }
     }
 
+    /**
+     * wait for blob replication before activate topology
+     *
+     * @param conf
+     * @param topologyId
+     */
     private void waitForDesiredCodeReplication(Map conf, String topologyId) {
         // ${topology.min.replication.count}
         int minReplicationCount = JStormUtils.parseInt(conf.get(Config.TOPOLOGY_MIN_REPLICATION_COUNT), 1);
@@ -1739,13 +1775,19 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     }
 
     /**
-     * generate TaskInfo for every bolt or spout in ZK /ZK/tasks/topoologyId/xxx
+     * generate TaskInfo for every bolt or spout in ZK : /ZK/tasks/topoologyId/xxx
+     *
+     * @param conf
+     * @param topologyId
+     * @param stormClusterState
+     * @throws Exception
      */
     public void setupZkTaskInfo(Map<Object, Object> conf, String topologyId, StormClusterState stormClusterState) throws Exception {
+        // 按照并行度创建组件对应的 task 信息，同一个组件的多个 task 信息具备连续的 ID
         Map<Integer, TaskInfo> taskToTaskInfo = this.mkTaskComponentAssignments(conf, topologyId);
 
-        // mkdir /ZK/taskbeats/topoologyId
-        int masterId = NimbusUtils.getTopologyMasterId(taskToTaskInfo);
+        // 创建 /ZK/taskbeats/${topology_id}
+        int masterId = NimbusUtils.getTopologyMasterId(taskToTaskInfo); // 获取 topology master 的 ID (这里使用的是其对应的 task ID)
         TopologyTaskHbInfo topoTaskHbInfo = new TopologyTaskHbInfo(topologyId, masterId);
         data.getTasksHeartbeat().put(topologyId, topoTaskHbInfo);
         stormClusterState.topology_heartbeat(topologyId, topoTaskHbInfo);
@@ -1758,7 +1800,87 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
     }
 
     /**
+     * {
+     * "1": {
+     * "componentId": "__topology_master",
+     * "componentType": "bolt"
+     * },
+     * "2": {
+     * "componentId": "word_count_bolt",
+     * "componentType": "bolt"
+     * },
+     * "3": {
+     * "componentId": "word_count_bolt",
+     * "componentType": "bolt"
+     * },
+     * "4": {
+     * "componentId": "word_count_bolt",
+     * "componentType": "bolt"
+     * },
+     * "5": {
+     * "componentId": "word_count_bolt",
+     * "componentType": "bolt"
+     * },
+     * "6": {
+     * "componentId": "word_count_bolt",
+     * "componentType": "bolt"
+     * },
+     * "7": {
+     * "componentId": "sentence_split_bolt",
+     * "componentType": "bolt"
+     * },
+     * "8": {
+     * "componentId": "sentence_split_bolt",
+     * "componentType": "bolt"
+     * },
+     * "9": {
+     * "componentId": "sentence_split_bolt",
+     * "componentType": "bolt"
+     * },
+     * "10": {
+     * "componentId": "sentence_split_bolt",
+     * "componentType": "bolt"
+     * },
+     * "11": {
+     * "componentId": "sentence_split_bolt",
+     * "componentType": "bolt"
+     * },
+     * "12": {
+     * "componentId": "__acker",
+     * "componentType": "bolt"
+     * },
+     * "13": {
+     * "componentId": "__acker",
+     * "componentType": "bolt"
+     * },
+     * "14": {
+     * "componentId": "kafka_spout",
+     * "componentType": "spout"
+     * },
+     * "15": {
+     * "componentId": "kafka_spout",
+     * "componentType": "spout"
+     * },
+     * "16": {
+     * "componentId": "kafka_spout",
+     * "componentType": "spout"
+     * },
+     * "17": {
+     * "componentId": "kafka_spout",
+     * "componentType": "spout"
+     * },
+     * "18": {
+     * "componentId": "kafka_spout",
+     * "componentType": "spout"
+     * }
+     * }
+     *
+     * @param conf
+     * @param topologyId
      * @return Map[task id, component id]
+     * @throws IOException
+     * @throws InvalidTopologyException
+     * @throws KeyNotFoundException
      */
     public Map<Integer, TaskInfo> mkTaskComponentAssignments(Map<Object, Object> conf, String topologyId)
             throws IOException, InvalidTopologyException, KeyNotFoundException {
@@ -1766,7 +1888,6 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         Map<Object, Object> stormConf = StormConfig.read_nimbus_topology_conf(topologyId, data.getBlobStore());
         StormTopology rawTopology = StormConfig.read_nimbus_topology_code(topologyId, data.getBlobStore());
         StormTopology topology = Common.system_topology(stormConf, rawTopology);
-
         return Common.mkTaskInfo(stormConf, topology, topologyId);
     }
 

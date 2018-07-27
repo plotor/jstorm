@@ -21,7 +21,7 @@
 | ---- | ---- + ${topology_id} : 记录当前 topology 对应的所有 task 的心跳信息
 | ---- | ---- | ---- + ${task_id} : 心跳信息（心跳时间、运行时长、统计信息）
 
-| ---- +  taskerrors : 所有 task 的错误信息
+| ---- + taskerrors : 所有 task 的错误信息
 | ---- | ---- + ${topology_id} : 记录当前 topology 对应的所有 task 的错误信息
 | ---- | ---- | ---- + ${task_id} : 错误信息
 ```

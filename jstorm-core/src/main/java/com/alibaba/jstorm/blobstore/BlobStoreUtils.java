@@ -501,7 +501,13 @@ public class BlobStoreUtils {
         return Sets.newHashSet(filterAndListKeys(iterator, keyFilter));
     }
 
-    // remove blob information in zk for the blobkey
+    /**
+     * remove blob information in zk for the blobkey
+     *
+     * @param blobKey
+     * @param blobStore
+     * @param clusterState
+     */
     public static void cleanup_key(String blobKey, BlobStore blobStore, StormClusterState clusterState) {
         // we skip to clean up the non-exist keys
         if (blobKey.startsWith(JStormMetrics.NIMBUS_METRIC_KEY)
@@ -538,9 +544,16 @@ public class BlobStoreUtils {
         return version.getKeySequenceNumber(conf);
     }
 
-    // get all key list (jar conf code lib) for the topology id, it only works in nimbus
-    public static List<String> getKeyListFromId(NimbusData data, String topologyId)
-            throws IOException, KeyNotFoundException {
+    /**
+     * get all key list (jar conf code lib) for the topology id, it only works in nimbus
+     *
+     * @param data
+     * @param topologyId
+     * @return
+     * @throws IOException
+     * @throws KeyNotFoundException
+     */
+    public static List<String> getKeyListFromId(NimbusData data, String topologyId) throws IOException, KeyNotFoundException {
         List<String> keys = new ArrayList<>();
         keys.add(StormConfig.master_stormjar_key(topologyId));
         keys.add(StormConfig.master_stormcode_key(topologyId));

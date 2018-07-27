@@ -38,16 +38,13 @@ import java.util.regex.Pattern;
 
 /**
  * Provides a way to store blobs that can be downloaded.
- * Blobs must be able to be uploaded and listed from Nimbus ,
- * and downloaded from the Supervisors. It is a key value based
- * store. Key being a string and value being the blob data.
+ * Blobs must be able to be uploaded and listed from Nimbus, and downloaded from the Supervisors.
+ * It is a key value based store. Key being a string and value being the blob data.
  *
  * ACL checking must take place against the provided subject.
- * If the blob store does not support Security it must validate
- * that all ACLs set are always WORLD, everything.
+ * If the blob store does not support Security it must validate that all ACLs set are always WORLD, everything.
  *
- * The users can upload their blobs through the blob store command
- * line. The command line also allows us to update and delete blobs.
+ * The users can upload their blobs through the blob store command line. The command line also allows us to update and delete blobs.
  *
  * Modifying the replication factor only works for {@link HdfsBlobStore}
  * as for the {@link LocalFsBlobStore} the replication is dependent on
@@ -186,7 +183,7 @@ public abstract class BlobStore implements Shutdownable {
     public void createBlob(String key, byte[] data, SettableBlobMeta meta) throws KeyAlreadyExistsException, IOException {
         AtomicOutputStream out = null;
         try {
-            out = createBlob(key, meta);
+            out = this.createBlob(key, meta);
             out.write(data);
             out.close();
             out = null;
@@ -211,7 +208,7 @@ public abstract class BlobStore implements Shutdownable {
     public void createBlob(String key, InputStream in, SettableBlobMeta meta) throws KeyAlreadyExistsException, IOException {
         AtomicOutputStream out = null;
         try {
-            out = createBlob(key, meta);
+            out = this.createBlob(key, meta);
             byte[] buffer = new byte[2048];
             int len = 0;
             while ((len = in.read(buffer)) > 0) {
@@ -238,7 +235,7 @@ public abstract class BlobStore implements Shutdownable {
      * @throws KeyNotFoundException
      */
     public void readBlobTo(String key, OutputStream out) throws IOException, KeyNotFoundException {
-        InputStreamWithMeta in = getBlob(key);
+        InputStreamWithMeta in = this.getBlob(key);
         if (in == null) {
             throw new IOException("Could not find " + key);
         }
@@ -290,7 +287,7 @@ public abstract class BlobStore implements Shutdownable {
                 out.close();
                 part.commit();
             } catch (IOException | RuntimeException e) {
-                cancel();
+                this.cancel();
                 throw e;
             }
         }
@@ -377,7 +374,7 @@ public abstract class BlobStore implements Shutdownable {
         public KeyTranslationIterator(Iterator<String> it, String prefix) throws IOException {
             this.it = it;
             this.prefix = prefix;
-            primeNext();
+            this.primeNext();
         }
 
         private void primeNext() {
@@ -398,11 +395,11 @@ public abstract class BlobStore implements Shutdownable {
 
         @Override
         public String next() {
-            if (!hasNext()) {
+            if (!this.hasNext()) {
                 throw new NoSuchElementException();
             }
             String current = next;
-            primeNext();
+            this.primeNext();
             return current;
         }
 

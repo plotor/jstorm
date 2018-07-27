@@ -370,8 +370,8 @@ struct TaskHeartbeat {
 }
 
 struct TopologyTaskHbInfo {
-    1: required string topologyId;
-    2: required i32 topologyMasterId;
+    1: required string topologyId; // topology ID
+    2: required i32 topologyMasterId; // topology master ID
     3: optional map<i32, TaskHeartbeat> taskHbs;
 }
 

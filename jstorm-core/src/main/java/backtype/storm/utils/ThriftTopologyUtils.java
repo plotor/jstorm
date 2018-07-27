@@ -47,6 +47,15 @@ public class ThriftTopologyUtils {
         return ret;
     }
 
+    /**
+     * 获取当前 topology 的所有组件信息：
+     * [bolt_id, Bolt]
+     * [spout_id, SpoutSpec]
+     * [spout_id, StateSpoutSpec]
+     *
+     * @param topology
+     * @return
+     */
     public static Map<String, Object> getComponents(StormTopology topology) {
         Map<String, Object> ret = new HashMap<>();
         for (StormTopology._Fields f : StormTopology.metaDataMap.keySet()) {

@@ -613,7 +613,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public void set_task(String topologyId, Map<Integer, TaskInfo> taskInfoMap) throws Exception {
-        String stormTaskPath = Cluster.storm_task_root(topologyId);
+        String stormTaskPath = Cluster.storm_task_root(topologyId); // tasks/{topology_id}
         if (taskInfoMap != null) {
             // re-update zk node of tasks
             this.setObject(stormTaskPath, taskInfoMap);
@@ -793,8 +793,8 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public void setup_blobstore(String key, NimbusInfo nimbusInfo, int versionInfo) throws Exception {
-        String blobPath = Cluster.blobstore_path(key);
-        String path = blobPath + "/" + nimbusInfo.toHostPortString() + "-" + versionInfo;
+        String blobPath = Cluster.blobstore_path(key); // blobstore/${key}
+        String path = blobPath + "/" + nimbusInfo.toHostPortString() + "-" + versionInfo; // blobstore/${key}/host:port-${version}
         LOG.info("setup path {}", path);
         cluster_state.mkdirs(blobPath);
         // we delete the node first to ensure the node gets created as part of this session only.

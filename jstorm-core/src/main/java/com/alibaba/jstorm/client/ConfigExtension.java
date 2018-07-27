@@ -983,7 +983,12 @@ public class ConfigExtension {
 
     public static final String TOPOLOGY_METRIC_SAMPLE_RATE = "topology.metric.sample.rate";
 
+    /**
+     * @param conf
+     * @return
+     */
     public static double getMetricSampleRate(Map conf) {
+        // ${topology.metric.sample.rate}，默认是 0.05
         double sampleRate = JStormUtils.parseDouble(conf.get(TOPOLOGY_METRIC_SAMPLE_RATE), DEFAULT_METRIC_SAMPLE_RATE);
         if (!conf.containsKey(TOPOLOGY_METRIC_SAMPLE_RATE)) {
             conf.put(TOPOLOGY_METRIC_SAMPLE_RATE, sampleRate);
