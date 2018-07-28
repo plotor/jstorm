@@ -121,6 +121,7 @@ public class TopologyMaster implements IBolt, IDynamicComponent {
         TMEvent workerSetUpdateEvent = new TMEvent(workerSetUpdater, null);
         threadPools.scheduleAtFixedRate(workerSetUpdateEvent, 10, 10, TimeUnit.SECONDS);
 
+        // 注册灰度发布周期性任务处理器
         TMHandler grayUpgradeHandler = new GrayUpgradeHandler();
         grayUpgradeHandler.init(tmContext);
         handlers.put("DUMMY", grayUpgradeHandler);

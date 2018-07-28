@@ -58,7 +58,6 @@ public class TopologyAssignContext {
 
     /**
      * topology_master_id
-     * FIXME 代表一个 topology 心跳检测 task 的 ID？
      */
     protected int topoMasterTaskId;
     protected boolean assignSingleWorkerForTM = false;

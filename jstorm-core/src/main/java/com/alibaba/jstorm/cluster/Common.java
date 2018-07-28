@@ -513,8 +513,7 @@ public class Common {
      * Add acker bolt to topology
      */
     public static void add_acker(Map stormConf, StormTopology ret) {
-        String key = Config.TOPOLOGY_ACKER_EXECUTORS;
-
+        String key = Config.TOPOLOGY_ACKER_EXECUTORS; // topology.acker.executors
         Integer ackerNum = JStormUtils.parseInt(stormConf.get(key), 0);
 
         // generate outputs
@@ -522,8 +521,8 @@ public class Common {
         ArrayList<String> fields = new ArrayList<>();
         fields.add("id");
 
-        outputs.put(ACKER_ACK_STREAM_ID, Thrift.directOutputFields(fields));
-        outputs.put(ACKER_FAIL_STREAM_ID, Thrift.directOutputFields(fields));
+        outputs.put(ACKER_ACK_STREAM_ID, Thrift.directOutputFields(fields)); // __ack_ack
+        outputs.put(ACKER_FAIL_STREAM_ID, Thrift.directOutputFields(fields)); // __ack_fail
 
         IBolt ackerbolt = new Acker();
 
@@ -829,7 +828,7 @@ public class Common {
     }
 
     /**
-     * <task_id, component_id>
+     * 封装 task_id 和组件 ID 的对应关系：[task_id, component_id]
      *
      * @param taskInfoMap
      * @return

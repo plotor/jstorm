@@ -52,6 +52,7 @@ public class SupervisorInfo implements Serializable {
 
     private String errorMessage;
 
+    /** 当前可用的 worker 对应的端口号 */
     private transient Set<Integer> availableWorkerPorts;
 
     public SupervisorInfo(String hostName, String supervisorId, Set<Integer> workerPorts, Map<Object, Object> conf) {
@@ -171,7 +172,7 @@ public class SupervisorInfo implements Serializable {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (this.getClass() != obj.getClass()) {
             return false;
         }
         SupervisorInfo other = (SupervisorInfo) obj;

@@ -58,10 +58,16 @@ public class WorkerScheduler {
         return instance;
     }
 
+    /**
+     * @param context
+     * @param needAssign 需要分配的 task id 集合
+     * @param allocWorkerNum 需要分配的 worker 的数目
+     * @return
+     */
     public List<ResourceWorkerSlot> getAvailableWorkers(
             DefaultTopologyAssignContext context, Set<Integer> needAssign, int allocWorkerNum) {
         int reserveWorkers = context.getReserveWorkerNum(); // 保留的 worker 数目
-        int workersNum = this.getAvailableWorkersNum(context);
+        int workersNum = this.getAvailableWorkersNum(context); // 可用的 worker 的数目
         if ((workersNum - reserveWorkers) < allocWorkerNum) {
             // 可用 worker 数目 - 保留的 worker 数目 < 需要分配的数目
             throw new FailedAssignTopologyException("there's no enough worker. allocWorkerNum="
@@ -71,6 +77,7 @@ public class WorkerScheduler {
         List<ResourceWorkerSlot> assignedWorkers = new ArrayList<>();
         // user define assignments, but dont't try to use custom scheduling for TM bolts now.
         this.getRightWorkers(context, needAssign, assignedWorkers, workersNum,
+                // 获取用户自定义分配 worker slot 信息，去除状态为 unstopped 的 worker
                 this.getUserDefineWorkers(context, ConfigExtension.getUserDefineAssignment(context.getStormConf())));
 
         // 如果配置指定要使用旧的分配，则从旧的分配中选出合适的worker
@@ -119,9 +126,9 @@ public class WorkerScheduler {
         // 这里是获取那些专门指定运行拓扑的supervisor节点
         List<SupervisorInfo> isolationSupervisors = this.getIsolationSupervisors(context);
         if (isolationSupervisors.size() != 0) {
-            this.putAllWorkerToSupervisor(assignedWorkers, getResAvailSupervisors(isolationSupervisors));
+            this.putAllWorkerToSupervisor(assignedWorkers, this.getResAvailSupervisors(isolationSupervisors));
         } else {
-            this.putAllWorkerToSupervisor(assignedWorkers, getResAvailSupervisors(context.getCluster()));
+            this.putAllWorkerToSupervisor(assignedWorkers, this.getResAvailSupervisors(context.getCluster()));
         }
         this.setAllWorkerMemAndCpu(context.getStormConf(), assignedWorkers);
         LOG.info("Assigned workers=" + assignedWorkers);
@@ -147,13 +154,13 @@ public class WorkerScheduler {
                 for (SupervisorInfo supervisor : supervisors) {
                     if (NetWorkUtils.equals(supervisor.getHostName(), worker.getHostname())
                             && supervisor.getAvailableWorkerPorts().size() > 0) {
-                        putWorkerToSupervisor(supervisor, worker);
+                        this.putWorkerToSupervisor(supervisor, worker);
                         break;
                     }
                 }
             }
         }
-        supervisors = getResAvailSupervisors(supervisors);
+        supervisors = this.getResAvailSupervisors(supervisors);
         Collections.sort(supervisors, new Comparator<SupervisorInfo>() {
 
             @Override
@@ -163,7 +170,7 @@ public class WorkerScheduler {
             }
 
         });
-        putWorkerToSupervisor(assignedWorkers, supervisors);
+        this.putWorkerToSupervisor(assignedWorkers, supervisors);
     }
 
     private void putWorkerToSupervisor(SupervisorInfo supervisor, ResourceWorkerSlot worker) {
@@ -252,10 +259,10 @@ public class WorkerScheduler {
 
     /**
      * @param context 之前准备的拓扑上下文信息
-     * @param needAssign 该拓扑需要分配的各个taskid
-     * @param assignedWorkers 存储那些在这个方法内分配到的worker资源
-     * @param workersNum 拓扑需要分配的worker数目
-     * @param workers 用户自定义的可用的worker资源
+     * @param needAssign 该拓扑需要分配的 task_id 集合
+     * @param assignedWorkers 存储那些在这个方法内分配到的 worker 资源，用于返回值
+     * @param workersNum 拓扑需要分配的 worker 数目
+     * @param workers 用户自定义分配 worker slot 信息，已经去除状态为 unstopped 的 worker
      */
     private void getRightWorkers(DefaultTopologyAssignContext context,
                                  Set<Integer> needAssign, List<ResourceWorkerSlot> assignedWorkers,
@@ -269,9 +276,11 @@ public class WorkerScheduler {
             boolean right = true;
             Set<Integer> tasks = worker.getTasks();
             if (tasks == null) {
+                // worker 没有 task 信息
                 continue;
             }
             for (Integer task : tasks) {
+                // 不需要分配或已经分配
                 if (!needAssign.contains(task) || assigned.contains(task)) {
                     right = false;
                     break;
@@ -282,10 +291,11 @@ public class WorkerScheduler {
                 users.add(worker);
             }
         }
+
+        // TODO by zhenchao 2018-07-28 19:21:57
         if (users.size() + assignedWorkers.size() > workersNum) {
             LOG.warn("There are no enough workers for user define scheduler / keeping old assignment, " +
-                            "userDefineWorkers={}, assignedWorkers={}, workerNum={}",
-                    users, assignedWorkers, workersNum);
+                    "userDefineWorkers={}, assignedWorkers={}, workerNum={}", users, assignedWorkers, workersNum);
             return;
         }
 
@@ -310,24 +320,30 @@ public class WorkerScheduler {
         return slotNum;
     }
 
+    /**
+     * 获取用户自定义分配 worker slot 信息，去除状态为 unstopped 的 worker
+     *
+     * @param context
+     * @param workers 获取用户定义的分配信息
+     * @return
+     */
     @SuppressWarnings("unchecked")
     private List<ResourceWorkerSlot> getUserDefineWorkers(
             DefaultTopologyAssignContext context, List<WorkerAssignment> workers) {
         List<ResourceWorkerSlot> ret = new ArrayList<>();
         if (workers == null) {
-            // 用户没有自定义 worker
+            // 用户没有自定义分配信息
             return ret;
         }
 
         Map<String, List<Integer>> componentToTask =
                 (HashMap<String, List<Integer>>) ((HashMap<String, List<Integer>>) context.getComponentTasks()).clone();
         if (context.getAssignType() != TopologyAssignContext.ASSIGN_TYPE_NEW) {
-            // 如果分配类型不是NEW，则还是从workers资源分配信息列表中去除 unstopworker。
-            // 这里是用户有指定某些 worker 资源属于 unstopworker 才能去掉。
+            // 如果用户指定的某些 worker 资源属于 unstopped worker，则从 workers 中移除
             this.checkUserDefineWorkers(context, workers, context.getTaskToComponent());
         }
 
-        // 遍历用户定义的worker，去除那些没有分配 task 的worker
+        // 遍历用户定义的 worker，去除那些没有分配 task 的 worker
         // 用户定义的 worker 中已经指定哪些 task 该分配到哪个 worker 中
         for (WorkerAssignment worker : workers) {
             ResourceWorkerSlot workerSlot = new ResourceWorkerSlot(worker, componentToTask);
@@ -338,8 +354,15 @@ public class WorkerScheduler {
         return ret;
     }
 
-    private void checkUserDefineWorkers(DefaultTopologyAssignContext context,
-                                        List<WorkerAssignment> workers, Map<Integer, String> taskToComponent) {
+    /**
+     * 如果用户指定的某些 worker 资源属于 unstopped worker，则移除
+     *
+     * @param context
+     * @param workers
+     * @param taskToComponent
+     */
+    private void checkUserDefineWorkers(
+            DefaultTopologyAssignContext context, List<WorkerAssignment> workers, Map<Integer, String> taskToComponent) {
         Set<ResourceWorkerSlot> unstoppedWorkers = context.getUnstoppedWorkers();
         List<WorkerAssignment> re = new ArrayList<>();
         for (WorkerAssignment worker : workers) {
@@ -382,7 +405,7 @@ public class WorkerScheduler {
         }
         List<SupervisorInfo> isolationSupervisors = new ArrayList<>();
         for (Entry<String, SupervisorInfo> entry : context.getCluster().entrySet()) {
-            if (containTargetHost(isolationHosts, entry.getValue().getHostName())) {
+            if (this.containTargetHost(isolationHosts, entry.getValue().getHostName())) {
                 isolationSupervisors.add(entry.getValue());
             }
         }

@@ -49,23 +49,28 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
 
     /**
      * TODO: problematic: some dead slots have been freed
+     * 如果 task 对应 worker 所属的 supervisor 运行正常，
+     * 则将对应的 worker port 加入到 supervisor 的 availableWorkerPorts 中
      *
      * @param context topology assign context
      */
     protected void freeUsed(TopologyAssignContext context) {
-        Set<Integer> canFree = new HashSet<>();
-        canFree.addAll(context.getAllTaskIds());
+        // 所有的 taskId 列表（不包含 unstopped）
+        Set<Integer> canFree = new HashSet<>(context.getAllTaskIds());
         canFree.removeAll(context.getUnstoppedTaskIds());
 
         Map<String, SupervisorInfo> cluster = context.getCluster();
         Assignment oldAssigns = context.getOldAssignment();
+        // 如果 task 对应 worker 所属的 supervisor 运行正常，则将对应的 worker port 加入 availableWorkerPorts
         for (Integer task : canFree) {
+            // 获取 task 对应的 worker 信息
             ResourceWorkerSlot worker = oldAssigns.getWorkerByTaskId(task);
             if (worker == null) {
                 LOG.warn("No ResourceWorkerSlot of task " + task + " is found when freeing resource");
                 continue;
             }
 
+            // 获取 worker 对应的 supervisor 信息
             SupervisorInfo supervisorInfo = cluster.get(worker.getNodeId());
             if (supervisorInfo == null) {
                 continue;
@@ -105,10 +110,9 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
      * @return a set of assigned slots
      */
     public Set<ResourceWorkerSlot> getKeepAssign(DefaultTopologyAssignContext defaultContext, Set<Integer> needAssigns) {
-        Set<Integer> keepAssignIds = new HashSet<>();
-        keepAssignIds.addAll(defaultContext.getAllTaskIds());
-        keepAssignIds.removeAll(defaultContext.getUnstoppedTaskIds());
-        keepAssignIds.removeAll(needAssigns);
+        Set<Integer> keepAssignIds = new HashSet<>(defaultContext.getAllTaskIds());
+        keepAssignIds.removeAll(defaultContext.getUnstoppedTaskIds()); // 移除 unstopped
+        keepAssignIds.removeAll(needAssigns); // 移除所有 needAssigns
         Set<ResourceWorkerSlot> keeps = new HashSet<>();
         if (keepAssignIds.isEmpty()) {
             return keeps;
@@ -118,6 +122,8 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
         if (oldAssignment == null) {
             return keeps;
         }
+
+        // 如果 oldWorker 的某个 task 不在 keepAssignIds 列表中，则将该 worker 从 keeps 中移除
         keeps.addAll(defaultContext.getOldWorkers());
         for (ResourceWorkerSlot worker : defaultContext.getOldWorkers()) {
             for (Integer task : worker.getTasks()) {
@@ -130,6 +136,13 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
         return keeps;
     }
 
+    /**
+     * 获取当前拓扑
+     *
+     * @param context
+     * @return
+     * @throws FailedAssignTopologyException
+     */
     @Override
     public Set<ResourceWorkerSlot> assignTasks(TopologyAssignContext context) throws FailedAssignTopologyException {
         int assignType = context.getAssignType();
@@ -142,6 +155,10 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
         if (assignType == TopologyAssignContext.ASSIGN_TYPE_REBALANCE) {
             // Mark all current assigned worker as available.
             // Current assignment will be restored in task scheduler.
+            /*
+             * 如果 task 对应 worker 所属的 supervisor 运行正常，
+             * 则将对应的 worker port 加入到 supervisor 的 availableWorkerPorts 中
+             */
             this.freeUsed(defaultContext);
         }
         LOG.info("Dead tasks:" + defaultContext.getDeadTaskIds());
@@ -149,13 +166,14 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
 
         // 基于当前的分配类型获取需要分配的 task id 列表
         Set<Integer> needAssignTasks = this.getNeedAssignTasks(defaultContext);
+        // 获取那些所有的 task 都在 needAssignTasks 之外的 worker 集合，这些 worker 是不需要 assign 的
         Set<ResourceWorkerSlot> keepAssigns = this.getKeepAssign(defaultContext, needAssignTasks);
 
-        // todo: use tree map to sort tasks
         Set<ResourceWorkerSlot> ret = new HashSet<>();
         ret.addAll(keepAssigns);
         ret.addAll(defaultContext.getUnstoppedWorkers());
 
+        // 计算需要分配的 worker 的数目
         int allocWorkerNum = defaultContext.getTotalWorkerNum() - defaultContext.getUnstoppedWorkerNum() - keepAssigns.size();
         LOG.info("allocWorkerNum=" + allocWorkerNum + ", totalWorkerNum=" + defaultContext.getTotalWorkerNum() + ", keepWorkerNum=" + keepAssigns.size());
 

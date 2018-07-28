@@ -27,8 +27,8 @@ public class WorkerSlot implements Comparable<WorkerSlot>, Serializable {
 
     private static final long serialVersionUID = -4451854497340313268L;
 
-    String nodeId; // supervisor id
-    int port; // supervisor 上的某个端口号
+    String nodeId; // 对应的 supervisor ID
+    int port; // supervisor 上 worker 对应的端口号
 
     public WorkerSlot(String nodeId, Number port) {
         this.nodeId = nodeId;
@@ -71,7 +71,7 @@ public class WorkerSlot implements Comparable<WorkerSlot>, Serializable {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (this.getClass() != obj.getClass()) {
             return false;
         }
         WorkerSlot other = (WorkerSlot) obj;

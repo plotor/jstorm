@@ -15,9 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.master;
 
 public interface TMHandler {
+
     /**
      * Init TMHandler
      *
@@ -38,4 +40,5 @@ public interface TMHandler {
      * it is likely cleanup could be called multiple times.
      */
     void cleanup();
+
 }

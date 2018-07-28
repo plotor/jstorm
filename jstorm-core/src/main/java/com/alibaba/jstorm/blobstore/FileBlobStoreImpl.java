@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.blobstore;
 
 import backtype.storm.Config;
@@ -25,7 +26,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Very basic blob store impl with no ACL handling.
@@ -43,7 +51,7 @@ public class FileBlobStoreImpl {
         private String next = null;
 
         public KeyInHashDirIterator() throws IOException {
-            primeNext();
+            this.primeNext();
         }
 
         private void primeNext() throws IOException {
@@ -51,7 +59,7 @@ public class FileBlobStoreImpl {
                 String name = String.valueOf(currentBucket);
                 File dir = new File(fullPath, name);
                 try {
-                    it = listKeys(dir);
+                    it = FileBlobStoreImpl.this.listKeys(dir);
                 } catch (FileNotFoundException e) {
                     it = null;
                 }
@@ -71,7 +79,7 @@ public class FileBlobStoreImpl {
 
         @Override
         public String next() {
-            if (!hasNext()) {
+            if (!this.hasNext()) {
                 throw new NoSuchElementException();
             }
             String current = next;
@@ -81,7 +89,7 @@ public class FileBlobStoreImpl {
                     it = null;
                     currentBucket++;
                     try {
-                        primeNext();
+                        this.primeNext();
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -112,7 +120,7 @@ public class FileBlobStoreImpl {
                 @Override
                 public void run() {
                     try {
-                        fullCleanup(FULL_CLEANUP_FREQ);
+                        FileBlobStoreImpl.this.fullCleanup(FULL_CLEANUP_FREQ);
                     } catch (IOException e) {
                         LOG.error("Error trying to cleanup", e);
                     }
@@ -137,7 +145,7 @@ public class FileBlobStoreImpl {
      * @throws IOException on any error
      */
     public LocalFsBlobStoreFile read(String key) throws IOException {
-        return new LocalFsBlobStoreFile(getKeyDir(key), BlobStoreFile.BLOBSTORE_DATA_FILE);
+        return new LocalFsBlobStoreFile(this.getKeyDir(key), BlobStoreFile.BLOBSTORE_DATA_FILE);
     }
 
     /**
@@ -147,7 +155,7 @@ public class FileBlobStoreImpl {
      * @throws IOException on any error
      */
     public LocalFsBlobStoreFile write(String key, boolean create) throws IOException {
-        return new LocalFsBlobStoreFile(getKeyDir(key), true, create);
+        return new LocalFsBlobStoreFile(this.getKeyDir(key), true, create);
     }
 
     /**
@@ -156,7 +164,7 @@ public class FileBlobStoreImpl {
      * @return true if it exists else false.
      */
     public boolean exists(String key) {
-        return getKeyDir(key).exists();
+        return this.getKeyDir(key).exists();
     }
 
     /**
@@ -165,16 +173,16 @@ public class FileBlobStoreImpl {
      * @throws IOException on any error
      */
     public void deleteKey(String key) throws IOException {
-        File keyDir = getKeyDir(key);
+        File keyDir = this.getKeyDir(key);
         LocalFsBlobStoreFile pf = new LocalFsBlobStoreFile(keyDir, BlobStoreFile.BLOBSTORE_DATA_FILE);
         pf.delete();
-        delete(keyDir);
+        this.delete(keyDir);
     }
 
     private File getKeyDir(String key) {
-        String hash = String.valueOf(Math.abs((long)key.hashCode()) % BUCKETS);
+        String hash = String.valueOf(Math.abs((long) key.hashCode()) % BUCKETS);
         File ret = new File(new File(fullPath, hash), key);
-        LOG.debug("{} Looking for {} in {}", new Object[]{fullPath, key, hash});
+        LOG.debug("{} Looking for {} in {}", new Object[] {fullPath, key, hash});
         return ret;
     }
 
@@ -183,14 +191,14 @@ public class FileBlobStoreImpl {
         Iterator<String> keys = new KeyInHashDirIterator();
         while (keys.hasNext()) {
             String key = keys.next();
-            File keyDir = getKeyDir(key);
-            Iterator<LocalFsBlobStoreFile> i = listBlobStoreFiles(keyDir);
+            File keyDir = this.getKeyDir(key);
+            Iterator<LocalFsBlobStoreFile> i = this.listBlobStoreFiles(keyDir);
             if (!i.hasNext()) {
                 //The dir is empty, so try to delete it, may fail, but that is OK
                 try {
                     keyDir.delete();
                 } catch (Exception e) {
-                    LOG.warn("Could not delete "+keyDir+" will try again later");
+                    LOG.warn("Could not delete " + keyDir + " will try again later");
                 }
             }
             while (i.hasNext()) {
@@ -208,12 +216,12 @@ public class FileBlobStoreImpl {
         ArrayList<LocalFsBlobStoreFile> ret = new ArrayList<LocalFsBlobStoreFile>();
         File[] files = path.listFiles();
         if (files != null) {
-            for (File sub: files) {
+            for (File sub : files) {
                 try {
                     ret.add(new LocalFsBlobStoreFile(sub.getParentFile(), sub.getName()));
                 } catch (IllegalArgumentException e) {
                     //Ignored the file did not match
-                    LOG.warn("Found an unexpected file in {} {}",path, sub.getName());
+                    LOG.warn("Found an unexpected file in {} {}", path, sub.getName());
                 }
             }
         }

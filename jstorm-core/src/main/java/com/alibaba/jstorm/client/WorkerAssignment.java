@@ -15,23 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.client;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
+import backtype.storm.scheduler.WorkerSlot;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.utils.JStormUtils;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.json.simple.JSONAware;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.scheduler.WorkerSlot;
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.utils.JStormUtils;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 public class WorkerAssignment extends WorkerSlot implements Serializable, JSONAware {
     private static final Logger LOG = LoggerFactory.getLogger(WorkerAssignment.class);
@@ -109,8 +108,8 @@ public class WorkerAssignment extends WorkerSlot implements Serializable, JSONAw
         map.put(CPU_TAG, String.valueOf(cpu));
         map.put(HOSTNAME_TAG, hostName);
         map.put(JVM_TAG, jvm);
-        map.put(NODEID_TAG, getNodeId());
-        map.put(PORT_TAG, String.valueOf(getPort()));
+        map.put(NODEID_TAG, this.getNodeId());
+        map.put(PORT_TAG, String.valueOf(this.getPort()));
 
         return Utils.to_json(map);
     }
@@ -183,32 +182,43 @@ public class WorkerAssignment extends WorkerSlot implements Serializable, JSONAw
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (!super.equals(obj))
+        }
+        if (!super.equals(obj)) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (this.getClass() != obj.getClass()) {
             return false;
+        }
         WorkerAssignment other = (WorkerAssignment) obj;
         if (componentToNum == null) {
-            if (other.componentToNum != null)
+            if (other.componentToNum != null) {
                 return false;
-        } else if (!componentToNum.equals(other.componentToNum))
+            }
+        } else if (!componentToNum.equals(other.componentToNum)) {
             return false;
-        if (cpu != other.cpu)
+        }
+        if (cpu != other.cpu) {
             return false;
+        }
         if (hostName == null) {
-            if (other.hostName != null)
+            if (other.hostName != null) {
                 return false;
-        } else if (!hostName.equals(other.hostName))
+            }
+        } else if (!hostName.equals(other.hostName)) {
             return false;
+        }
         if (jvm == null) {
-            if (other.jvm != null)
+            if (other.jvm != null) {
                 return false;
-        } else if (!jvm.equals(other.jvm))
+            }
+        } else if (!jvm.equals(other.jvm)) {
             return false;
-        if (mem != other.mem)
+        }
+        if (mem != other.mem) {
             return false;
+        }
         return true;
     }
 

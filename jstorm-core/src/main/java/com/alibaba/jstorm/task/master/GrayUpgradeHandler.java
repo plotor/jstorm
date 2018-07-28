@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.master;
 
 import backtype.storm.task.TopologyContext;
@@ -24,22 +25,24 @@ import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.upgrade.GrayUpgradeConfig;
 import com.google.common.collect.Sets;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author wange
  * @since 2.3.1
  */
 public class GrayUpgradeHandler implements TMHandler, Runnable {
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
+
+    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     private StormClusterState stormClusterState;
 
@@ -111,7 +114,7 @@ public class GrayUpgradeHandler implements TMHandler, Runnable {
 
             // first time, set workers
             if (this.totalWorkers.size() == 0) {
-                setTotalWorkers(tmContext);
+                this.setTotalWorkers(tmContext);
             }
 
             // notify current upgrading workers to upgrade (again)
@@ -119,7 +122,7 @@ public class GrayUpgradeHandler implements TMHandler, Runnable {
             if (upgradingWorkers.size() > 0) {
                 LOG.info("Following workers are under upgrade:{}", upgradingWorkers);
                 for (String worker : upgradingWorkers) {
-                    notifyToUpgrade(worker);
+                    this.notifyToUpgrade(worker);
                 }
                 return;
             }
@@ -133,7 +136,7 @@ public class GrayUpgradeHandler implements TMHandler, Runnable {
                 return;
             }
 
-            if (isUpgradeCompleted(upgradedWorkers, totalWorkers)) {
+            if (this.isUpgradeCompleted(upgradedWorkers, totalWorkers)) {
                 LOG.info("This upgraded has finished! Marking upgrade config as completed...");
                 GrayUpgradeConfig.completeUpgrade(grayUpgradeConf);
                 stormClusterState.set_gray_upgrade_conf(topologyId, grayUpgradeConf);
@@ -144,7 +147,7 @@ public class GrayUpgradeHandler implements TMHandler, Runnable {
 
             // assign next batch of workers
             if (grayUpgradeConf.continueUpgrading()) {
-                pickWorkersToUpgrade(grayUpgradeConf, upgradedWorkers);
+                this.pickWorkersToUpgrade(grayUpgradeConf, upgradedWorkers);
             }
 
             // pause upgrading
@@ -152,7 +155,7 @@ public class GrayUpgradeHandler implements TMHandler, Runnable {
             stormClusterState.set_gray_upgrade_conf(topologyId, grayUpgradeConf);
         } catch (Exception ex) {
             LOG.error("Failed to get upgrade config from zk, will abort this upgrade...", ex);
-            recover();
+            this.recover();
         }
     }
 
@@ -170,7 +173,7 @@ public class GrayUpgradeHandler implements TMHandler, Runnable {
             LOG.info("Upgrading specified workers:{}", workers);
             for (String worker : workers) {
                 if (remainingSlots.contains(worker)) {
-                    addUpgradingSlot(worker);
+                    this.addUpgradingSlot(worker);
                 } else {
                     LOG.warn("Worker {} is not in topology worker list or has been upgraded already, skip.", worker);
                 }
@@ -193,14 +196,14 @@ public class GrayUpgradeHandler implements TMHandler, Runnable {
                 }
             }
             LOG.info("Available workers of component {}: {}", component, slots);
-            pickUpgradingSlots(slots, workerNum > 0 ? workerNum : slots.size());
+            this.pickUpgradingSlots(slots, workerNum > 0 ? workerNum : slots.size());
             // reset component
             if (workerNum == 0 || workerNum >= slots.size()) {
                 grayUpgradeConf.setComponent(null);
             }
         } else if (workerNum > 0) {
             LOG.info("Upgrading workers at random");
-            pickUpgradingSlots(remainingSlots, workerNum);
+            this.pickUpgradingSlots(remainingSlots, workerNum);
         }
     }
 
@@ -208,7 +211,7 @@ public class GrayUpgradeHandler implements TMHandler, Runnable {
         // pick workers
         int i = 0;
         for (String remainingSlot : remainingSlots) {
-            addUpgradingSlot(remainingSlot);
+            this.addUpgradingSlot(remainingSlot);
             i++;
             if (i == n) {
                 break;
@@ -218,7 +221,7 @@ public class GrayUpgradeHandler implements TMHandler, Runnable {
 
     private void addUpgradingSlot(String worker) throws Exception {
         stormClusterState.add_upgrading_worker(topologyId, worker);
-        notifyToUpgrade(worker);
+        this.notifyToUpgrade(worker);
     }
 
     private boolean isUpgradeCompleted(Collection<String> upgradedWorkers, Collection<String> allWorkers) {

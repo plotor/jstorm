@@ -676,7 +676,7 @@ public class StormZkClusterState implements StormClusterState {
      */
     @Override
     public Map<Integer, TaskInfo> task_all_info(String topologyId) throws Exception {
-        // tasks/{topology_id}
+        // tasks/${topology_id}
         String taskPath = Cluster.storm_task_root(topologyId);
         Object data = this.getObject(taskPath, false);
         if (data == null) {
@@ -882,7 +882,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public List<String> get_blacklist() throws Exception {
-        String stormPath = Cluster.blacklist_path("blacklist");
+        String stormPath = Cluster.blacklist_path("blacklist"); // blacklist/blacklist
         Object blackListObj = this.getObject(stormPath, false);
         if (blackListObj != null) {
             return (List<String>) blackListObj;
@@ -912,6 +912,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public List<String> get_upgrading_workers(String topologyId) throws Exception {
+        // gray_upgrade/${topology_id}/upgrading_workers
         List<String> ret = cluster_state.get_children(Cluster.gray_upgrade_upgrading_workers_path(topologyId), false);
         if (ret == null) {
             ret = new ArrayList<>();
@@ -921,6 +922,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public List<String> get_upgraded_workers(String topologyId) throws Exception {
+        // gray_upgrade/${topology_id}/upgraded_workers
         List<String> ret = cluster_state.get_children(Cluster.gray_upgrade_upgraded_workers_path(topologyId), false);
         if (ret == null) {
             ret = new ArrayList<>();
@@ -945,6 +947,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public void remove_gray_upgrade_info(String topologyId) throws Exception {
+        // gray_upgrade/${topology_id}/conf
         cluster_state.delete_node(Cluster.gray_upgrade_conf_path(topologyId));
         List<String> upgradingWorkers = this.get_upgrading_workers(topologyId);
         for (String upgradingWorker : upgradingWorkers) {

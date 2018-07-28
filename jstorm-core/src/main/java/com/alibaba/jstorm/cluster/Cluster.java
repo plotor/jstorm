@@ -140,6 +140,12 @@ public class Cluster {
         return TASKS_SUBTREE + ZK_SEPARATOR + topology_id;
     }
 
+    /**
+     * taskbeats/${topology_id}
+     *
+     * @param topology_id
+     * @return
+     */
     public static String taskbeat_storm_root(String topology_id) {
         return TASKBEATS_SUBTREE + ZK_SEPARATOR + topology_id;
     }
@@ -176,6 +182,12 @@ public class Cluster {
         return GRAY_UPGRADE_SUBTREE + ZK_SEPARATOR + topology_id;
     }
 
+    /**
+     * gray_upgrade/${topology_id}/conf
+     *
+     * @param topologyId
+     * @return
+     */
     public static String gray_upgrade_conf_path(String topologyId) {
         return gray_upgrade_base_path(topologyId) + ZK_SEPARATOR + CONF;
     }
@@ -232,6 +244,12 @@ public class Cluster {
         return BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE + ZK_SEPARATOR + key;
     }
 
+    /**
+     * blacklist/${key}
+     *
+     * @param key
+     * @return
+     */
     public static String blacklist_path(String key) {
         return BLACKLIST_SUBTREE + ZK_SEPARATOR + key;
     }
@@ -258,7 +276,7 @@ public class Cluster {
     }
 
     /**
-     * 获取指定 topology 下对应的 <task_id, component_id> 映射列表
+     * 获取指定 topology 下对应的所有 task_id 与组件 ID 之间的映射关系
      *
      * @param zkCluster
      * @param topologyId
@@ -269,12 +287,13 @@ public class Cluster {
     public static Map<Integer, String> get_all_task_component(
             StormClusterState zkCluster, String topologyId, Map<Integer, TaskInfo> taskInfoMap) throws Exception {
         if (taskInfoMap == null) {
-            // 从 ZK 上获取当前 topology 对应的所有 {@link TaskInfo}
+            // 从 ZK 上获取当前 topology 对应的所有 task 信息：tasks/${topology_id}
             taskInfoMap = get_all_taskInfo(zkCluster, topologyId);
         }
         if (taskInfoMap == null) {
             return null;
         }
+        // 封装 task_id 和组件 ID 的对应关系：[task_id, component_id]
         return Common.getTaskToComponent(taskInfoMap);
     }
 
@@ -333,7 +352,8 @@ public class Cluster {
     }
 
     /**
-     * 从 ZK 上获取所有的 supervisor 信息：<id, supervisorInfo>
+     * 从 ZK 上获取所有的 supervisor 信息：[id, supervisorInfo]
+     * 忽略位于黑名单中的 supervisor
      *
      * @param stormClusterState storm cluster state
      * @param callback watcher callback
@@ -348,12 +368,13 @@ public class Cluster {
         List<String> supervisorIds = stormClusterState.supervisors(callback);
 
         // ignore any supervisors in blacklist
+        // 获取所有 supervisor hostname 黑名单
         List<String> blacklist = stormClusterState.get_blacklist();
 
         if (supervisorIds != null) {
             for (Iterator<String> iter = supervisorIds.iterator(); iter.hasNext(); ) {
                 String supervisorId = iter.next();
-                // 获取指定 id 的 supervisor 信息
+                // 获取指定 id 的 supervisor 信息：supervisors/${supervisor_id}
                 SupervisorInfo supervisorInfo = stormClusterState.supervisor_info(supervisorId);
                 if (supervisorInfo == null) {
                     LOG.warn("Failed to get SupervisorInfo of " + supervisorId);
@@ -371,24 +392,32 @@ public class Cluster {
         return rtn;
     }
 
+    /**
+     * 获取当前集群所有 topology 对应的任务分配信息，key 是 topology_id
+     *
+     * @param stormClusterState
+     * @param callback
+     * @return
+     * @throws Exception
+     */
     public static Map<String, Assignment> get_all_assignment(
             StormClusterState stormClusterState, RunnableCallback callback) throws Exception {
         Map<String, Assignment> ret = new HashMap<>();
 
-        // get /assignments {topology_id}
+        // 获取 /ZK/assignments 下所有的 topology_id
         List<String> assignments = stormClusterState.assignments(callback);
         if (assignments == null) {
             LOG.debug("No assignment of ZK");
             return ret;
         }
 
+        // 获取所有 topology 对应的任务分配信息
         for (String topology_id : assignments) {
             Assignment assignment = stormClusterState.assignment_info(topology_id, callback);
             if (assignment == null) {
                 LOG.error("Failed to get Assignment of " + topology_id + " from ZK");
                 continue;
             }
-
             ret.put(topology_id, assignment);
         }
 

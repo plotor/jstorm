@@ -482,6 +482,12 @@ public class ConfigExtension {
         conf.put(USE_USERDEFINE_ASSIGNMENT, ret);
     }
 
+    /**
+     * 获取用户定义的分配信息
+     *
+     * @param conf
+     * @return
+     */
     public static List<WorkerAssignment> getUserDefineAssignment(Map conf) {
         List<WorkerAssignment> ret = new ArrayList<>();
         if (conf.get(USE_USERDEFINE_ASSIGNMENT) == null) // ${use.userdefine.assignment}
@@ -1432,6 +1438,7 @@ public class ConfigExtension {
         return JStormUtils.parseBoolean(conf.get(CLUSTER_CONF_SYNC_ENABLED), true);
     }
 
+    /** 配置保留的 worker 数目 */
     public static String RESERVE_WORKERS = "jstorm.reserve.workers";
 
     public static Integer getReserveWorkers(Map conf) {

@@ -390,7 +390,8 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         return topologyId;
     }
 
-    private void makeAssignment(String topologyName, String topologyId, TopologyInitialStatus status) throws FailedAssignTopologyException {
+    private void makeAssignment(String topologyName, String topologyId, TopologyInitialStatus status)
+            throws FailedAssignTopologyException {
         TopologyAssignEvent assignEvent = new TopologyAssignEvent();
         assignEvent.setTopologyId(topologyId);
         assignEvent.setScratch(false);
@@ -1580,8 +1581,10 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         }
 
         if (update) {
+            // 备份当前 storm code 数据
             this.backupBlob(codeKey, codeKeyBak, topologyId);
         }
+        // 创建或者更新 storm code 和 storm conf 数据
         this.createOrUpdateBlob(confKey, Utils.serialize(stormConf), update, topologyId);
         this.createOrUpdateBlob(codeKey, Utils.serialize(topology), update, topologyId);
     }
@@ -1783,19 +1786,21 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
      * @throws Exception
      */
     public void setupZkTaskInfo(Map<Object, Object> conf, String topologyId, StormClusterState stormClusterState) throws Exception {
-        // 按照并行度创建组件对应的 task 信息，同一个组件的多个 task 信息具备连续的 ID
+        // 为当前 topology 追加系统组件，同时基于并行度创建组件对应的 task 信息，同一个组件的多个 task 信息具备连续的 ID
         Map<Integer, TaskInfo> taskToTaskInfo = this.mkTaskComponentAssignments(conf, topologyId);
 
-        // 创建 /ZK/taskbeats/${topology_id}
-        int masterId = NimbusUtils.getTopologyMasterId(taskToTaskInfo); // 获取 topology master 的 ID (这里使用的是其对应的 task ID)
+        // 获取 topology master 的 ID (这里使用的是其对应的 task ID)
+        int masterId = NimbusUtils.getTopologyMasterId(taskToTaskInfo);
         TopologyTaskHbInfo topoTaskHbInfo = new TopologyTaskHbInfo(topologyId, masterId);
         data.getTasksHeartbeat().put(topologyId, topoTaskHbInfo);
+        // 创建 /ZK/taskbeats/${topology_id}，并写入 topologyId 和 topologyMasterId
         stormClusterState.topology_heartbeat(topologyId, topoTaskHbInfo);
 
         if (taskToTaskInfo == null || taskToTaskInfo.size() == 0) {
             throw new InvalidTopologyException("Failed to generate TaskIDs map");
         }
         // key is task id, value is task info
+        // 记录 task 信息到 ZK : /ZK/tasks/${topology_id}
         stormClusterState.set_task(topologyId, taskToTaskInfo);
     }
 
@@ -1884,10 +1889,13 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
      */
     public Map<Integer, TaskInfo> mkTaskComponentAssignments(Map<Object, Object> conf, String topologyId)
             throws IOException, InvalidTopologyException, KeyNotFoundException {
-        // we can directly pass stormConf from submit method ?
+        // 从 blobstore 中获取当前 topology 的配置信息
         Map<Object, Object> stormConf = StormConfig.read_nimbus_topology_conf(topologyId, data.getBlobStore());
+        // 从 blobstore 中获取当前 topology 的 StormTopology 对象
         StormTopology rawTopology = StormConfig.read_nimbus_topology_code(topologyId, data.getBlobStore());
+        // 追加一些系统组件到当前 topology 中
         StormTopology topology = Common.system_topology(stormConf, rawTopology);
+        // 为当前 topology 生成 task 信息，key 是 taskId
         return Common.mkTaskInfo(stormConf, topology, topologyId);
     }
 
@@ -2266,6 +2274,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
                                String component, Set<String> workers, int workerNum) throws Exception {
         StormClusterState stormClusterState = data.getStormClusterState();
 
+        // 默认为 1 天
         long tpTtl = ConfigExtension.getTopologyUpgradeTtl(stormConf);
 
         // update jar and conf first
@@ -2286,8 +2295,9 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             int totalWorkerNum = assignment.getWorkers().size() - 1;
 
             if (upgradeConfig.isExpired()) {
-                //stormClusterState.remove_gray_upgrade_info(topologyId);
+                // 灰度发布信息已经过期
                 if (stormBase.getStatus().getStatusType() != StatusType.active) {
+                    // 如果当前 topology 状态为非活跃， 设置当前 topology 为活跃状态
                     stormClusterState.update_storm(topologyId, new StormStatus(StatusType.active));
                 }
 
@@ -2296,13 +2306,13 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
                     throw new TException("The upgrade has expired, will abort this upgrade...");
                 } else {
                     LOG.info("removing an expired upgrade conf: {}", upgradeConfig);
-                    isNewUpgrade = true;
+                    isNewUpgrade = true;  // 标记本次为新灰度
                 }
             } else if (upgradeConfig.isCompleted()) {
                 // we don't check upgradedWorkers here, just leave it to TM
                 if (uploadedLocation == null) {
+                    // 灰度发布已经完成
                     LOG.warn("The upgrade has finished already, there's nothing to do.");
-                    //stormClusterState.remove_gray_upgrade_info(topologyId);
                     if (stormBase.getStatus().getStatusType() != StatusType.active) {
                         stormClusterState.update_storm(topologyId, new StormStatus(StatusType.active));
                     }
@@ -2313,6 +2323,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
                 }
             } else if (upgradingWorkerNum + upgradedWorkerNum > 0 && // still upgrading
                     upgradingWorkerNum + upgradedWorkerNum < totalWorkerNum && uploadedLocation != null) {
+                // 当前 topology 存在进行中的灰度任务
                 throw new RuntimeException("There're still workers under upgrade, please continue after they're done.");
             }
         } else {
@@ -2327,10 +2338,11 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         if (isNewUpgrade) {
             LOG.info("Starting a new gray upgrade.");
             // remove upgrade info before starting a new upgrade
+            // 移除之前的灰度发布信息
             stormClusterState.remove_gray_upgrade_info(topologyId);
 
             upgradeConfig = new GrayUpgradeConfig();
-            upgradeConfig.setUpgradeExpireTime(System.currentTimeMillis() + tpTtl);
+            upgradeConfig.setUpgradeExpireTime(System.currentTimeMillis() + tpTtl); // 设置过期时间，默认为 1 天
 
             this.setupStormCode(topologyId, uploadedLocation, stormConf, topology, true);
 
@@ -2341,8 +2353,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         } else {
             List<String> upgradedWorkers = stormClusterState.get_upgraded_workers(topologyId);
             List<String> upgradingWorkers = stormClusterState.get_upgrading_workers(topologyId);
-            LOG.info("Continuing an existing gray upgrade, upgraded workers:{}, upgrading workers:{}",
-                    upgradedWorkers, upgradingWorkers);
+            LOG.info("Continuing an existing gray upgrade, upgraded workers:{}, upgrading workers:{}", upgradedWorkers, upgradingWorkers);
         }
 
         // set continue upgrade command in zk
@@ -2359,7 +2370,6 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
         }
 
         LOG.info("Submitted upgrade command, please wait for workers of {} to finish upgrading.", topologyId);
-
         return topologyId;
     }
 }

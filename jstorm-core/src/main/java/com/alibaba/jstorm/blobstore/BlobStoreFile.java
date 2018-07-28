@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.blobstore;
 
 import backtype.storm.generated.SettableBlobMeta;
@@ -36,14 +37,24 @@ public abstract class BlobStoreFile {
     protected static final String BLOBSTORE_DATA_FILE = "data";
 
     public abstract void delete() throws IOException;
+
     public abstract String getKey();
+
     public abstract boolean isTmp();
+
     public abstract void setMetadata(SettableBlobMeta meta);
+
     public abstract SettableBlobMeta getMetadata();
+
     public abstract long getModTime() throws IOException;
+
     public abstract InputStream getInputStream() throws IOException;
+
     public abstract OutputStream getOutputStream() throws IOException;
+
     public abstract void commit() throws IOException;
+
     public abstract void cancel() throws IOException;
+
     public abstract long getFileLength() throws IOException;
 }

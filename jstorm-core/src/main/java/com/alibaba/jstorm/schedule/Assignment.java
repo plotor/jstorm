@@ -290,6 +290,12 @@ public class Assignment implements Serializable {
         return new HashSet<>();
     }
 
+    /**
+     * 获取 task 对应的 worker 信息
+     *
+     * @param taskId
+     * @return
+     */
     public ResourceWorkerSlot getWorkerByTaskId(Integer taskId) {
         for (ResourceWorkerSlot worker : workers) {
             if (worker.getTasks().contains(taskId)) {
