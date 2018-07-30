@@ -59,6 +59,8 @@ public class WorkerScheduler {
     }
 
     /**
+     * TODO by zhenchao 2018-07-30 09:30:00
+     *
      * @param context
      * @param needAssign 需要分配的 task id 集合
      * @param allocWorkerNum 需要分配的 worker 的数目
@@ -76,11 +78,12 @@ public class WorkerScheduler {
         workersNum = allocWorkerNum;
         List<ResourceWorkerSlot> assignedWorkers = new ArrayList<>();
         // user define assignments, but dont't try to use custom scheduling for TM bolts now.
+        // 从 needAssign 中移除已经分配的 task，并记录分配的 worker 到 assignedWorkers 中
         this.getRightWorkers(context, needAssign, assignedWorkers, workersNum,
                 // 获取用户自定义分配 worker slot 信息，去除状态为 unstopped 的 worker
                 this.getUserDefineWorkers(context, ConfigExtension.getUserDefineAssignment(context.getStormConf())));
 
-        // 如果配置指定要使用旧的分配，则从旧的分配中选出合适的worker
+        // 如果配置指定要使用旧的分配，则从旧的分配中选出合适的 worker
         if (ConfigExtension.isUseOldAssignment(context.getStormConf())) {
             this.getRightWorkers(context, needAssign, assignedWorkers, workersNum, context.getOldWorkers());
         } else if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_REBALANCE && !context.isReassign()) {
@@ -258,6 +261,8 @@ public class WorkerScheduler {
     }
 
     /**
+     * 从 needAssign 中移除已经分配的 task，并记录分配的 worker 到 assignedWorkers 中
+     *
      * @param context 之前准备的拓扑上下文信息
      * @param needAssign 该拓扑需要分配的 task_id 集合
      * @param assignedWorkers 存储那些在这个方法内分配到的 worker 资源，用于返回值
@@ -267,7 +272,7 @@ public class WorkerScheduler {
     private void getRightWorkers(DefaultTopologyAssignContext context,
                                  Set<Integer> needAssign, List<ResourceWorkerSlot> assignedWorkers,
                                  int workersNum, Collection<ResourceWorkerSlot> workers) {
-        Set<Integer> assigned = new HashSet<>();
+        Set<Integer> assigned = new HashSet<>(); // 记录已经分配的 taskId
         List<ResourceWorkerSlot> users = new ArrayList<>();
         if (workers == null) {
             return;
@@ -292,7 +297,6 @@ public class WorkerScheduler {
             }
         }
 
-        // TODO by zhenchao 2018-07-28 19:21:57
         if (users.size() + assignedWorkers.size() > workersNum) {
             LOG.warn("There are no enough workers for user define scheduler / keeping old assignment, " +
                     "userDefineWorkers={}, assignedWorkers={}, workerNum={}", users, assignedWorkers, workersNum);
