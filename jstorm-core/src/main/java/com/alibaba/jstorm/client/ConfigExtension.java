@@ -1311,11 +1311,11 @@ public class ConfigExtension {
     protected static final String NIMBUS_CONFIG_UPDATE_HANDLER_CLASS = "nimbus.config.update.handler.class";
 
     public static String getNimbusConfigUpdateHandlerClass(Map conf) {
+        // ${nimbus.config.update.handler.class}
         String klass = (String) conf.get(NIMBUS_CONFIG_UPDATE_HANDLER_CLASS);
         if (StringUtils.isBlank(klass)) {
             klass = DefaultConfigUpdateHandler.class.getName();
         }
-
         return klass;
     }
 

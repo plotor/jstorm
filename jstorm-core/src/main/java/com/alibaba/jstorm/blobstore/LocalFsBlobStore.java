@@ -86,11 +86,13 @@ public class LocalFsBlobStore extends BlobStore {
         if (overrideBase == null) {
             overrideBase = (String) conf.get(Config.BLOBSTORE_DIR); // blobstore.dir
             if (overrideBase == null) {
+                // 本地模式 blobstore 会存放到 ${storm.local.dir}/blobs/
                 overrideBase = (String) conf.get(Config.STORM_LOCAL_DIR); // storm.local.dir
             }
         }
-        File baseDir = new File(overrideBase, BASE_BLOBS_DIR_NAME);
+        File baseDir = new File(overrideBase, BASE_BLOBS_DIR_NAME); // ${storm.local.dir}/blobs/
         try {
+            // 创建 ZK 客户端，基于 apache curator
             zkClient = BlobStoreUtils.createZKClient(conf);
             fbs = new FileBlobStoreImpl(baseDir, conf);
         } catch (Exception e) {
@@ -128,8 +130,8 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public AtomicOutputStream updateBlob(String key) throws KeyNotFoundException {
         validateKey(key);
-        checkForBlobOrDownload(key);
-        getStoredBlobMeta(key);
+        this.checkForBlobOrDownload(key);
+        this.getStoredBlobMeta(key);
         try {
             return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX + key, false));
         } catch (IOException e) {
@@ -171,10 +173,10 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public ReadableBlobMeta getBlobMeta(String key) throws KeyNotFoundException {
         validateKey(key);
-        if (!checkForBlobOrDownload(key)) {
-            checkForBlobUpdate(key);
+        if (!this.checkForBlobOrDownload(key)) {
+            this.checkForBlobUpdate(key);
         }
-        SettableBlobMeta meta = getStoredBlobMeta(key);
+        SettableBlobMeta meta = this.getStoredBlobMeta(key);
         ReadableBlobMeta rbm = new ReadableBlobMeta();
         rbm.set_settable(meta);
         try {
@@ -189,7 +191,7 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public void setBlobMeta(String key, SettableBlobMeta meta) throws KeyNotFoundException {
         validateKey(key);
-        checkForBlobOrDownload(key);
+        this.checkForBlobOrDownload(key);
         //SettableBlobMeta orig = getStoredBlobMeta(key);
         BlobStoreFileOutputStream mOut = null;
         try {
@@ -213,8 +215,8 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public void deleteBlob(String key) throws KeyNotFoundException {
         validateKey(key);
-        checkForBlobOrDownload(key);
-        getStoredBlobMeta(key);
+        this.checkForBlobOrDownload(key);
+        this.getStoredBlobMeta(key);
         try {
             fbs.deleteKey(DATA_PREFIX + key);
             fbs.deleteKey(META_PREFIX + key);
@@ -233,10 +235,10 @@ public class LocalFsBlobStore extends BlobStore {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
-        if (!checkForBlobOrDownload(key, nimbusSet)) {
-            checkForBlobUpdate(key, nimbusSet);
+        if (!this.checkForBlobOrDownload(key, nimbusSet)) {
+            this.checkForBlobUpdate(key, nimbusSet);
         }
-        getStoredBlobMeta(key);
+        this.getStoredBlobMeta(key);
         try {
             return new BlobStoreFileInputStream(fbs.read(DATA_PREFIX + key));
         } catch (IOException e) {
@@ -266,7 +268,7 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public int getBlobReplication(String key) throws Exception {
         validateKey(key);
-        getStoredBlobMeta(key);
+        this.getStoredBlobMeta(key);
         if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + key) == null) {
             return 0;
         }
@@ -281,13 +283,13 @@ public class LocalFsBlobStore extends BlobStore {
 
     //This additional check and download is for nimbus high availability in case you have more than one nimbus
     public boolean checkForBlobOrDownload(String key) {
-        return checkForBlobOrDownload(key, null);
+        return this.checkForBlobOrDownload(key, null);
     }
 
     public boolean checkForBlobOrDownload(String key, Set<NimbusInfo> nimbusSet) {
         boolean checkBlobDownload = false;
         long start = System.currentTimeMillis();
-        ReentrantLock lock = getLockForKey(key);
+        ReentrantLock lock = this.getLockForKey(key);
         lock.lock();
         try {
             // quite slow, at least 10ms+
@@ -315,24 +317,24 @@ public class LocalFsBlobStore extends BlobStore {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            unlockForKey(key, lock);
+            this.unlockForKey(key, lock);
         }
         LOG.debug("checkForBlobOrDownload, key:{}, cost:{}", key, System.currentTimeMillis() - start);
         return checkBlobDownload;
     }
 
     public void checkForBlobUpdate(String key) {
-        checkForBlobUpdate(key, null);
+        this.checkForBlobUpdate(key, null);
     }
 
     public void checkForBlobUpdate(String key, Set<NimbusInfo> nimbusSet) {
         long start = System.currentTimeMillis();
-        ReentrantLock lock = getLockForKey(key);
+        ReentrantLock lock = this.getLockForKey(key);
         lock.lock();
         try {
             BlobStoreUtils.updateKeyForBlobStore(conf, this, zkClient, key, nimbusInfo, nimbusSet);
         } finally {
-            unlockForKey(key, lock);
+            this.unlockForKey(key, lock);
         }
         LOG.debug("checkForBlobUpdate, key:{}, cost:{}", key, System.currentTimeMillis() - start);
     }

@@ -67,6 +67,8 @@ public class NimbusData {
     /**
      * Due to the conf is no longer to be static, it will be refreshed dynamically
      * it should be AtomicReference
+     *
+     * Nimbus 集群配置:default.yaml/storm.yaml/命令行参数
      */
     private final Map<Object, Object> conf;
 
@@ -158,15 +160,18 @@ public class NimbusData {
          */
         this.createFileHandler();
         this.mkBlobCacheMap();
+        // 基于 conf 构造 NimbusInfo 对象
         this.nimbusHostPortInfo = NimbusInfo.fromConf(conf);
-        // local blob or hdfs blob
+        // 创建并初始化对应的 blobstore 实例
         this.blobStore = BlobStoreUtils.getNimbusBlobStore(conf, nimbusHostPortInfo);
 
         this.isLaunchedCleaner = false;
         this.isLaunchedMonitor = false;
 
+        // 初始化提交编号，从 0 开始计数
         this.submittedCount = new AtomicInteger(0);
 
+        // 创建 StormZkClusterState 对象，用于 ZK 数据管理
         this.stormClusterState = Cluster.mk_storm_cluster_state(conf);
 
         // 创建 memCache 和 dbCache
@@ -253,7 +258,7 @@ public class NimbusData {
         int file_copy_expiration_secs = JStormUtils.parseInt(conf.get(Config.NIMBUS_FILE_COPY_EXPIRATION_SECS), 30);
 
         /*
-         * {@link TimeCacheMap} 在实例化时会启动一个守护线程，
+         * TimeCacheMap 在实例化时会启动一个守护线程，
          * 并依据超时时间循环从 buckets 中去除对象，并应用执行 callback 的 expire 方法
          * 这里的 expire 逻辑是执行关闭管道或输入流
          */

@@ -318,12 +318,19 @@ public class BlobStoreUtils {
         return store;
     }
 
+    /**
+     * 创建并初始化对应的 blobstore 实例
+     *
+     * @param conf
+     * @param nimbusInfo
+     * @return
+     */
     public static BlobStore getNimbusBlobStore(Map conf, NimbusInfo nimbusInfo) {
         return getNimbusBlobStore(conf, null, nimbusInfo);
     }
 
     /**
-     * 创建对应的 blobstore 对象：LocalFsBlobStore or HdfsBlobStore
+     * 创建并初始化对应的 blobstore 实例：LocalFsBlobStore or HdfsBlobStore
      *
      * @param conf
      * @param baseDir
@@ -331,14 +338,17 @@ public class BlobStoreUtils {
      * @return
      */
     public static BlobStore getNimbusBlobStore(Map conf, String baseDir, NimbusInfo nimbusInfo) {
-        String type = (String) conf.get(Config.NIMBUS_BLOBSTORE); // nimbus.blobstore.class:
+        // 尝试获取用户指定的 ${nimbus.blobstore.class} 实现类
+        String type = (String) conf.get(Config.NIMBUS_BLOBSTORE);
         if (type == null) {
-            type = LocalFsBlobStore.class.getName(); // 默认使用 com.alibaba.jstorm.blobstore.LocalFsBlobStore
+            // 默认使用 LocalFsBlobStore
+            type = LocalFsBlobStore.class.getName();
         }
         BlobStore store = (BlobStore) Utils.newInstance(type);
         HashMap nconf = new HashMap(conf);
         // only enable cleanup of blobstore on nimbus
         nconf.put(Config.BLOBSTORE_CLEANUP_ENABLE, Boolean.TRUE); // blobstore.cleanup.enable=true
+        // 初始化 blobstore 实例
         store.prepare(nconf, baseDir, nimbusInfo);
         return store;
     }

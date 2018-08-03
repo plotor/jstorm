@@ -77,4 +77,4 @@ else
 	startJStorm "supervisor" "Supervisor"
 fi
 
-echo "Successfully  start jstorm daemon...."
+echo "Successfully start jstorm daemon...."

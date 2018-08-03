@@ -48,6 +48,7 @@ public interface INimbus {
 
     /**
      * map from node id to supervisor details
+     * 有 nodeId 获取对应 supervisor 的 hostname
      *
      * @param existingSupervisors
      * @param nodeId

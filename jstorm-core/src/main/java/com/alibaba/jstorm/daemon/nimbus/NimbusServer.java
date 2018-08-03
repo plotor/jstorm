@@ -141,7 +141,6 @@ public class NimbusServer {
     @SuppressWarnings("rawtypes")
     private void launchServer(final Map conf, INimbus inimbus) {
         LOG.info("Begin to start nimbus with conf " + conf);
-
         try {
             // 1. 验证当前为分布式运行模式，不允许以本地模式运行
             StormConfig.validate_distributed_mode(conf);
@@ -149,10 +148,10 @@ public class NimbusServer {
             // 2. 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid}，如果存在历史运行记录，则会进行清除
             this.createPid(conf);
 
-            // 3. 注册 shutdown hook 方法，用于执行在 JVM 进程终止时的清理逻辑
+            // 3. 注册 shutdown hook 方法，用于在 JVM 进程终止时执行清理逻辑
             this.initShutdownHook();
 
-            // 4. 空方法
+            // 4. 模板方法
             inimbus.prepare(conf, StormConfig.masterInimbus(conf));
 
             // 5. 基于 conf 创建 NimbusData 对象
@@ -161,7 +160,7 @@ public class NimbusServer {
             // 6. 注册一个 follower 线程
             this.initFollowerThread(conf);
 
-            // 7. 创建并启动一个后端 HTTP 服务（默认端口为 7621）
+            // 7. 创建并启动一个后端 HTTP 服务（默认端口为 7621，主要用于查看和下载 nimbus 的日志数据）
             int port = ConfigExtension.getNimbusDeamonHttpserverPort(conf);
             hs = new Httpserver(port, conf);
             hs.start();
@@ -219,8 +218,8 @@ public class NimbusServer {
         LOG.info("Begin to start nimbus on local model");
         StormConfig.validate_local_mode(conf);
         inimbus.prepare(conf, StormConfig.masterInimbus(conf));
-        data = createNimbusData(conf, inimbus);
-        init(conf);
+        data = this.createNimbusData(conf, inimbus);
+        this.init(conf);
         serviceHandler = new ServiceHandler(data);
         return serviceHandler;
     }
@@ -261,12 +260,12 @@ public class NimbusServer {
         this.initTopologyStatus();
 
         // 清除函数
-        initCleaner(conf);
+        this.initCleaner(conf);
 
-        initMetricRunnable();
+        this.initMetricRunnable();
 
         if (!data.isLocalMode()) {
-            initMonitor(conf);
+            this.initMonitor(conf);
             //mkRefreshConfThread(data);
         }
     }
@@ -280,8 +279,6 @@ public class NimbusServer {
      * @throws Exception
      */
     private NimbusData createNimbusData(Map conf, INimbus inimbus) throws Exception {
-        // Callback callback=new TimerCallBack();
-        // StormTimer timer=Timer.mkTimerTimer(callback);
         return new NimbusData(conf, inimbus);
     }
 
@@ -393,9 +390,10 @@ public class NimbusServer {
          * we will execute this callback, to init some necessary data/thread
          */
         Callback leaderCallback = new Callback() {
+            @Override
             public <T> Object execute(T... args) {
                 try {
-                    init(data.getConf());
+                    NimbusServer.this.init(data.getConf());
                 } catch (Exception e) {
                     LOG.error("Nimbus init error after becoming a leader", e);
                     JStormUtils.halt_process(0, "Failed to init nimbus");
@@ -415,6 +413,7 @@ public class NimbusServer {
      */
     private void initShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
             public void run() {
                 NimbusServer.this.cleanup();
             }

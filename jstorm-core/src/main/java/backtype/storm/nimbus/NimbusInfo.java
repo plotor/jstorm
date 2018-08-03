@@ -66,7 +66,6 @@ public class NimbusInfo implements Serializable {
         } else {
             host = NetWorkUtils.ip();
         }
-
         int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString()); // 8627
         return new NimbusInfo(host, port, false);
     }

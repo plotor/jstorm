@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.metric;
 
 import backtype.storm.generated.MetricInfo;
@@ -32,11 +33,20 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
- * metrics cache. we maintain the following data in rocks DB cache: 1. all topology ids 2. topology id ==> all metrics meta(map<metric_name, metric_id>) 3.
- * topology id ==> all metrics data
+ * metrics cache.
+ * we maintain the following data in rocks DB cache:
+ * 1. all topology ids
+ * 2. topology id ==> all metrics meta(map<metric_name, metric_id>)
+ * 3. topology id ==> all metrics data
  *
  * @author Cody (weiyue.wy@alibaba-inc.com)
  * @since 2.0.5
@@ -89,7 +99,7 @@ public class JStormMetricCache {
     }
 
     public JStormMetricCache(Map conf, StormClusterState zkCluster) {
-        String dbCacheClass = getNimbusCacheClass(conf);
+        String dbCacheClass = this.getNimbusCacheClass(conf);
         LOG.info("JStorm metrics cache will use {}", dbCacheClass);
 
         boolean reset = ConfigExtension.getMetricCacheReset(conf);
@@ -136,42 +146,42 @@ public class JStormMetricCache {
         long ts = System.currentTimeMillis();
         int tp = 0, comp = 0, compStream = 0, task = 0, stream = 0, worker = 0, netty = 0;
         if (tpMetric.get_componentMetric().get_metrics_size() > 0) {
-            batchData.put(METRIC_DATA_30M_COMPONENT + topologyId, new Object[]{ts, tpMetric.get_componentMetric()});
+            batchData.put(METRIC_DATA_30M_COMPONENT + topologyId, new Object[] {ts, tpMetric.get_componentMetric()});
             comp += tpMetric.get_componentMetric().get_metrics_size();
         }
         if (tpMetric.is_set_compStreamMetric() && tpMetric.get_compStreamMetric().get_metrics_size() > 0) {
-            batchData.put(METRIC_DATA_30M_COMP_STREAM + topologyId, new Object[]{ts, tpMetric.get_compStreamMetric()});
+            batchData.put(METRIC_DATA_30M_COMP_STREAM + topologyId, new Object[] {ts, tpMetric.get_compStreamMetric()});
             compStream += tpMetric.get_compStreamMetric().get_metrics_size();
         }
         if (tpMetric.get_taskMetric().get_metrics_size() > 0) {
-            tryCombineMetricInfo(METRIC_DATA_30M_TASK + topologyId, tpMetric.get_taskMetric(), MetaType.TASK, ts);
+            this.tryCombineMetricInfo(METRIC_DATA_30M_TASK + topologyId, tpMetric.get_taskMetric(), MetaType.TASK, ts);
             task += tpMetric.get_taskMetric().get_metrics_size();
         }
         if (tpMetric.get_streamMetric().get_metrics_size() > 0) {
-            tryCombineMetricInfo(METRIC_DATA_30M_STREAM + topologyId, tpMetric.get_streamMetric(), MetaType.STREAM, ts);
+            this.tryCombineMetricInfo(METRIC_DATA_30M_STREAM + topologyId, tpMetric.get_streamMetric(), MetaType.STREAM, ts);
             stream += tpMetric.get_streamMetric().get_metrics_size();
         }
         if (tpMetric.get_workerMetric().get_metrics_size() > 0) {
-            tryCombineMetricInfo(METRIC_DATA_30M_WORKER + topologyId, tpMetric.get_workerMetric(), MetaType.WORKER, ts);
+            this.tryCombineMetricInfo(METRIC_DATA_30M_WORKER + topologyId, tpMetric.get_workerMetric(), MetaType.WORKER, ts);
             worker += tpMetric.get_workerMetric().get_metrics_size();
         }
         if (tpMetric.get_nettyMetric().get_metrics_size() > 0) {
-            tryCombineMetricInfo(METRIC_DATA_30M_NETTY + topologyId, tpMetric.get_nettyMetric(), MetaType.NETTY, ts);
+            this.tryCombineMetricInfo(METRIC_DATA_30M_NETTY + topologyId, tpMetric.get_nettyMetric(), MetaType.NETTY, ts);
             netty += tpMetric.get_nettyMetric().get_metrics_size();
         }
 
         // store 30 snapshots of topology metrics
         if (tpMetric.get_topologyMetric().get_metrics_size() > 0) {
             String keyPrefix = METRIC_DATA_30M_TOPOLOGY + topologyId + "-";
-            int page = getRingAvailableIndex(keyPrefix);
+            int page = this.getRingAvailableIndex(keyPrefix);
 
-            batchData.put(keyPrefix + page, new Object[]{ts, tpMetric.get_topologyMetric()});
+            batchData.put(keyPrefix + page, new Object[] {ts, tpMetric.get_topologyMetric()});
             tp += tpMetric.get_topologyMetric().get_metrics_size();
         }
         LOG.info("caching metric data for topology:{},tp:{},comp:{},comp_stream:{},task:{},stream:{},worker:{},netty:{},cost:{}",
                 topologyId, tp, comp, compStream, task, stream, worker, netty, System.currentTimeMillis() - ts);
 
-        return putBatch(batchData);
+        return this.putBatch(batchData);
     }
 
     private int getRingAvailableIndex(String keyPrefix) {
@@ -207,13 +217,13 @@ public class JStormMetricCache {
                         metaType, old.get_metrics_size(), incoming.get_metrics_size());
                 old.get_metrics().putAll(incoming.get_metrics());
                 // remove dead worker
-                cache.put(key, new Object[]{ts, old});
+                cache.put(key, new Object[] {ts, old});
             } catch (Exception ignored) {
                 cache.remove(key);
-                cache.put(key, new Object[]{ts, incoming});
+                cache.put(key, new Object[] {ts, incoming});
             }
         } else {
-            cache.put(key, new Object[]{ts, incoming});
+            cache.put(key, new Object[] {ts, incoming});
         }
     }
 
@@ -276,8 +286,8 @@ public class JStormMetricCache {
     }
 
     public void removeTopology(String topologyId) {
-        removeTopologyMeta(topologyId);
-        removeTopologyData(topologyId);
+        this.removeTopologyMeta(topologyId);
+        this.removeTopologyData(topologyId);
     }
 
     protected void removeTopologyMeta(String topologyId) {
