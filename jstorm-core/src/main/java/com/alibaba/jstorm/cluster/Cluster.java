@@ -115,13 +115,13 @@ public class Cluster {
     }
 
     /**
-     * 获取 topology 对应的任务分配信息路径
+     * assignments/${topology_id}
      *
      * @param id
      * @return
      */
     public static String assignment_path(String id) {
-        // assignments/{topology_id}
+        // assignments/${topology_id}
         return ASSIGNMENTS_SUBTREE + ZK_SEPARATOR + id;
     }
 
@@ -221,13 +221,13 @@ public class Cluster {
     }
 
     /**
-     * 获取 assignments_bak/{topology_name}
+     * assignments_bak/${topology_name}
      *
      * @param id
      * @return
      */
     public static String assignment_bak_path(String id) {
-        return ASSIGNMENTS_BAK_SUBTREE + ZK_SEPARATOR + id; // assignments_bak/{topology_name}
+        return ASSIGNMENTS_BAK_SUBTREE + ZK_SEPARATOR + id; // assignments_bak/${topology_name}
     }
 
     /**

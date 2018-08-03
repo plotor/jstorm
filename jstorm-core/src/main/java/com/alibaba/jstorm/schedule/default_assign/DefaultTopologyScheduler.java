@@ -137,7 +137,7 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
     }
 
     /**
-     * 获取当前拓扑
+     * 为当前 topology 中的 task 分配 worker
      *
      * @param context
      * @return
@@ -182,14 +182,16 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
             throw new FailedAssignTopologyException("Don't need assign worker, all workers are fine ");
         }
 
+        // 获取可用的 worker 列表，并为其设置分配对应的 supervisor 信息
         List<ResourceWorkerSlot> availableWorkers =
                 WorkerScheduler.getInstance().getAvailableWorkers(defaultContext, needAssignTasks, allocWorkerNum);
         TaskScheduler taskScheduler = new TaskScheduler(defaultContext, needAssignTasks, availableWorkers);
+        // 记录已经分配的 worker
         Set<ResourceWorkerSlot> assignment = new HashSet<>(taskScheduler.assign());
 
-        //setting worker's memory for TM
+        // setting worker's memory for TM
+        // 为 TM 对应的 worker 设置工作内存大小
         int topologyMasterId = defaultContext.getTopologyMasterTaskId();
-        // ${topology.master.worker.memory.size}
         Long tmWorkerMem = ConfigExtension.getMemSizePerTopologyMasterWorker(defaultContext.getStormConf());
         if (tmWorkerMem != null) {
             for (ResourceWorkerSlot resourceWorkerSlot : assignment) {

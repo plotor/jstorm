@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule.default_assign.Selector;
 
-import java.util.List;
-
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
+
+import java.util.List;
 
 public interface Selector {
     List<ResourceWorkerSlot> select(List<ResourceWorkerSlot> result, String name);

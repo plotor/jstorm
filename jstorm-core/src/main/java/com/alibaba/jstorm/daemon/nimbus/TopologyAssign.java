@@ -204,7 +204,7 @@ public class TopologyAssign implements Runnable {
         }
 
         if (assignment != null) {
-            // 将拓扑信息备份到 ZK 上
+            // 将拓扑信息备份到 ZK 上：assignments_bak/${topology_name}
             this.backupAssignment(assignment, event);
         }
         event.done();
@@ -497,18 +497,18 @@ public class TopologyAssign implements Runnable {
         if (!StormConfig.local_mode(nimbusData.getConf())) {
             // 集群模式，获取模式的调度器
             ITopologyScheduler scheduler = schedulers.get(DEFAULT_SCHEDULER_NAME); // DefaultTopologyScheduler
-            // 为 topology 分配 worker
+            // 为当前 topology 中的 task 分配 worker
             assignments = scheduler.assignTasks(context);
         } else {
             // 本地模式
             assignments = mkLocalAssignment(context);
         }
 
-        // TODO by zhenchao 2018-06-05 18:49:06
+        // 记录分配信息到 ZK
         Assignment assignment = null;
         if (assignments != null && assignments.size() > 0) {
-            Map<String, String> nodeHost = getTopologyNodeHost(
-                    context.getCluster(), context.getOldAssignment(), assignments);
+            // 获取服务中的 supervisor ID 及其 hostname 信息
+            Map<String, String> nodeHost = getTopologyNodeHost(context.getCluster(), context.getOldAssignment(), assignments);
             Map<Integer, Integer> startTimes = getTaskStartTimes(
                     context, nimbusData, topologyId, context.getOldAssignment(), assignments);
 
@@ -521,19 +521,11 @@ public class TopologyAssign implements Runnable {
                 assignment.setAssignmentType(Assignment.AssignmentType.ScaleTopology);
             }
             StormClusterState stormClusterState = nimbusData.getStormClusterState();
-
+            // 写入 assignment 信息到 ZK: assignments/${topology_id}
             stormClusterState.set_assignment(topologyId, assignment);
 
             // update task heartbeat's start time
             NimbusUtils.updateTaskHbStartTime(nimbusData, assignment, topologyId);
-
-            // Update metrics information in ZK when rebalance or reassignment
-            // Only update metrics monitor status when creating topology
-            // if (context.getAssignType() ==
-            // TopologyAssignContext.ASSIGN_TYPE_REBALANCE
-            // || context.getAssignType() ==
-            // TopologyAssignContext.ASSIGN_TYPE_MONITOR)
-            // NimbusUtils.updateMetricsInfo(nimbusData, topologyId, assignment);
 
             NimbusUtils.updateTopologyTaskTimeout(nimbusData, topologyId);
 
@@ -570,11 +562,22 @@ public class TopologyAssign implements Runnable {
         return result;
     }
 
+    /**
+     * 获取 task 的启动时间
+     *
+     * @param context
+     * @param nimbusData
+     * @param topologyId
+     * @param existingAssignment
+     * @param workers
+     * @return
+     * @throws Exception
+     */
     public static Map<Integer, Integer> getTaskStartTimes(TopologyAssignContext context, NimbusData nimbusData,
-                                                          String topologyId, Assignment existingAssignment,
-                                                          Set<ResourceWorkerSlot> workers) throws Exception {
+                                                          String topologyId, Assignment existingAssignment, Set<ResourceWorkerSlot> workers) throws Exception {
         Map<Integer, Integer> startTimes = new TreeMap<>();
 
+        // 对于新分配来说，直接以当前时间作为 task 的启动时间（单位：秒）
         if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_NEW) {
             int nowSecs = TimeUtils.current_time_secs();
             for (ResourceWorkerSlot worker : workers) {
@@ -582,7 +585,6 @@ public class TopologyAssign implements Runnable {
                     startTimes.put(changedTaskId, nowSecs);
                 }
             }
-
             return startTimes;
         }
 
@@ -592,7 +594,6 @@ public class TopologyAssign implements Runnable {
             if (taskStartTimeSecs != null) {
                 startTimes.putAll(taskStartTimeSecs);
             }
-
             if (existingAssignment.getWorkers() != null) {
                 oldWorkers = existingAssignment.getWorkers();
             }
@@ -615,10 +616,18 @@ public class TopologyAssign implements Runnable {
         return startTimes;
     }
 
+    /**
+     * 获取服务中的 supervisor ID 及其 hostname 信息
+     *
+     * @param supervisorMap
+     * @param existingAssignment
+     * @param workers
+     * @return
+     */
     public static Map<String, String> getTopologyNodeHost(
             Map<String, SupervisorInfo> supervisorMap, Assignment existingAssignment, Set<ResourceWorkerSlot> workers) {
         // the following is that remove unused node from allNodeHost
-        Set<String> usedNodes = new HashSet<>();
+        Set<String> usedNodes = new HashSet<>(); // 记录已分配 worker 隶属的 supervisor 对应的 ID
         for (ResourceWorkerSlot worker : workers) {
             usedNodes.add(worker.getNodeId());
         }

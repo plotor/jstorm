@@ -789,27 +789,31 @@ public class Common {
 
     /**
      * get all bolts' inputs and spouts' outputs <Bolt_name, <Input_name>> <Spout_name, <Output_name>>
+     * 获取 topology 中所有 bolt 及其对应的 input 组件 ID 映射关系
      *
      * @return all bolts' inputs and spouts' outputs
      */
-    public static Map<String, Set<String>> buildSpoutOutoputAndBoltInputMap(DefaultTopologyAssignContext context) {
-        Set<String> bolts = context.getRawTopology().get_bolts().keySet();
-        Set<String> spouts = context.getRawTopology().get_spouts().keySet();
-        Map<String, Set<String>> relationship = new HashMap<>();
+    public static Map<String, Set<String>> buildSpoutOutputAndBoltInputMap(DefaultTopologyAssignContext context) {
+        Set<String> bolts = context.getRawTopology().get_bolts().keySet(); // 获取 topology 所有的 bolt 的 ID 集合
+        Set<String> spouts = context.getRawTopology().get_spouts().keySet(); // 获取 topology 所有的 spout 的 ID 集合
+        Map<String, Set<String>> relationship = new HashMap<>(); // 记录结果
         for (Entry<String, Bolt> entry : context.getRawTopology().get_bolts().entrySet()) {
+            // 获取 bolt 的 inputs
             Map<GlobalStreamId, Grouping> inputs = entry.getValue().get_common().get_inputs();
             Set<String> input = new HashSet<>();
-            relationship.put(entry.getKey(), input);
+            relationship.put(entry.getKey(), input); // <bolt_id, input>
+            // 遍历处理 bolt 的 inputs 组件
             for (Entry<GlobalStreamId, Grouping> inEntry : inputs.entrySet()) {
-                String component = inEntry.getKey().get_componentId();
+                String component = inEntry.getKey().get_componentId(); // 组件 ID
                 input.add(component);
-                if (!bolts.contains(component)) {
+                if (!bolts.contains(component)) { // 该组件不是 bolt，也就是 spout
                     // spout
                     Set<String> spoutOutput = relationship.get(component);
                     if (spoutOutput == null) {
                         spoutOutput = new HashSet<>();
                         relationship.put(component, spoutOutput);
                     }
+                    // 将该 spout 组件 ID 加入到对应 bolt 的 集合中
                     spoutOutput.add(entry.getKey());
                 }
             }

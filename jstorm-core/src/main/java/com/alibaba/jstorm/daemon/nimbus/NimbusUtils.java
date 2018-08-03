@@ -636,6 +636,7 @@ public class NimbusUtils {
     public static void updateTopologyTaskTimeout(NimbusData data, String topologyId) {
         Map topologyConf = null;
         try {
+            // 获取 topology 的配置信息
             topologyConf = StormConfig.read_nimbus_topology_conf(topologyId, data.getBlobStore());
         } catch (Exception e) {
             LOG.warn("Failed to read configuration of {}, {}", topologyId, e.getMessage());

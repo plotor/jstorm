@@ -65,7 +65,7 @@ public class TaskScheduler {
         LOG.info("Tasks " + tasks + " is going to be assigned in workers " + workers);
         this.context = context;
         this.taskContext = new TaskAssignContext(this.buildSupervisorToWorker(workers),
-                Common.buildSpoutOutoputAndBoltInputMap(context), context.getTaskToComponent());
+                Common.buildSpoutOutputAndBoltInputMap(context), context.getTaskToComponent());
         this.componentSelector = new ComponentNumSelector(taskContext);
         this.inputComponentSelector = new InputComponentNumSelector(taskContext);
         this.totalTaskNumSelector = new TotalTaskNumSelector(taskContext);
@@ -75,7 +75,8 @@ public class TaskScheduler {
         if (context.getAssignType() != TopologyAssignContext.ASSIGN_TYPE_REBALANCE || context.isReassign()) {
             // warning ! it doesn't consider HA TM now!!
             if (context.getAssignSingleWorkerForTM() && tasks.contains(context.getTopologyMasterTaskId())) {
-                assignForTopologyMaster();
+                // 为 TM 分配 worker
+                this.assignForTopologyMaster();
             }
         }
 
@@ -88,14 +89,14 @@ public class TaskScheduler {
                 preAssignWorkers.add(worker.getKey());
             }
         }
-        setTaskNum(taskNum, workerNum);
+        this.setTaskNum(taskNum, workerNum);
 
         // Check the worker assignment status of pre-assigned workers, e.g user defined or old assignment workers.
         // Remove the workers which have been assigned with enough workers.
         for (ResourceWorkerSlot worker : preAssignWorkers) {
             if (taskContext.getWorkerToTaskNum().keySet().contains(worker)) {
 
-                Set<ResourceWorkerSlot> doneWorkers = removeWorkerFromSrcPool(taskContext.getWorkerToTaskNum().get(worker), worker);
+                Set<ResourceWorkerSlot> doneWorkers = this.removeWorkerFromSrcPool(taskContext.getWorkerToTaskNum().get(worker), worker);
                 if (doneWorkers != null) {
                     for (ResourceWorkerSlot doneWorker : doneWorkers) {
                         taskNum -= doneWorker.getTasks().size();
@@ -104,11 +105,11 @@ public class TaskScheduler {
                 }
             }
         }
-        setTaskNum(taskNum, workerNum);
+        this.setTaskNum(taskNum, workerNum);
 
         // For Scale-out case, the old assignment should be kept.
         if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_REBALANCE && !context.isReassign()) {
-            keepAssignment(taskNum, context.getOldAssignment().getWorkers());
+            this.keepAssignment(taskNum, context.getOldAssignment().getWorkers());
         }
     }
 
@@ -125,7 +126,7 @@ public class TaskScheduler {
                     if (contextWorker != null) {
                         if (tmWorker != null && tmWorker.getTasks().contains(taskId) && context.getAssignSingleWorkerForTM()) {
                             if (context.getTopologyMasterTaskId() == taskId) {
-                                updateAssignedTasksOfWorker(taskId, contextWorker);
+                                this.updateAssignedTasksOfWorker(taskId, contextWorker);
                                 taskContext.getWorkerToTaskNum().remove(contextWorker);
                                 contextWorker.getTasks().clear();
                                 contextWorker.getTasks().add(taskId);
@@ -137,8 +138,8 @@ public class TaskScheduler {
                             }
                         } else {
                             String componentName = context.getTaskToComponent().get(taskId);
-                            updateAssignedTasksOfWorker(taskId, contextWorker);
-                            updateComponentsNumOfWorker(componentName, contextWorker);
+                            this.updateAssignedTasksOfWorker(taskId, contextWorker);
+                            this.updateComponentsNumOfWorker(componentName, contextWorker);
                             keepTasks.add(taskId);
                         }
                     }
@@ -146,7 +147,7 @@ public class TaskScheduler {
             }
         }
         if (tmWorker != null) {
-            setTaskNum(taskNum, workerNum);
+            this.setTaskNum(taskNum, workerNum);
             keepAssignments.remove(tmWorker);
         }
 
@@ -159,7 +160,7 @@ public class TaskScheduler {
             Set<ResourceWorkerSlot> doneAssignedWorkers = new HashSet<>();
             for (ResourceWorkerSlot worker : keepAssignments) {
                 ResourceWorkerSlot contextWorker = taskContext.getWorker(worker);
-                if (contextWorker != null && isTaskFullForWorker(contextWorker)) {
+                if (contextWorker != null && this.isTaskFullForWorker(contextWorker)) {
                     found = true;
                     workerNum--;
                     taskContext.getWorkerToTaskNum().remove(contextWorker);
@@ -172,7 +173,7 @@ public class TaskScheduler {
 
             if (found) {
                 taskNum -= doneAssignedTaskNum;
-                setTaskNum(taskNum, workerNum);
+                this.setTaskNum(taskNum, workerNum);
                 keepAssignments.removeAll(doneAssignedWorkers);
             } else {
                 break;
@@ -207,12 +208,12 @@ public class TaskScheduler {
 
     public List<ResourceWorkerSlot> assign() {
         if (tasks.size() == 0) {
-            assignments.addAll(getRestAssignedWorkers());
+            assignments.addAll(this.getRestAssignedWorkers());
             return assignments;
         }
 
         // Firstly, assign workers to the components which are configured "task.on.differ.node"
-        Set<Integer> assignedTasks = assignForDifferNodeTask();
+        Set<Integer> assignedTasks = this.assignForDifferNodeTask();
 
         // Assign for the tasks except system tasks
         tasks.removeAll(assignedTasks);
@@ -223,25 +224,27 @@ public class TaskScheduler {
                 systemTasks.put(task, name);
                 continue;
             }
-            assignForTask(name, task);
-        }
-        
-        /*
-         * At last, make the assignment for system component, e.g. acker, topology master...
-         */
-        for (Entry<Integer, String> entry : systemTasks.entrySet()) {
-            assignForTask(entry.getValue(), entry.getKey());
+            this.assignForTask(name, task);
         }
 
-        assignments.addAll(getRestAssignedWorkers());
+        // At last, make the assignment for system component, e.g. acker, topology master...
+        for (Entry<Integer, String> entry : systemTasks.entrySet()) {
+            this.assignForTask(entry.getValue(), entry.getKey());
+        }
+
+        assignments.addAll(this.getRestAssignedWorkers());
         return assignments;
     }
 
+    /**
+     * 为 TM 分配 worker
+     */
     private void assignForTopologyMaster() {
         int taskId = context.getTopologyMasterTaskId();
 
         // Try to find a worker which is in a supervisor with most workers,
         // to avoid the balance problem when the assignment for other workers.
+        // 从 supervisor 列表中寻找一个 worker 分配给 TM，该 worker 隶属的 supervisor 具备最多的 worker 数目
         ResourceWorkerSlot workerAssigned = null;
         int workerNumOfSuperv = 0;
         for (ResourceWorkerSlot workerSlot : taskContext.getWorkerToTaskNum().keySet()) {
@@ -250,6 +253,7 @@ public class TaskScheduler {
                 for (ResourceWorkerSlot worker : workers) {
                     Set<Integer> tasks = worker.getTasks();
                     if (tasks == null || tasks.size() == 0) {
+                        // TM 独占一个 worker
                         workerAssigned = worker;
                         workerNumOfSuperv = workers.size();
                         break;
@@ -257,11 +261,11 @@ public class TaskScheduler {
                 }
             }
         }
-
         if (workerAssigned == null) {
             throw new FailedAssignTopologyException("there's no enough workers for the assignment of topology master");
         }
-        updateAssignedTasksOfWorker(taskId, workerAssigned);
+        // 将 taskId 加入到 worker 的 task 列表，并更新 worker 持有的 task 数目
+        this.updateAssignedTasksOfWorker(taskId, workerAssigned);
         taskContext.getWorkerToTaskNum().remove(workerAssigned);
         assignments.add(workerAssigned);
         tasks.remove(taskId);
@@ -270,8 +274,8 @@ public class TaskScheduler {
     }
 
     private void assignForTask(String name, Integer task) {
-        ResourceWorkerSlot worker = chooseWorker(name, new ArrayList<>(taskContext.getWorkerToTaskNum().keySet()));
-        pushTaskToWorker(task, name, worker);
+        ResourceWorkerSlot worker = this.chooseWorker(name, new ArrayList<>(taskContext.getWorkerToTaskNum().keySet()));
+        this.pushTaskToWorker(task, name, worker);
     }
 
     private Set<Integer> assignForDifferNodeTask() {
@@ -284,13 +288,19 @@ public class TaskScheduler {
         }
         for (Integer task : ret) {
             String name = context.getTaskToComponent().get(task);
-            ResourceWorkerSlot worker = chooseWorker(name, getDifferNodeTaskWokers(name));
+            ResourceWorkerSlot worker = this.chooseWorker(name, this.getDifferNodeTaskWokers(name));
             LOG.info("Due to task.on.differ.node, push task-{} to {}:{}", task, worker.getHostname(), worker.getPort());
-            pushTaskToWorker(task, name, worker);
+            this.pushTaskToWorker(task, name, worker);
         }
         return ret;
     }
 
+    /**
+     * 建立 supervisor_id 到隶属于该 supervisor 的 worker 列表的映射关系
+     *
+     * @param workers
+     * @return
+     */
     private Map<String, List<ResourceWorkerSlot>> buildSupervisorToWorker(List<ResourceWorkerSlot> workers) {
         Map<String, List<ResourceWorkerSlot>> supervisorToWorker = new HashMap<>();
         for (ResourceWorkerSlot worker : workers) {
@@ -317,11 +327,18 @@ public class TaskScheduler {
 
     private void pushTaskToWorker(Integer task, String name, ResourceWorkerSlot worker) {
         LOG.debug("Push task-" + task + " to worker-" + worker.getPort());
-        int taskNum = updateAssignedTasksOfWorker(task, worker);
-        removeWorkerFromSrcPool(taskNum, worker);
-        updateComponentsNumOfWorker(name, worker);
+        int taskNum = this.updateAssignedTasksOfWorker(task, worker);
+        this.removeWorkerFromSrcPool(taskNum, worker);
+        this.updateComponentsNumOfWorker(name, worker);
     }
 
+    /**
+     * 将 task 加入到 worker 的 task 列表，并更新 worker 持有的 task 数目
+     *
+     * @param task
+     * @param worker
+     * @return
+     */
     private int updateAssignedTasksOfWorker(Integer task, ResourceWorkerSlot worker) {
         int ret;
         Set<Integer> tasks = worker.getTasks();

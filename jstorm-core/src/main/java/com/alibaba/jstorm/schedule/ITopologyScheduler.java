@@ -29,7 +29,7 @@ public interface ITopologyScheduler {
     void prepare(Map conf);
 
     /**
-     * 为 topology 分配 worker
+     * 为当前 topology 中的 task 分配 worker
      *
      * @param context
      * @return

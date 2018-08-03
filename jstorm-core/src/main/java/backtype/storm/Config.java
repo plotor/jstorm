@@ -1441,8 +1441,8 @@ public class Config extends HashMap<String, Object> {
     public static final Object DEV_ZOOKEEPER_PATH_SCHEMA = String.class;
 
     /**
-     * A map from topology name to the number of machines that should be dedicated for that topology. Set storm.scheduler to
-     * backtype.storm.scheduler.IsolationScheduler to make use of the isolation scheduler.
+     * A map from topology name to the number of machines that should be dedicated for that topology.
+     * Set storm.scheduler to backtype.storm.scheduler.IsolationScheduler to make use of the isolation scheduler.
      */
     public static final String ISOLATION_SCHEDULER_MACHINES = "isolation.scheduler.machines";
     public static final Object ISOLATION_SCHEDULER_MACHINES_SCHEMA = ConfigValidation.MapOfStringToNumberValidator;
