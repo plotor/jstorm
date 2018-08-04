@@ -95,7 +95,7 @@ public class StormZkClusterState implements StormClusterState {
         blobstore_callback = new AtomicReference<>(null);
         gray_upgrade_callback = new AtomicReference<>(null);
 
-        // 注册一个 ZK 数据变更时的回调策略
+        // 注册 ZK 数据变更时的回调机制
         state_id = cluster_state.register(new ClusterStateCallback() {
             @Override
             public <T> Object execute(T... args) {
@@ -108,12 +108,12 @@ public class StormZkClusterState implements StormClusterState {
                 }
 
                 String path = (String) args[1]; // zk path
-                // 以 “/” 作为分隔符切分 path
+                // 规范化路径，以 “/” 作为分隔符切分 path
                 List<String> tokens = PathUtils.tokenize_path(path);
                 int size = tokens.size();
                 if (size >= 1) {
                     String params;
-                    String root = tokens.get(0);
+                    String root = tokens.get(0); // 获取一级路径
                     RunnableCallback fn = null;
                     if (root.equals(Cluster.ASSIGNMENTS_ROOT)) { // assignments
                         if (size == 1) {
@@ -123,7 +123,6 @@ public class StormZkClusterState implements StormClusterState {
                             params = tokens.get(1);
                             fn = assignment_info_callback.remove(params);
                         }
-
                     } else if (root.equals(Cluster.SUPERVISORS_ROOT)) { // supervisors
                         fn = supervisors_callback.getAndSet(null);
                     } else if (root.equals(Cluster.STORMS_ROOT) && size > 1) { // topology
@@ -139,10 +138,7 @@ public class StormZkClusterState implements StormClusterState {
                     } else {
                         LOG.error("Unknown callback for subtree " + path);
                     }
-
                     if (fn != null) {
-                        // FIXME How to set the args
-                        // fn.setArgs(params, zkEventTypes, path);
                         fn.run();
                     }
                 }

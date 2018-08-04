@@ -82,12 +82,6 @@ public class BlobStoreUtils {
         return zkClient;
     }
 
-//    public static Subject getNimbusSubject() {
-//        Subject subject = new Subject();
-//        subject.getPrincipals().add(new NimbusPrincipal());
-//        return subject;
-//    }
-
     // Normalize state
     public static BlobKeySequenceInfo normalizeNimbusHostPortSequenceNumberInfo(String nimbusSeqNumberInfo) {
         BlobKeySequenceInfo keySequenceInfo = new BlobKeySequenceInfo();
@@ -180,8 +174,7 @@ public class BlobStoreUtils {
         return isSuccess;
     }
 
-    public static boolean updateBlob(BlobStore blobStore, String key, byte[] data) throws IOException,
-                                                                                          KeyNotFoundException {
+    public static boolean updateBlob(BlobStore blobStore, String key, byte[] data) throws IOException, KeyNotFoundException {
         boolean isSuccess = false;
         AtomicOutputStream out = null;
         try {

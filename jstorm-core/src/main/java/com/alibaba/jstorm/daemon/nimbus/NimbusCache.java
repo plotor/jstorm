@@ -67,7 +67,7 @@ public class NimbusCache {
             return TIMEOUT_MEM_CACHE_CLASS;
         }
 
-        // 获取 nimbus.cache.class 配置项指定的缓存实现类
+        // 获取 ${nimbus.cache.class} 配置项指定的缓存实现类
         String nimbusCacheClass = ConfigExtension.getNimbusCacheClass(conf);
         if (!StringUtils.isBlank(nimbusCacheClass)) {
             return nimbusCacheClass;
@@ -87,10 +87,10 @@ public class NimbusCache {
             dbCache = (JStormCache) Utils.newInstance(dbCacheClass);
 
             String dbDir = StormConfig.masterDbDir(conf);
-            conf.put(RocksDBCache.ROCKSDB_ROOT_DIR, dbDir);
-            // 是否在 nimbus 启动时清空数据
+            // 设置本地缓存数据存放目录
+            conf.put(RocksDBCache.ROCKSDB_ROOT_DIR, dbDir); // ${storm.local.dir}/nimbus/rocksdb
+            // 是否在 nimbus 启动时清空数据，默认为 true
             conf.put(RocksDBCache.ROCKSDB_RESET, ConfigExtension.getNimbusCacheReset(conf));
-
             dbCache.init(conf);
             if (dbCache instanceof TimeoutMemCache) {
                 memCache = dbCache;

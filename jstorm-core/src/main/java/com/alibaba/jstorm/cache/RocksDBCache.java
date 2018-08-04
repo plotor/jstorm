@@ -90,7 +90,7 @@ public class RocksDBCache implements JStormCache {
 
     public void initDb(List<Integer> list) throws Exception {
         Options dbOptions = new Options().setCreateMissingColumnFamilies(true).setCreateIfMissing(true);
-        initDb(list, dbOptions);
+        this.initDb(list, dbOptions);
     }
 
     @SuppressWarnings("unused")
@@ -110,11 +110,11 @@ public class RocksDBCache implements JStormCache {
 
     @Override
     public void init(Map<Object, Object> conf) throws Exception {
-        initDir(conf);
+        this.initDir(conf);
 
         List<Integer> list = new ArrayList<>();
         if (conf.get(TAG_TIMEOUT_LIST) != null) {
-            for (Object obj : (List) ConfigExtension.getCacheTimeoutList(conf)) {
+            for (Object obj : ConfigExtension.getCacheTimeoutList(conf)) {
                 Integer timeoutSecond = JStormUtils.parseInt(obj);
                 if (timeoutSecond == null || timeoutSecond <= 0) {
                     continue;
@@ -128,7 +128,7 @@ public class RocksDBCache implements JStormCache {
         boolean isSuccess = false;
         for (int i = 0; i < 3; i++) {
             try {
-                initDb(list);
+                this.initDb(list);
                 isSuccess = true;
                 break;
             } catch (Exception e) {
@@ -162,7 +162,7 @@ public class RocksDBCache implements JStormCache {
             byte[] data = db.get(key.getBytes());
             if (data != null) {
                 try {
-                    return deserialize(data);
+                    return this.deserialize(data);
                 } catch (Exception e) {
                     LOG.error("Failed to deserialize obj of " + key, e);
                     db.remove(key.getBytes());
@@ -199,7 +199,7 @@ public class RocksDBCache implements JStormCache {
 
                 Object value;
                 try {
-                    value = deserialize(valueByte);
+                    value = this.deserialize(valueByte);
                 } catch (Exception e) {
                     LOG.error("Failed to deserialize obj of " + new String(keyByte));
                     db.remove(keyByte);
@@ -227,18 +227,18 @@ public class RocksDBCache implements JStormCache {
     @Override
     public void removeBatch(Collection<String> keys) {
         for (String key : keys) {
-            remove(key);
+            this.remove(key);
         }
     }
 
     @Override
     public void put(String key, Object value, int timeoutSecond) {
-        put(key, value);
+        this.put(key, value);
     }
 
     @Override
     public void put(String key, Object value) {
-        byte[] data = serialize(value);
+        byte[] data = this.serialize(value);
         try {
             db.put(key.getBytes(), data);
         } catch (Exception e) {
@@ -259,7 +259,7 @@ public class RocksDBCache implements JStormCache {
                 String key = entry.getKey();
                 Object value = entry.getValue();
 
-                byte[] data = serialize(value);
+                byte[] data = this.serialize(value);
 
                 if (StringUtils.isBlank(key) || data == null || data.length == 0) {
                     continue;
@@ -286,7 +286,7 @@ public class RocksDBCache implements JStormCache {
 
     @Override
     public void putBatch(Map<String, Object> map, int timeoutSeconds) {
-        putBatch(map);
+        this.putBatch(map);
     }
 
     protected byte[] serialize(Object data) {

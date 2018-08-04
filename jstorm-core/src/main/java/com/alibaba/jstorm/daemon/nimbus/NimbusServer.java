@@ -364,11 +364,10 @@ public class NimbusServer {
 
         // ${nimbus.thrift.max_buffer_size}
         Integer maxReadBufSize = JStormUtils.parseInt(conf.get(Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE));
-
+        // 设置服务运行参数
         THsHaServer.Args args = new THsHaServer.Args(socket);
         args.workerThreads(ServiceHandler.THREAD_NUM); // 64
         args.protocolFactory(new TBinaryProtocol.Factory(false, true, maxReadBufSize, -1));
-
         args.processor(new Nimbus.Processor<Iface>(serviceHandler));
         args.maxReadBufferBytes = maxReadBufSize;
 

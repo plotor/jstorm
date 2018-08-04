@@ -43,6 +43,11 @@ public class TimeCacheMap<K, V> implements TimeOutMap<K, V> {
     private Thread cleaner;
     private ExpiredCallback callback;
 
+    /**
+     * @param expirationSecs
+     * @param numBuckets 默认是 3
+     * @param callback
+     */
     public TimeCacheMap(int expirationSecs, int numBuckets, ExpiredCallback<K, V> callback) {
         if (numBuckets < 2) {
             throw new IllegalArgumentException("numBuckets must be >= 2");
@@ -52,13 +57,14 @@ public class TimeCacheMap<K, V> implements TimeOutMap<K, V> {
             buckets.add(new HashMap<K, V>());
         }
 
+        // 注册回调策略
         this.callback = callback;
         final long expirationMillis = expirationSecs * 1000L;
         final long sleepTime = expirationMillis / (numBuckets - 1);
 
         /*
          * cleaner 线程会一直循环的执行，
-         * 从缓冲区尾部中获取对象，并应用到 callback 的 expire 方法
+         * 间隔指定时间从缓冲区尾部获取对象，并为该对象应用 callback 的 expire 方法
          */
         this.cleaner = new Thread(new Runnable() {
 
@@ -68,7 +74,7 @@ public class TimeCacheMap<K, V> implements TimeOutMap<K, V> {
                     Map<K, V> dead;
                     JStormUtils.sleepMs(sleepTime);
                     synchronized (lock) {
-                        // 从缓冲区中获取对象
+                        // 从缓冲区队尾获取对象
                         dead = buckets.removeLast();
                         // 添加一个空的 map 到缓冲区，从而保证线程的正常运行
                         buckets.addFirst(new HashMap<K, V>());

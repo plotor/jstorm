@@ -73,7 +73,7 @@ public class NimbusData {
     private final Map<Object, Object> conf;
 
     /**
-     * 储整个集群的状态（写入 ZK，已经从 ZK 上读取）
+     * 储整个集群的状态（写入 ZK，以及从 ZK 上读取）
      */
     private StormClusterState stormClusterState;
 
@@ -174,7 +174,7 @@ public class NimbusData {
         // 创建 StormZkClusterState 对象，用于 ZK 数据管理
         this.stormClusterState = Cluster.mk_storm_cluster_state(conf);
 
-        // 创建 memCache 和 dbCache
+        // 创建 cache，减小对 ZK 的访问压力
         this.createCache();
 
         this.taskHeartbeatsCache = new ConcurrentHashMap<>();

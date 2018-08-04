@@ -13,6 +13,8 @@
 | ---- + assignments : 拓扑任务分配信息
 | ---- | ---- + ${topology_id} : 任务分配信息（对应 nimbus 上的代码目录、所有 task 的启动时间、每个 task 与节点的映射）
 
+| ---- + assignments_bak : 
+
 | ---- + tasks : 所有的 task
 | ---- | ---- + ${topology_id} : 记录当前 topology 对应的所有 task
 | ---- | ---- | ---- + ${task_id} : task 对应的 component_id（bolt_id 或 spout_id）
@@ -24,6 +26,12 @@
 | ---- + taskerrors : 所有 task 的错误信息
 | ---- | ---- + ${topology_id} : 记录当前 topology 对应的所有 task 的错误信息
 | ---- | ---- | ---- + ${task_id} : 错误信息
+
+| ---- + metrics
+
+| ---- + blobstore
+
+| ---- + gray_upgrade
 ```
 
 ### Nimbus 本地数据说明
