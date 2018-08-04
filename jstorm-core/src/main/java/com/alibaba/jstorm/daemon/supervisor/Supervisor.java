@@ -90,18 +90,19 @@ public class Supervisor {
 
         /*
          * Step 1: 创建并清空 ${storm.local.dir}/supervisor/tmp
-         *
-         * 临时目录，从 nimbus 下载的文件的临时存储目录，简单处理之后复制到 stormdist/${topology_id}
+         * 从 nimbus 下载的文件的临时存放目录（stormcode.cer、stormconf.cer、stormjar.jar、lib），
+         * 简单处理之后复制到 ${storm.local.dir}/supervisor/stormdist/${topology_id}
          */
         String path = StormConfig.supervisorTmpDir(conf);
         FileUtils.cleanDirectory(new File(path));
 
         /*
-         * Step 2: 创建 ZK 操作实例
+         * Step 2: 创建 ZK 操作对象和 worker 运行错误数据上报器
          */
         StormClusterState stormClusterState = Cluster.mk_storm_cluster_state(conf);
 
         String hostName = JStormServerUtils.getHostName(conf); // 获取主机名
+        // 创建 worker 运行错误上报器，上错 worker 的运行错误数据到 ZK:taskerrors/${topology_id}/${task_id}
         WorkerReportError workerReportError = new WorkerReportError(stormClusterState, hostName);
 
         /*
@@ -122,7 +123,7 @@ public class Supervisor {
         localState.remove(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION); // lcoal-zk-assignment.version
 
         /*
-         * Step 4: 创建 HeartBeat
+         * Step 4: 创建并启动心跳机制
          * every ${supervisor.heartbeat.frequency.secs} write SupervisorInfo to ZK sync heartbeat to nimbus
          */
         Heartbeat hb = new Heartbeat(conf, stormClusterState, supervisorId, localState);
@@ -154,7 +155,7 @@ public class Supervisor {
         SyncSupervisorEvent syncSupervisorEvent = new SyncSupervisorEvent(
                 supervisorId, conf, syncSupEventManager, stormClusterState, localState, syncProcessEvent, hb);
 
-        // ${supervisor.monitor.frequency.secs}
+        // ${supervisor.monitor.frequency.secs}，默认为 10 秒
         int syncFrequency = JStormUtils.parseInt(conf.get(Config.SUPERVISOR_MONITOR_FREQUENCY_SECS));
         EventManagerPusher syncSupervisorPusher = new EventManagerPusher(syncSupEventManager, syncSupervisorEvent, syncFrequency);
         /*
@@ -240,10 +241,10 @@ public class Supervisor {
              */
             Map<Object, Object> conf = Utils.readStormConfig();
 
-            // 确保当前为分布式模式
+            // 确保当前为分布式运行模式
             StormConfig.validate_distributed_mode(conf);
 
-            // 创建 ${storm.local.dir}/supervisor/pids/${pid}
+            // 创建进程文件： ${storm.local.dir}/supervisor/pids/${pid}
             this.createPid(conf);
 
             // 创建并启动 supervisor
@@ -251,7 +252,7 @@ public class Supervisor {
 
             JStormUtils.redirectOutput("/dev/null");
 
-            // 注册 SupervisorManger#run 方法，当 jvm 停止运行时执行 shutdown 逻辑
+            // 注册 SupervisorManger，当 JVM 进程停止时执行 shutdown 逻辑
             this.initShutdownHook(supervisorManager);
 
             // 循环监测 shutdown 方法是否执行完毕
@@ -270,7 +271,6 @@ public class Supervisor {
         } finally {
             LOG.info("Shutdown supervisor!!!");
         }
-
     }
 
     /**

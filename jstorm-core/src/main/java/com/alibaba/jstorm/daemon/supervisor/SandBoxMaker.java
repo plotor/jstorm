@@ -15,7 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
+
+import backtype.storm.Config;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.cluster.StormConfig;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -31,18 +40,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.cluster.StormConfig;
-
 /**
- * Right now generate java sandbox policy through template file
+ * Right now generate java sandbox（沙箱） policy through template file
  * In the future, generating java sandbox policy will through hard-code
  *
  * @author longda
@@ -102,7 +101,7 @@ public class SandBoxMaker {
     private String replaceLine(String line, Map<String, String> replaceMap) {
         for (Entry<String, String> entry : replaceMap.entrySet()) {
             if (line.contains(CLASS_PATH_KEY)) {
-                return genClassPath(entry.getValue());
+                return this.genClassPath(entry.getValue());
             } else if (line.contains(entry.getKey())) {
                 return line.replace(entry.getKey(), entry.getValue());
             }
@@ -124,7 +123,7 @@ public class SandBoxMaker {
             reader = new BufferedReader(new LineNumberReader(inputReader));
             String line;
             while ((line = reader.readLine()) != null) {
-                String replaced = replaceLine(line, replaceMap);
+                String replaced = this.replaceLine(line, replaceMap);
                 writer.println(replaced);
             }
             return tmpPolicy;
@@ -154,7 +153,7 @@ public class SandBoxMaker {
         }
 
         replaceMap.putAll(replaceBaseMap);
-        String tmpPolicy = generatePolicyFile(replaceMap);
+        String tmpPolicy = this.generatePolicyFile(replaceMap);
 
         File file = new File(tmpPolicy);
         String policyPath = StormConfig.worker_root(conf, workerId) + File.separator + SANBOX_TEMPLATE_NAME;

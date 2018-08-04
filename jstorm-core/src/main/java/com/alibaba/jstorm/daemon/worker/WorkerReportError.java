@@ -43,7 +43,7 @@ public class WorkerReportError {
     }
 
     /**
-     * Report worker's error to zk
+     * 上错 worker 的运行错误数据到 ZK:taskerrors/${topology_id}/${task_id}
      *
      * @param topologyId
      * @param workerPort

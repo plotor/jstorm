@@ -407,21 +407,21 @@ public class StormZkClusterState implements StormClusterState {
     }
 
     @Override
-    public void report_task_error(String topology_id, int task_id, String error, String error_level, int error_code)
-            throws Exception {
+    public void report_task_error(String topology_id, int task_id, String error, String error_level, int error_code) throws Exception {
         this.report_task_error(topology_id, task_id, error, error_level, error_code, ErrorConstants.DURATION_SECS_DEFAULT);
     }
 
     @Override
-    public void report_task_error(String topology_id, int task_id, String error, String error_level, int error_code,
-                                  int duration_secs) throws Exception {
+    public void report_task_error(
+            String topology_id, int task_id, String error, String error_level, int error_code, int duration_secs) throws Exception {
         this.report_task_error(topology_id, task_id, error, error_level, error_code, duration_secs, null);
     }
 
     @Override
-    public void report_task_error(String topology_id, int task_id, String error, String error_level, int error_code,
-                                  int duration_secs, String tag) throws Exception {
+    public void report_task_error(
+            String topology_id, int task_id, String error, String error_level, int error_code, int duration_secs, String tag) throws Exception {
         boolean found = false;
+        // taskerrors/${topology_id}/${task_id}
         String path = Cluster.taskerror_path(topology_id, task_id);
         try {
             cluster_state.mkdirs(path);
@@ -431,6 +431,7 @@ public class StormZkClusterState implements StormClusterState {
         List<Integer> children = new ArrayList<>();
 
         int timeSecs = TimeUtils.current_time_secs();
+        // taskerrors/${topology_id}/${task_id}/${timstamp}
         String timestampPath = path + Cluster.ZK_SEPARATOR + timeSecs;
         TaskError taskError = new TaskError(error, error_level, error_code, timeSecs, duration_secs);
 

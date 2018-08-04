@@ -39,8 +39,8 @@ public class LocalAssignment implements Serializable {
     private String jvm;
     private long timeStamp;
 
-    public LocalAssignment(String topologyId, Set<Integer> taskIds, String topologyName,
-                           long mem, int cpu, String jvm, long timeStamp) {
+    public LocalAssignment(
+            String topologyId, Set<Integer> taskIds, String topologyName, long mem, int cpu, String jvm, long timeStamp) {
         this.topologyId = topologyId;
         this.taskIds = new HashSet<>(taskIds);
         this.topologyName = topologyName;
@@ -120,7 +120,7 @@ public class LocalAssignment implements Serializable {
         if (obj == null) {
             return false;
         }
-        if (getClass() != obj.getClass()) {
+        if (this.getClass() != obj.getClass()) {
             return false;
         }
         LocalAssignment other = (LocalAssignment) obj;

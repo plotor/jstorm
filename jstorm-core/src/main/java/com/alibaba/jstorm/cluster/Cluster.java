@@ -164,6 +164,13 @@ public class Cluster {
         return taskerror_storm_root(topology_id) + ZK_SEPARATOR + LAST_ERROR;
     }
 
+    /**
+     * taskerrors/${topology_id}/${task_id}
+     *
+     * @param topology_id
+     * @param task_id
+     * @return
+     */
     public static String taskerror_path(String topology_id, int task_id) {
         return taskerror_storm_root(topology_id) + ZK_SEPARATOR + task_id;
     }

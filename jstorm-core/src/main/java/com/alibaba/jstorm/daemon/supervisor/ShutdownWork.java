@@ -15,18 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
-
-import com.google.common.collect.Lists;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
@@ -35,23 +25,34 @@ import com.alibaba.jstorm.daemon.worker.ProcessSimulator;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
+import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * @author Johnfang (xiaojian.fxj@alibaba-inc.com)
  */
 public class ShutdownWork extends RunnableCallback {
+
     private static final Logger LOG = LoggerFactory.getLogger(ShutdownWork.class);
 
     /**
      * shutdown all workers
      *
-     * @param conf               storm conf
-     * @param supervisorId       supervisor id
+     * @param conf storm conf
+     * @param supervisorId supervisor id
      * @param workerIdToTopology worker to topology to be removed
-     * @param workerThreadPids   worker to pid, used in local mode only
-     * @param cgroupManager      cgroup manager (if used)
-     * @param block              whether to use blocking wait
-     * @param killingWorkers     the workers being killed
+     * @param workerThreadPids worker to pid, used in local mode only
+     * @param cgroupManager cgroup manager (if used)
+     * @param block whether to use blocking wait
+     * @param killingWorkers the workers being killed
      */
     @SuppressWarnings("unused")
     public void shutWorker(Map conf,
@@ -66,8 +67,9 @@ public class ShutdownWork extends RunnableCallback {
         boolean localMode = false;
         int maxWaitTime = 0;
 
-        if (killingWorkers == null)
+        if (killingWorkers == null) {
             killingWorkers = new HashMap<>();
+        }
 
         for (Entry<String, String> entry : workerIdToTopology.entrySet()) {
             String workerId = entry.getKey();
@@ -144,7 +146,7 @@ public class ShutdownWork extends RunnableCallback {
     /**
      * clean the directory , sub-directories of STORM-LOCAL-DIR/workers/workerId
      *
-     * @param conf     storm conf
+     * @param conf storm conf
      * @param workerId worker id
      */
     public static void tryCleanupWorkerDir(Map conf, String workerId) {
@@ -163,7 +165,7 @@ public class ShutdownWork extends RunnableCallback {
     /**
      * When worker has been started by manually and supervisor, it will return multiple pid
      *
-     * @param conf     storm conf
+     * @param conf storm conf
      * @param workerId worker id
      */
     public static List<String> getPid(Map conf, String workerId) throws IOException {

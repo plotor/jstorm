@@ -66,6 +66,7 @@ class Heartbeat extends RunnableCallback {
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Heartbeat(Map conf, StormClusterState stormClusterState, String supervisorId, LocalState localState) {
+        // 获取 supervisor 的主机名
         String myHostName = JStormServerUtils.getHostName(conf);
         this.stormClusterState = stormClusterState;
         this.supervisorId = supervisorId;
@@ -113,7 +114,9 @@ class Heartbeat extends RunnableCallback {
             supervisorInfo = new SupervisorInfo(myHostName, supervisorId, portList, conf);
         }
 
+        // 设置 storm 版本信息，读取 version 文件，当前是 2.4.0
         supervisorInfo.setVersion(Utils.getVersion());
+        // 获取并设置当前版本 jstorm 构建时间，读取 build 文件
         String buildTs = Utils.getBuildTime();
         supervisorInfo.setBuildTs(buildTs);
         LOG.info("jstorm version:{}, build ts:{}", supervisorInfo.getVersion(), supervisorInfo.getBuildTs());
@@ -121,9 +124,9 @@ class Heartbeat extends RunnableCallback {
 
     @SuppressWarnings("unchecked")
     public void update() {
-        // 更新最新一次更新 SupervisorInfo 数据的时间
+        // 更新本次上报时间为当前时间（单位：秒）
         supervisorInfo.setTimeSecs(TimeUtils.current_time_secs());
-        // 更新截止上次心跳更新时的启动时间
+        // 更新截止目前节点的运行时间（单位：秒）
         supervisorInfo.setUptimeSecs(TimeUtils.current_time_secs() - startTime);
 
         // 依据具体配置和资源占用，调整端口号列表

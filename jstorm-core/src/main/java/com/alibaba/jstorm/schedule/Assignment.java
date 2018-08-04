@@ -311,6 +311,7 @@ public class Assignment implements Serializable {
 
     public boolean isTopologyChange(long oldTimeStamp) {
         boolean isChange = false;
+        // 时间戳已经更新 && 任务分配类型不是新分配
         if (timeStamp > oldTimeStamp && (type.equals(AssignmentType.UpdateTopology) || type.equals(AssignmentType.ScaleTopology))) {
             isChange = true;
         }

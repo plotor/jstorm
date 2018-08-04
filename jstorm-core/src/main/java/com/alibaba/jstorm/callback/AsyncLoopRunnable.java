@@ -114,7 +114,7 @@ public class AsyncLoopRunnable implements Runnable {
         if (rtn != null) {
             long sleepTime = Long.parseLong(String.valueOf(rtn));
             if (sleepTime < 0) {
-                // 位设置睡眠时间
+                // 未设置睡眠时间
                 return true;
             } else if (sleepTime > 0) {
                 long now = System.currentTimeMillis();
