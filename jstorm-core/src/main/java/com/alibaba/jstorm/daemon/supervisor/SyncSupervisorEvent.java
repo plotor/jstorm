@@ -174,11 +174,11 @@ class SyncSupervisorEvent extends RunnableCallback {
             Map<String, String> topologyCodes = getTopologyCodeLocations(assignments, supervisorId);
             // downloadFailedTopologyIds which can't finished download binary from nimbus
             Set<String> downloadFailedTopologyIds = new HashSet<>(); // 记录所有下载失败的 topologyId
-            // 下载 topology 代码到本地
+            // 从 nimbus 下载相应的 topology jar 文件到 supervisor 本地
             this.downloadTopology(topologyCodes, downloadedTopologyIds, updateTopologies, assignments, downloadFailedTopologyIds);
 
             /*
-             * 7: 删除无用的 topology 任务代码（之前下载过，但是本次未分配给当前 supervisor 的 topology）
+             * 7: 删除无用的 topology 相关文件（之前下载过，但是本次未分配给当前 supervisor）
              */
             this.removeUselessTopology(topologyCodes, downloadedTopologyIds);
 
@@ -192,7 +192,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             heartbeat.updateHbTrigger(true);
 
             try {
-                // 更新本地状态信息
+                // 更新本地任务分配状态信息
                 localState.put(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION, assignmentVersion);
                 localState.put(Common.LS_LOCAl_ZK_ASSIGNMENTS, assignments);
             } catch (IOException e) {
@@ -212,6 +212,8 @@ class SyncSupervisorEvent extends RunnableCallback {
 
     /**
      * download code with two cluster modes: local and distributed
+     *
+     * 从 nimbus 下载 topology 对应的 jar 文件
      */
     private void downloadStormCode(Map conf, String topologyId, String masterCodeDir) throws IOException, TException {
         String clusterMode = StormConfig.cluster_mode(conf);
@@ -336,11 +338,13 @@ class SyncSupervisorEvent extends RunnableCallback {
     }
 
     /**
+     * 从 nimbus 下载相应的 topology jar 文件到本地
+     *
      * @param topologyCodes [topologyId, master-code-dir]
      * @param downloadedTopologyIds 本地已经下载的 topology
-     * @param updateTopologies
-     * @param assignments
-     * @param downloadFailedTopologyIds
+     * @param updateTopologies 需要重新下载的 topology
+     * @param assignments 所有 topology 的任务分配信息
+     * @param downloadFailedTopologyIds 记录下载失败的 topology
      * @throws Exception
      */
     public void downloadTopology(Map<String, String> topologyCodes, List<String> downloadedTopologyIds,
@@ -355,10 +359,16 @@ class SyncSupervisorEvent extends RunnableCallback {
                 int retry = 0;
                 while (retry < 3) {
                     try {
+                        /*
+                         * 1. 从 nimbus 上下载指定 topology 对应的 stormjar.jar/stormcode.ser/stormconf.ser/lib-jar(如果存在的话) 到 supervisor 本地
+                         * 2. 抽取 storm jar 的 resources 文件
+                         * 3. 将临时目录下的文件移动到 ${storm.local.dir}/supervisor/stormdist/${topology_id} 目录
+                         * 4. 清空临时目录
+                         */
                         this.downloadStormCode(conf, topologyId, masterCodeDir);
                         // update assignment timeStamp
-                        StormConfig.write_supervisor_topology_timestamp(
-                                conf, topologyId, assignments.get(topologyId).getTimeStamp());
+                        // 记录 topology 任务分配时间戳到 ${storm.local.dir}/supervisor/stormdist/${topology_id}/timestamp 文件
+                        StormConfig.write_supervisor_topology_timestamp(conf, topologyId, assignments.get(topologyId).getTimeStamp());
                         break;
                     } catch (IOException | TException e) {
                         LOG.error(e + " downloadStormCode failed, topologyId:" + topologyId + ", masterCodeDir:" + masterCodeDir);
@@ -374,11 +384,14 @@ class SyncSupervisorEvent extends RunnableCallback {
                 }
             }
         }
+
+        // 情况下载失败的 topology 对应目录：${storm.local.dir}/supervisor/stormdist/${topology_id}
         // clear directory of topologyId is dangerous,
         // so it only clear the topologyId which isn't contained by downloadedTopologyIds
         for (String topologyId : downloadFailedTopologyIds) {
             if (!downloadedTopologyIds.contains(topologyId)) {
                 try {
+                    // ${storm.local.dir}/supervisor/stormdist/${topology_id}
                     String stormroot = StormConfig.supervisor_stormdist_root(conf, topologyId);
                     File destDir = new File(stormroot);
                     FileUtils.deleteQuietly(destDir);
@@ -388,6 +401,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             }
         }
 
+        // 更新本地 topology 对应的 task-cleanup-timeout
         this.updateTaskCleanupTimeout(downloadTopologies);
     }
 
@@ -512,12 +526,18 @@ class SyncSupervisorEvent extends RunnableCallback {
         return reDownloadTopologies;
     }
 
+    /**
+     * 更新本地 topology 对应的 task-cleanup-timeout
+     *
+     * @param topologies
+     */
     @SuppressWarnings("unchecked")
     private void updateTaskCleanupTimeout(Set<String> topologies) {
         Map topologyConf = null;
         Map<String, Integer> taskCleanupTimeouts = new HashMap<>();
         for (String topologyId : topologies) {
             try {
+                // 加载 topology 配置信息
                 topologyConf = StormConfig.read_supervisor_topology_conf(conf, topologyId);
             } catch (IOException e) {
                 LOG.info("Failed to read conf for " + topologyId);
@@ -525,18 +545,19 @@ class SyncSupervisorEvent extends RunnableCallback {
 
             Integer cleanupTimeout = null;
             if (topologyConf != null) {
+                // task.cleanup.timeout.sec
                 cleanupTimeout = JStormUtils.parseInt(topologyConf.get(ConfigExtension.TASK_CLEANUP_TIMEOUT_SEC));
             }
-
             if (cleanupTimeout == null) {
+                // task.cleanup.timeout.sec，默认为 10 秒
                 cleanupTimeout = ConfigExtension.getTaskCleanupTimeoutSec(conf);
             }
-
             taskCleanupTimeouts.put(topologyId, cleanupTimeout);
         }
 
         Map<String, Integer> localTaskCleanupTimeouts = null;
         try {
+            // task-cleanup-timeout
             localTaskCleanupTimeouts = (Map<String, Integer>) localState.get(Common.LS_TASK_CLEANUP_TIMEOUT);
         } catch (IOException e) {
             LOG.error("Failed to read local task cleanup timeout map", e);

@@ -143,7 +143,7 @@ class SyncProcessEvent extends ShutdownWork {
     /**
      * @param localAssignments 本地 topology 分配信息, key is port
      * @param downloadFailedTopologyIds 下载失败的 topologyId
-     * @param upgradeTopologyPorts
+     * @param upgradeTopologyPorts [topology_id, Pair(host, port)]
      */
     public void run(Map<Integer, LocalAssignment> localAssignments,
                     Set<String> downloadFailedTopologyIds,
@@ -152,20 +152,17 @@ class SyncProcessEvent extends ShutdownWork {
         LOG.debug("Syncing processes, interval (sec): " + TimeUtils.time_delta(lastTime));
         lastTime = TimeUtils.current_time_secs();
         try {
-
-            /*
-             * 1: get assigned tasks from localstat Map<port(type Integer), LocalAssignment>
-             */
             if (localAssignments == null) {
                 localAssignments = new HashMap<>();
             }
             LOG.debug("Assigned tasks: " + localAssignments);
 
             /*
-             * 2: 从 local_dir/workers/${worker_id}/heartbeats 中获取所有 worker 的状态：Map<worker_id [WorkerHeartbeat, state]>
+             * 1: 获取本地所有 worker 的状态信息：Map<worker_id [WorkerHeartbeat, state]>
              */
             Map<String, StateHeartbeat> localWorkerStats;
             try {
+                // Map[workerId, [worker heartbeat, state]]
                 localWorkerStats = this.getLocalWorkerStats(conf, localState, localAssignments);
             } catch (Exception e) {
                 LOG.error("Failed to get local worker stats");
@@ -179,7 +176,9 @@ class SyncProcessEvent extends ShutdownWork {
             Map<String, Integer> taskCleanupTimeoutMap;
             Set<Integer> keepPorts = null;
             try {
+                // [topology_id, cleanup_second]
                 taskCleanupTimeoutMap = (Map<String, Integer>) localState.get(Common.LS_TASK_CLEANUP_TIMEOUT); // task-cleanup-timeout
+                // TODO by zhenchao 2018-08-10 19:25:47
                 keepPorts = this.killUselessWorkers(localWorkerStats, localAssignments, taskCleanupTimeoutMap);
                 localState.put(Common.LS_TASK_CLEANUP_TIMEOUT, taskCleanupTimeoutMap);
             } catch (IOException e) {
@@ -375,7 +374,9 @@ class SyncProcessEvent extends ShutdownWork {
     }
 
     /**
-     * get localStat of approved workerId's map
+     * 获取本地所有 worker 的状态信息
+     *
+     * get localStat of approved workerId's map：${storm.local.dir}/workers/${worker_id}/heartbeats
      *
      * @return Map[workerId, [worker heartbeat, state]]
      */
@@ -392,11 +393,14 @@ class SyncProcessEvent extends ShutdownWork {
             State state;
 
             if (whb == null) {
+                // 当前 worker 没有心跳信息
                 state = State.notStarted;
                 Pair<Integer, Integer> timeToPort = this.workerIdToStartTimeAndPort.get(workerId);
                 if (timeToPort != null) {
+                    // 获取当前 worker 的任务分配信息
                     LocalAssignment localAssignment = assignedTasks.get(timeToPort.getSecond());
                     if (localAssignment == null) {
+                        // 当前 worker 没有分配任务
                         LOG.info("Following worker doesn't exist in the assignment, remove port=" + timeToPort.getSecond());
                         state = State.disallowed;
                         // workerId is disallowed ,so remove it from workerIdToStartTimeAndPort
@@ -407,21 +411,25 @@ class SyncProcessEvent extends ShutdownWork {
                 }
             } else if (!this.matchesAssignment(whb, assignedTasks)) {
                 // workerId isn't approved or isn't assigned task
+                /*
+                 * 检查当前 worker 的任务分配信息是否匹配当前处理的 topology:
+                 * 1. 当前 worker 没有分配任务
+                 * 2. 当前 worker 分配的任务不属于当前处理的 topology
+                 */
                 state = State.disallowed;
             } else if ((now - whb.getTimeSecs()) > JStormUtils.parseInt(conf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS))) {
+                // 当前 worker 心跳超时，如果不是 killing worker 则上报给 ZK
                 if (!killingWorkers.containsKey(workerId)) {
                     String outTimeInfo = " it is likely to be out of memory, the worker heartbeat has timed out ";
-                    workerReportError.report(whb.getTopologyId(), whb.getPort(),
-                            whb.getTaskIds(), outTimeInfo, ErrorConstants.CODE_WORKER_TIMEOUT);
+                    workerReportError.report(whb.getTopologyId(), whb.getPort(), whb.getTaskIds(), outTimeInfo, ErrorConstants.CODE_WORKER_TIMEOUT);
                 }
-
                 state = State.timedOut;
             } else {
+                // 当前 worker 已经死亡，如果不是 killing worker 则上报给 ZK
                 if (this.isWorkerDead(workerId)) {
                     if (!killingWorkers.containsKey(workerId)) {
                         String workerDeadInfo = "Worker is dead ";
-                        workerReportError.report(whb.getTopologyId(), whb.getPort(),
-                                whb.getTaskIds(), workerDeadInfo, ErrorConstants.CODE_WORKER_DEAD);
+                        workerReportError.report(whb.getTopologyId(), whb.getPort(), whb.getTaskIds(), workerDeadInfo, ErrorConstants.CODE_WORKER_DEAD);
                     }
                     state = State.timedOut;
                 } else {
@@ -431,12 +439,10 @@ class SyncProcessEvent extends ShutdownWork {
 
             if (state != State.valid) {
                 if (!killingWorkers.containsKey(workerId)) {
-                    LOG.info("Worker:" + workerId + " state:" + state + " WorkerHeartbeat:" + whb +
-                            " assignedTasks:" + assignedTasks + " at supervisor time-secs " + now);
+                    LOG.info("Worker:" + workerId + " state:" + state + " WorkerHeartbeat:" + whb + " assignedTasks:" + assignedTasks + " at supervisor time-secs " + now);
                 }
             } else {
-                LOG.debug("Worker:" + workerId + " state:" + state + " WorkerHeartbeat: " + whb
-                        + " at supervisor time-secs " + now);
+                LOG.debug("Worker:" + workerId + " state:" + state + " WorkerHeartbeat: " + whb + " at supervisor time-secs " + now);
             }
 
             workerIdHbState.put(workerId, new StateHeartbeat(state, whb));
@@ -448,51 +454,54 @@ class SyncProcessEvent extends ShutdownWork {
     /**
      * check whether the worker heartbeat is allowed in the assignedTasks
      *
+     * 检查当前 worker 的任务分配信息是否匹配当前处理的 topology:
+     *
+     * 1. 当前 worker 没有分配任务
+     * 2. 当前 worker 分配的任务不属于当前处理的 topology
+     *
+     * 以上两种情况返回 false
+     *
      * @param whb WorkerHeartbeat
-     * @param assignedTasks assigned tasks
+     * @param assignedTasks assigned tasks, key is worker port
      * @return if true, the assignments(LS-LOCAL-ASSIGNMENTS) match with worker heartbeat, false otherwise
      */
     public boolean matchesAssignment(WorkerHeartbeat whb, Map<Integer, LocalAssignment> assignedTasks) {
         boolean isMatch = true;
         LocalAssignment localAssignment = assignedTasks.get(whb.getPort());
         if (localAssignment == null) {
+            // 当前 worker 没有分配任务
             LOG.debug("Following worker has been removed, port=" + whb.getPort() + ", assignedTasks=" + assignedTasks);
             isMatch = false;
         } else if (!whb.getTopologyId().equals(localAssignment.getTopologyId())) {
-            // topology id not equal
+            // 任务分配信息不属于当前处理的 topology
             LOG.info("topology id not equal whb=" + whb.getTopologyId() + ",localAssignment=" + localAssignment.getTopologyId());
             isMatch = false;
-        }/*
-         * else if (!(whb.getTaskIds().equals(localAssignment.getTaskIds()))) { // task-id isn't equal LOG.info("task-id isn't equal whb=" + whb.getTaskIds() +
-         * ",localAssignment=" + localAssignment.getTaskIds()); isMatch = false; }
-         */
-
+        }
         return isMatch;
     }
 
     /**
-     * 从 ${local_dir}/workers/${worker_id}/heartbeats 中获取当前 supervisor 上所有 worker 对应的 {@link WorkerHeartbeat} 信息
+     * 从 ${storm.local.dir}/workers/${worker_id}/heartbeats 中获取当前 supervisor 上所有 worker 对应的 {@link WorkerHeartbeat} 信息
      *
      * @param conf conf
-     * @return key is workerId
+     * @return [worker_id, WorkerHeartbeat]
      * @throws IOException
      */
     public Map<String, WorkerHeartbeat> readWorkerHeartbeats(Map conf) throws Exception {
         Map<String, WorkerHeartbeat> workerHeartbeats = new HashMap<>();
 
-        // ${local_dir}/workers
+        // ${storm.local.dir}/workers
         String path = StormConfig.worker_root(conf);
 
-        // 获取 ${local_dir}/workers 下面所有的 worker_id
+        // 获取 ${storm.local.dir}/workers 下面所有的 worker_id
         List<String> workerIds = PathUtils.read_dir_contents(path);
-
         if (workerIds == null) {
             LOG.info("No worker dir under " + path);
             return workerHeartbeats;
         }
 
         for (String workerId : workerIds) {
-            // 从 ${local_dir}/workers/${worker_id}/heartbeats 中获取指定 worker 对应的 {@link WorkerHeartbeat} 信息
+            // 从 ${storm.local.dir}/workers/${worker_id}/heartbeats 中获取指定 worker 对应的 WorkerHeartbeat 信息
             WorkerHeartbeat whb = this.readWorkerHeartbeat(conf, workerId);
             workerHeartbeats.put(workerId, whb); // ATTENTION: whb can be null
         }
@@ -500,7 +509,7 @@ class SyncProcessEvent extends ShutdownWork {
     }
 
     /**
-     * 从 ${local_dir}/workers/${worker_id}/heartbeats 中获取指定 worker 对应的 {@link WorkerHeartbeat} 信息
+     * 从 ${storm.local.dir}/workers/${worker_id}/heartbeats 中获取指定 worker 对应的 {@link WorkerHeartbeat} 信息
      *
      * @param conf conf
      * @param workerId worker id
@@ -508,7 +517,7 @@ class SyncProcessEvent extends ShutdownWork {
      */
     public WorkerHeartbeat readWorkerHeartbeat(Map conf, String workerId) throws Exception {
         try {
-            // 创建 ${local_dir}/workers/${worker_id}/heartbeats 对应的 LocalState 对象
+            // 创建 ${storm.local.dir}/workers/${worker_id}/heartbeats 对应的 LocalState 对象
             LocalState ls = StormConfig.worker_state(conf, workerId);
             return (WorkerHeartbeat) ls.get(Common.LS_WORKER_HEARTBEAT);
         } catch (Exception e) {
@@ -968,6 +977,12 @@ class SyncProcessEvent extends ShutdownWork {
         JStormUtils.launchProcess(cmd, environment, backend);
     }
 
+    /**
+     * @param localWorkerStats Map[workerId, [worker heartbeat, state]]
+     * @param localAssignments
+     * @param taskCleanupTimeoutMap task-cleanup-timeout
+     * @return
+     */
     private Set<Integer> killUselessWorkers(Map<String, StateHeartbeat> localWorkerStats,
                                             Map<Integer, LocalAssignment> localAssignments,
                                             Map<String, Integer> taskCleanupTimeoutMap) {

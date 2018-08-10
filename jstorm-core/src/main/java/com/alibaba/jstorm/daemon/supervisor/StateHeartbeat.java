@@ -24,7 +24,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 
 /**
- * Worker's state and Hearbeat
+ * Worker's state and Heartbeat
  *
  * @author Xin.Zhou
  */

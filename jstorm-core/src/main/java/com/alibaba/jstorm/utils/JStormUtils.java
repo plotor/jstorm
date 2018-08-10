@@ -272,7 +272,7 @@ public class JStormUtils {
      * Extract dir from the jar to dest dir
      *
      * @param jarpath path to jar
-     * @param dir dir to be extracted
+     * @param dir dir to be extracted : resources
      * @param destdir destination dir
      */
     public static void extractDirFromJar(String jarpath, String dir, String destdir) {
@@ -288,8 +288,7 @@ public class JStormUtils {
                         File file = new File(destdir, ze.getName());
                         if (!file.getParentFile().mkdirs()) {
                             if (!file.getParentFile().isDirectory()) {
-                                throw new IOException("Mkdirs failed to create " +
-                                        file.getParentFile().toString());
+                                throw new IOException("Mkdirs failed to create " + file.getParentFile().toString());
                             }
                         }
                         OutputStream out = new FileOutputStream(file);

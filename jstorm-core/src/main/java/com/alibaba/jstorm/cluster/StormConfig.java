@@ -155,14 +155,14 @@ public class StormConfig {
     }
 
     /**
-     * 创建并返回 ${local_dir}/workers
+     * 创建并返回 ${storm.local.dir}/workers
      *
      * @param conf
      * @return
      * @throws IOException
      */
     public static String worker_root(Map conf) throws IOException {
-        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "workers"; // ${local_dir}/workers
+        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPERATEOR + "workers"; // ${storm.local.dir}/workers
         FileUtils.forceMkdir(new File(ret));
         return ret;
     }
@@ -252,6 +252,14 @@ public class StormConfig {
         return ret;
     }
 
+    /**
+     * ${storm.local.dir}/supervisor/stormdist/${topology_id}
+     *
+     * @param conf
+     * @param topologyId
+     * @return
+     * @throws IOException
+     */
     public static String supervisor_stormdist_root(Map conf, String topologyId) throws IOException {
         return supervisor_stormdist_root(conf) + FILE_SEPERATEOR + topologyId;
     }
@@ -352,6 +360,10 @@ public class StormConfig {
         return stormroot + FILE_SEPERATEOR + "stormcode.ser";
     }
 
+    /**
+     * @param stormroot
+     * @return
+     */
     public static String stormconf_path(String stormroot) {
         return stormroot + FILE_SEPERATEOR + "stormconf.ser";
     }
@@ -550,9 +562,13 @@ public class StormConfig {
 
     /**
      * merge storm conf into cluster conf
+     *
+     * 加载 topology 配置信息
      */
     public static Map read_supervisor_topology_conf(Map conf, String topologyId) throws IOException {
+        // ${storm.local.dir}/supervisor/stormdist/${topology_id}
         String topologyRoot = StormConfig.supervisor_stormdist_root(conf, topologyId);
+        // ${storm.local.dir}/supervisor/stormdist/${topology_id}/stormconf.ser
         String confPath = StormConfig.stormconf_path(topologyRoot);
         return (Map) readLocalObject(topologyId, confPath);
     }
@@ -652,8 +668,18 @@ public class StormConfig {
         return JStormUtils.bytesToLong(data);
     }
 
+    /**
+     * 记录时间戳到 ${storm.local.dir}/supervisor/stormdist/${topology_id}/timestamp
+     *
+     * @param conf
+     * @param topologyId
+     * @param timeStamp
+     * @throws IOException
+     */
     public static void write_supervisor_topology_timestamp(Map conf, String topologyId, long timeStamp) throws IOException {
+        // ${storm.local.dir}/supervisor/stormdist/${topology_id}
         String stormRoot = supervisor_stormdist_root(conf, topologyId);
+        // ${storm.local.dir}/supervisor/stormdist/${topology_id}/timestamp
         String timeStampPath = stormts_path(stormRoot);
 
         byte[] data = JStormUtils.longToBytes(timeStamp);

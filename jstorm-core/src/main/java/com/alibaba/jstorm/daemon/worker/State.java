@@ -25,9 +25,9 @@ package com.alibaba.jstorm.daemon.worker;
  */
 public enum State {
 
-    valid,
-    disallowed,
-    notStarted,
-    timedOut
+    valid, // 正常状态
+    disallowed, // worker 没有分配任务
+    notStarted, // worker 未启动
+    timedOut // worker 心跳超时，或已经死亡
 
 }

@@ -305,7 +305,7 @@ public class BlobStoreUtils {
     }
 
     public static ClientBlobStore getClientBlobStoreForSupervisor(Map conf) {
-        // default is NimbusBlobStore
+        // ${supervisor.blobstore.class}, default is NimbusBlobStore
         ClientBlobStore store = (ClientBlobStore) Utils.newInstance((String) conf.get(Config.SUPERVISOR_BLOBSTORE));
         store.prepare(conf);
         return store;
@@ -399,15 +399,14 @@ public class BlobStoreUtils {
      * @throws KeyNotFoundException
      * @throws IOException
      */
-    public static void downloadResourcesAsSupervisorDirect(String key, String localFile,
-                                                           ClientBlobStore cb) throws KeyNotFoundException, IOException {
+    public static void downloadResourcesAsSupervisorDirect(String key, String localFile, ClientBlobStore cb) throws KeyNotFoundException, IOException {
         final int MAX_RETRY_ATTEMPTS = 2;
         final int ATTEMPTS_INTERVAL_TIME = 100;
         for (int retryAttempts = 0; retryAttempts < MAX_RETRY_ATTEMPTS; retryAttempts++) {
             if (downloadResourcesAsSupervisorAttempt(cb, key, localFile)) {
                 break;
             }
-            Utils.sleep(ATTEMPTS_INTERVAL_TIME);
+            Utils.sleep(ATTEMPTS_INTERVAL_TIME); // 休息 100ms
         }
     }
 
@@ -596,28 +595,33 @@ public class BlobStoreUtils {
 
     /**
      * no need to synchronize, since EventManager will execute sequentially
+     *
+     * 1. 从 nimbus 上下载指定 topology 对应的 stormjar.jar/stormcode.ser/stormconf.ser/lib-jar(如果存在的话) 到 supervisor 本地
+     * 2. 抽取 storm jar 的 resources 文件
+     * 3. 将临时目录下的文件移动到 ${storm.local.dir}/supervisor/stormdist/${topology_id} 目录
+     * 4. 清空临时目录
      */
     public static void downloadDistributeStormCode(Map conf, String topologyId, String masterCodeDir)
             throws IOException, TException {
         String tmpToot = null;
         try {
-            // STORM_LOCAL_DIR/supervisor/tmp/(UUID)
+            // ${storm.local.dir}/supervisor/tmp/${uuid}
             tmpToot = StormConfig.supervisorTmpDir(conf) + File.separator + UUID.randomUUID().toString();
-
-            // STORM_LOCAL_DIR/supervisor/stormdist/topologyId
+            // ${storm.local.dir}/supervisor/stormdist/${topology_id}
             String stormRoot = StormConfig.supervisor_stormdist_root(conf, topologyId);
 
+            // 从 nimbus 上下载当前 topology 对应的 stormjar.jar/stormcode.ser/stormconf.ser/lib-jar(如果存在的话) 到 supervisor 本地
             JStormServerUtils.downloadCodeFromBlobStore(conf, tmpToot, topologyId);
 
-            // tmproot/stormjar.jar
+            // ${storm.local.dir}/supervisor/tmp/${uuid}/stormjar.jar
             String localFileJarTmp = StormConfig.stormjar_path(tmpToot);
-
-            // extract dir from jar
+            // 抽取 jar 的 resources 文件到 tmpToot 目录， extract dir from jar
             JStormUtils.extractDirFromJar(localFileJarTmp, StormConfig.RESOURCES_SUBDIR, tmpToot);
 
             File srcDir = new File(tmpToot);
             File destDir = new File(stormRoot);
             try {
+                // 移动临时目录下的文件到 ${storm.local.dir}/supervisor/stormdist/${topology_id}
                 FileUtils.moveDirectory(srcDir, destDir);
             } catch (FileExistsException e) {
                 FileUtils.copyDirectory(srcDir, destDir);
@@ -625,6 +629,7 @@ public class BlobStoreUtils {
             }
         } finally {
             if (tmpToot != null) {
+                // 清空临时目录
                 File srcDir = new File(tmpToot);
                 FileUtils.deleteQuietly(srcDir);
             }

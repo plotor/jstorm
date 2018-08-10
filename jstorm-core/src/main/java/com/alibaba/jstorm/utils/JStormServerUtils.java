@@ -47,34 +47,54 @@ public class JStormServerUtils {
 
     private static final Logger LOG = LoggerFactory.getLogger(JStormServerUtils.class);
 
+    /**
+     * 从 nimbus 上下载当前 topology 对应的 stormjar.jar/stormcode.ser/stormconf.ser/lib-jar(如果存在的话) 到 supervisor 本地
+     *
+     * @param conf
+     * @param localRoot ${storm.local.dir}/supervisor/tmp/${uuid}
+     * @param topologyId
+     * @throws IOException
+     * @throws KeyNotFoundException
+     */
     public static void downloadCodeFromBlobStore(Map conf, String localRoot, String topologyId) throws IOException, KeyNotFoundException {
         ClientBlobStore blobStore = BlobStoreUtils.getClientBlobStoreForSupervisor(conf);
         FileUtils.forceMkdir(new File(localRoot));
 
+        /* 从 nimbus 上下载对应的 stormjar.jar/stormcode.ser/stormconf.ser 到 supervisor 本地 */
+
+        // ${storm.local.dir}/supervisor/tmp/${uuid}/stormjar.jar
         String localStormJarPath = StormConfig.stormjar_path(localRoot);
+        // ${topology_id}-stormjar.jar
         String masterStormJarKey = StormConfig.master_stormjar_key(topologyId);
         BlobStoreUtils.downloadResourcesAsSupervisor(masterStormJarKey, localStormJarPath, blobStore, conf);
 
+        // ${storm.local.dir}/supervisor/tmp/${uuid}/stormcode.ser
         String localStormCodePath = StormConfig.stormcode_path(localRoot);
+        // ${topology_id}-stormcode.ser
         String masterStormCodeKey = StormConfig.master_stormcode_key(topologyId);
         BlobStoreUtils.downloadResourcesAsSupervisor(masterStormCodeKey, localStormCodePath, blobStore, conf);
 
+        // ${storm.local.dir}/supervisor/tmp/${uuid}/stormconf.ser
         String localStormConfPath = StormConfig.stormconf_path(localRoot);
+        // ${topology_id}-stormconf.ser
         String masterStormConfKey = StormConfig.master_stormconf_key(topologyId);
         BlobStoreUtils.downloadResourcesAsSupervisor(masterStormConfKey, localStormConfPath, blobStore, conf);
 
+        // 读取 topology 的配置信息
         Map stormConf = (Map) StormConfig.readLocalObject(topologyId, localStormConfPath);
-
         if (stormConf == null) {
             throw new IOException("Get topology conf error: " + topologyId);
         }
 
-        List<String> libs = (List<String>) stormConf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
+        List<String> libs = (List<String>) stormConf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME); // topology.lib.name
         if (libs != null) {
+            // 下载对应的 lib 文件
             for (String libName : libs) {
+                // ${storm.local.dir}/supervisor/tmp/${uuid}/lib/${lib_name}
                 String localStormLibPath = StormConfig.stormlib_path(localRoot, libName);
+                // ${topology_id}-lib-${lib_name}
                 String masterStormLibKey = StormConfig.master_stormlib_key(topologyId, libName);
-                //make sure the parent lib dir is exist
+                // make sure the parent lib dir is exist
                 new File(localStormLibPath).getParentFile().mkdir();
                 BlobStoreUtils.downloadResourcesAsSupervisor(masterStormLibKey, localStormLibPath, blobStore, conf);
             }
