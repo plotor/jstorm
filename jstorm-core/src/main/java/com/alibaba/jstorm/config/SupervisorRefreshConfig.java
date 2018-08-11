@@ -106,8 +106,9 @@ public class SupervisorRefreshConfig extends RunnableCallback {
                 }
             }
 
-            String nimbusYaml = JStormUtils.trimEnd(yarnConfigBlacklist.filterConfigIfNecessary(
-                    this.nimbusClientWrapper.getClient().getStormRawConf()));
+            // 获取 nimbus 的 yaml 配置
+            String nimbusYaml = JStormUtils.trimEnd(
+                    yarnConfigBlacklist.filterConfigIfNecessary(this.nimbusClientWrapper.getClient().getStormRawConf()));
             Map nimbusConf = LoadConf.loadYamlFromString(nimbusYaml);
 
             if (nimbusYaml != null && !this.supervisorConf.equals(nimbusConf)) {
@@ -116,8 +117,7 @@ public class SupervisorRefreshConfig extends RunnableCallback {
                     LOG.error("received invalid storm.yaml, skip...");
                 } else {
                     MapDifference<?, ?> diff = Maps.difference(this.supervisorConf, nimbusConf);
-                    LOG.debug("conf diff, left only:{}, right only:{}",
-                            diff.entriesOnlyOnLeft(), diff.entriesOnlyOnRight());
+                    LOG.debug("conf diff, left only:{}, right only:{}", diff.entriesOnlyOnLeft(), diff.entriesOnlyOnRight());
                     LOG.debug("received nimbus config update, new config:\n{}", nimbusYaml);
                     this.stormYaml = nimbusYaml;
 

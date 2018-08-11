@@ -166,7 +166,7 @@ public class Supervisor {
         threads.add(syncSupervisorThread);
 
         /*
-         * Step 6: start httpserver
+         * Step 6: 启动 HTTP 服务（默认端口 7622）
          */
         Httpserver httpserver = null;
         if (!StormConfig.local_mode(conf)) { // distribute mode
@@ -176,17 +176,17 @@ public class Supervisor {
         }
 
         /*
-         * Step 7: check supervisor
+         * Step 7: 检查 supervisor 健康状况 & 同步 nimbus 配置信息
          */
         if (!StormConfig.local_mode(conf)) {
             if (ConfigExtension.isEnableCheckSupervisor(conf)) {
-                // 启动一个线程用于检查状态
+                // 启动一个线程用于检查 supervisor 健康状况
                 SupervisorHealth supervisorHealth = new SupervisorHealth(conf, hb, supervisorId);
                 AsyncLoopThread healthThread = new AsyncLoopThread(supervisorHealth, false, null, Thread.MIN_PRIORITY, true);
                 threads.add(healthThread);
             }
 
-            // init refresh config thread
+            // 定期同步 nimbus 节点的 storm.yaml 配置（每隔 20 ～ 30 秒）
             AsyncLoopThread refreshConfigThread = new AsyncLoopThread(new SupervisorRefreshConfig(conf));
             threads.add(refreshConfigThread);
         }

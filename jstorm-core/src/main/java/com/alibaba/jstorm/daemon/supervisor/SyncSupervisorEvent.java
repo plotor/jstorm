@@ -130,9 +130,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             LOG.debug("Downloaded storm ids: " + downloadedTopologyIds);
 
             /*
-             * 1.3: 获取当前 supervisor 的任务分配信息：<port, LocalAssignments>
-             * 遍历所有的 topology，记录当前 supervisor 的 worker_port 到 LocalAssignment 的映射信息
-             * 对于同一台 supervisor，一个 worker 端口只能分配一个任务
+             * 1.3: 获取分配给当前 supervisor 的任务信息：<port, LocalAssignments>
              */
             Map<Integer, LocalAssignment> zkAssignment = this.getLocalAssign(stormClusterState, supervisorId, assignments);
 
@@ -160,9 +158,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             if (reDownloadTopologies != null) {
                 updateTopologies.addAll(reDownloadTopologies);
             }
-
-            // 获取灰度发布且指定在当前 supervisor 的 topology
-            // get upgrade topology ports：[topology_id, Pair(host, port)]
+            // 获取灰度发布且指定在当前 supervisor 的 topology：[topology_id, Pair(host, port)]
             Map<String, Set<Pair<String, Integer>>> upgradeTopologyPorts =
                     this.getUpgradeTopologies(stormClusterState, localAssignment, zkAssignment);
             if (upgradeTopologyPorts.size() > 0) {
@@ -364,7 +360,7 @@ class SyncSupervisorEvent extends RunnableCallback {
                     try {
                         /*
                          * 1. 从 nimbus 上下载指定 topology 对应的 stormjar.jar/stormcode.ser/stormconf.ser/lib-jar(如果存在的话) 到 supervisor 本地
-                         * 2. 抽取 storm jar 的 resources 文件
+                         * 2. 抽取 stormjar.jar 的 resources 文件
                          * 3. 将临时目录下的文件移动到 ${storm.local.dir}/supervisor/stormdist/${topology_id} 目录
                          * 4. 清空临时目录
                          */
@@ -388,7 +384,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             }
         }
 
-        // 情况下载失败的 topology 对应目录：${storm.local.dir}/supervisor/stormdist/${topology_id}
+        // 清空下载失败的 topology 对应目录：${storm.local.dir}/supervisor/stormdist/${topology_id}
         // clear directory of topologyId is dangerous,
         // so it only clear the topologyId which isn't contained by downloadedTopologyIds
         for (String topologyId : downloadFailedTopologyIds) {
@@ -591,10 +587,8 @@ class SyncSupervisorEvent extends RunnableCallback {
             Map<String, Integer> assignmentVersion, Map<String, Assignment> localZkAssignments,
             RunnableCallback callback) throws Exception {
 
-        // <topology_id, assignment>
-        Map<String, Assignment> ret = new HashMap<>();
-        // <topology_id, assign_version>
-        Map<String, Integer> updateAssignmentVersion = new HashMap<>();
+        Map<String, Assignment> ret = new HashMap<>(); // <topology_id, assignment>
+        Map<String, Integer> updateAssignmentVersion = new HashMap<>(); // <topology_id, assign_version>
 
         // 从 ZK 上获取 assignments 路径下所有的 topology_id
         List<String> assignments = stormClusterState.assignments(callback);

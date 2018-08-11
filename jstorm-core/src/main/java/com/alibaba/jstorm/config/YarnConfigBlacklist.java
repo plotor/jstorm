@@ -15,23 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.config;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import com.google.common.collect.Lists;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * yarn config black list, note that ONLY plain K-V is supported, list/map values are not supported!!!
@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * @since 16/5/26
  */
 public class YarnConfigBlacklist implements Refreshable {
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
+    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
     private static YarnConfigBlacklist INSTANCE;
 
     private final Splitter NEW_LINE = Splitter.on(Pattern.compile("[\n]"));
@@ -51,9 +51,8 @@ public class YarnConfigBlacklist implements Refreshable {
 
     private YarnConfigBlacklist(Map conf) {
         this.conf = conf;
-        this.isJstormOnYarn = JStormUtils.parseBoolean(System.getProperty("jstorm-on-yarn"), false) ||
-                ConfigExtension.isJStormOnYarn(conf);
-        parseYarnConfigBlackList(this.conf);
+        this.isJstormOnYarn = JStormUtils.parseBoolean(System.getProperty("jstorm-on-yarn"), false) || ConfigExtension.isJStormOnYarn(conf);
+        this.parseYarnConfigBlackList(this.conf);
         if (isJstormOnYarn) {
             LOG.info("running jstorm on YARN.");
         } else {
@@ -75,7 +74,7 @@ public class YarnConfigBlacklist implements Refreshable {
 
     @Override
     public void refresh(Map conf) {
-        parseYarnConfigBlackList(conf);
+        this.parseYarnConfigBlackList(conf);
         LOG.info("config blacklist:{}", Joiner.on(",").join(yarnConfigBlackList));
     }
 
@@ -99,7 +98,7 @@ public class YarnConfigBlacklist implements Refreshable {
         }
 
         StringBuilder sb = new StringBuilder(4096);
-        Iterable<String> lines = splitLines(confData);
+        Iterable<String> lines = this.splitLines(confData);
         List<String> lineArray = Lists.newArrayList(lines);
         for (int i = 0; i < lineArray.size(); i++) {
             String trimmedLine = lineArray.get(i).trim();
@@ -137,7 +136,7 @@ public class YarnConfigBlacklist implements Refreshable {
         }
 
         StringBuilder sb = new StringBuilder();
-        Iterable<String> lines = splitLines(confData);
+        Iterable<String> lines = this.splitLines(confData);
         List<String> lineArray = Lists.newArrayList(lines);
         for (int i = 0; i < lineArray.size(); i++) {
             String trimmedLine = lineArray.get(i).trim();

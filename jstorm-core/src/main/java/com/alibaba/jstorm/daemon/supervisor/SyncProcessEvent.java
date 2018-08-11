@@ -96,6 +96,7 @@ class SyncProcessEvent extends ShutdownWork {
      */
     private Map<Integer, String> portToWorkerId = new HashMap<>();
 
+    /** 记录需要重新下载的 topology ID 列表 */
     private AtomicReference<Set> needDownloadTopologies;
 
     private boolean isJstormOnYarn;
@@ -147,7 +148,7 @@ class SyncProcessEvent extends ShutdownWork {
      *
      * @param localAssignments 本地 topology 分配信息, key is port
      * @param downloadFailedTopologyIds 下载失败的 topologyId
-     * @param upgradeTopologyPorts [topology_id, Pair(host, port)]
+     * @param upgradeTopologyPorts [topology_id, Set[Pair(host, port)]]
      */
     public void run(Map<Integer, LocalAssignment> localAssignments,
                     Set<String> downloadFailedTopologyIds,
@@ -175,7 +176,7 @@ class SyncProcessEvent extends ShutdownWork {
             LOG.debug("Allocated: " + localWorkerStats);
 
             /*
-             * 3: 杀死无用的 worker，并从 localWorkerStats 中移除
+             * 2: 杀死无用的 worker，并从 localWorkerStats 中移除
              */
             Map<String, Integer> taskCleanupTimeoutMap;
             Set<Integer> keepPorts = null;
@@ -189,16 +190,16 @@ class SyncProcessEvent extends ShutdownWork {
                 LOG.error("Failed to kill workers", e);
             }
 
-            // 4. 检测 worker 是否启动成功，对于启动失败的 worker 则清空相应数据
+            // 3. 检测 worker 是否正在启动中，清空处于运行态和启动失败 worker 的相应数据（workerIdToStartTimeAndPort 和 portToWorkerId）
             this.checkNewWorkers(conf);
 
-            // 5. 检查需要重新下载的 topology：未启动成功，同时下载时间已经超过 2 分钟
+            // 4. 标记需要重新下载的 topology（没有启动成功，同时下载时间已经超过 2 分钟）
             this.checkNeedUpdateTopologies(localWorkerStats, localAssignments);
 
-            // 6. 为下载失败的 topology 在空闲端口上启动新的 worker
+            // 5. 启动新的 worker 执行 topology 任务
             this.startNewWorkers(keepPorts, localAssignments, downloadFailedTopologyIds);
 
-            // 7. 启动灰度的 worker
+            // 6. 启动相应的 worker 执行在当前节点 灰度的 topology 任务
             this.restartUpgradingWorkers(localAssignments, localWorkerStats, upgradeTopologyPorts);
 
         } catch (Exception e) {
@@ -207,6 +208,12 @@ class SyncProcessEvent extends ShutdownWork {
         }
     }
 
+    /**
+     * @param assignments
+     * @param localWorkerStats
+     * @param upgradeTopologyPorts [topology_id, Set[Pair(host, port)]]
+     * @throws Exception
+     */
     private void restartUpgradingWorkers(Map<Integer, LocalAssignment> assignments,
                                          Map<String, StateHeartbeat> localWorkerStats,
                                          Map<String, Set<Pair<String, Integer>>> upgradeTopologyPorts) throws Exception {
@@ -228,17 +235,19 @@ class SyncProcessEvent extends ShutdownWork {
         Map<String, String> workerIdToHostPort = new HashMap<>();
         for (Entry<String, Set<Pair<String, Integer>>> entry : upgradeTopologyPorts.entrySet()) {
             String topologyId = entry.getKey();
-            Set<Pair<String, Integer>> hostPorts = entry.getValue();
+            Set<Pair<String, Integer>> hostPorts = entry.getValue(); // 灰度指定的 host 和 port
             for (Pair<String, Integer> hostPort : hostPorts) {
                 String workerId = portToWorkerId.get(hostPort.getSecond());
                 if (workerId == null) {
                     LOG.error("Failed to get worker id for port:{}", hostPort.getSecond());
                 } else {
+                    // 获取当前 topology 处于灰度中的 host 和 port 集合
                     Set<Pair<String, Integer>> upgradingHostPorts = upgradingTopologyPorts.get(topologyId);
                     if (upgradingHostPorts == null) {
                         upgradingHostPorts = new HashSet<>();
                         upgradingTopologyPorts.put(topologyId, upgradingHostPorts);
                     }
+                    // 如果本次指定了新的 hostPort，则添加到 upgradingTopologyPorts 中
                     if (!upgradingHostPorts.contains(hostPort)) {
                         killingWorkers.put(workerId, TimeUtils.current_time_secs());
                         workerIdToTopology.put(workerId, topologyId);
@@ -268,8 +277,10 @@ class SyncProcessEvent extends ShutdownWork {
         }
 
         LOG.info("Starting workers...");
+        // 调用命令行启动 worker，同时记录相应数据
         this.startWorkers(portToAssignment);
 
+        // 更新相应 topology 的灰度信息到 ZK
         LOG.info("Updating upgrading workers on zk...");
         for (Entry<String, Set<Pair<String, Integer>>> entry : upgradeTopologyPorts.entrySet()) {
             String topologyId = entry.getKey();
@@ -366,10 +377,10 @@ class SyncProcessEvent extends ShutdownWork {
                 if ((TimeUtils.current_time_secs() - startTime) <
                         // 默认为 120 秒
                         JStormUtils.parseInt(conf.get(Config.SUPERVISOR_WORKER_START_TIMEOUT_SECS))) {
-                    // 如果启动时间距离当前不超过两分钟，则认为 worker 还没有启动起来
+                    // 如果启动时间距离当前不超过两分钟，则认为 worker 正在启动中
                     LOG.info(workerId + " still hasn't started");
                 } else {
-                    // 否则任务 worker 启动失败
+                    // 否则认为 worker 启动失败
                     LOG.error("Failed to start Worker " + workerId);
                     workers.add(workerId);
                 }
@@ -379,7 +390,7 @@ class SyncProcessEvent extends ShutdownWork {
             }
         }
 
-        // 对于启动失败的 worker，则清空相关数据
+        // 对于启动失败和已经成功的 worker（除了正在启动中的），清空相关数据
         for (String workerId : workers) {
             Integer port = this.workerIdToStartTimeAndPort.get(workerId).getSecond();
             this.workerIdToStartTimeAndPort.remove(workerId);
@@ -411,7 +422,7 @@ class SyncProcessEvent extends ShutdownWork {
             State state;
 
             if (whb == null) {
-                // 当前 worker 没有心跳信息
+                // 当前 worker 没有心跳信息，标识为 notStarted
                 state = State.notStarted;
                 Pair<Integer, Integer> timeToPort = this.workerIdToStartTimeAndPort.get(workerId);
                 if (timeToPort != null) {
@@ -1057,7 +1068,7 @@ class SyncProcessEvent extends ShutdownWork {
             localWorkerStats.remove(removedWorkerId);
         }
 
-        // Keep the workers which are still under starting
+        // Keep the workers which are still under starting（正在启动中）
         for (Entry<String, Pair<Integer, Integer>> entry : workerIdToStartTimeAndPort.entrySet()) {
             String workerId = entry.getKey();
             StateHeartbeat hbState = localWorkerStats.get(workerId);
@@ -1088,7 +1099,7 @@ class SyncProcessEvent extends ShutdownWork {
     }
 
     /**
-     * 启动新的 worker:
+     * 启动新的 worker 执行 topology 任务
      *
      * @param keepPorts 已经处理运行状态的 worker ports
      * @param localAssignments
@@ -1099,14 +1110,12 @@ class SyncProcessEvent extends ShutdownWork {
             Set<Integer> keepPorts, Map<Integer, LocalAssignment> localAssignments, Set<String> downloadFailedTopologyIds)
             throws Exception {
         /*
-         * 4: 获取所有需要重新分配 worker 的 task，即 localAssignments 中端口不包含在 keepPorts 中的
-         *
-         * 从 localAssignments 中剔除所有位于 keepPorts 中的 key
+         * 1: 获取所有需要重新分配 worker 的 task，即 localAssignments 中端口不包含在 keepPorts 中的
          */
         Map<Integer, LocalAssignment> newWorkers = JStormUtils.select_keys_pred(keepPorts, localAssignments);
 
         /*
-         * 5: 移除所有分配的 topology 下载失败的 worker，并调用命令行启动相应的 worker
+         * 2: 移除所有分配的 topology 下载失败的 worker，并调用命令行启动新的 worker
          */
         for (Iterator<Entry<Integer, LocalAssignment>> entryItr = newWorkers.entrySet().iterator(); entryItr.hasNext(); ) {
             Entry<Integer, LocalAssignment> entry = entryItr.next();
@@ -1122,6 +1131,12 @@ class SyncProcessEvent extends ShutdownWork {
         this.startWorkers(newWorkers);
     }
 
+    /**
+     * 启动 worker 执行分配的任务
+     *
+     * @param portToAssignment
+     * @throws Exception
+     */
     private void startWorkers(Map<Integer, LocalAssignment> portToAssignment) throws Exception {
         Map<Integer, String> newWorkerIds = new HashMap<>(); // <port, worker_id>
 
@@ -1133,7 +1148,6 @@ class SyncProcessEvent extends ShutdownWork {
             String workerId = UUID.randomUUID().toString();
             newWorkerIds.put(port, workerId);
 
-            // create new worker Id directory
             try {
                 // 创建 ${storm.local.dir}/workers/${worker_id}/pids
                 StormConfig.worker_pids_root(conf, workerId);
@@ -1154,7 +1168,7 @@ class SyncProcessEvent extends ShutdownWork {
             }
         }
 
-        // 记录 worker 相应数据
+        // 更新 worker 在本地的相应数据
         this.markAllNewWorkers(newWorkerIds);
     }
 
