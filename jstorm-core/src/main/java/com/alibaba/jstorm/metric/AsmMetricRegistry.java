@@ -15,13 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.metric;
 
-import com.alibaba.jstorm.common.metric.*;
+import com.alibaba.jstorm.common.metric.AsmCounter;
+import com.alibaba.jstorm.common.metric.AsmGauge;
+import com.alibaba.jstorm.common.metric.AsmHistogram;
+import com.alibaba.jstorm.common.metric.AsmMeter;
+import com.alibaba.jstorm.common.metric.AsmMetric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -44,9 +54,9 @@ public class AsmMetricRegistry implements AsmMetricSet {
     /**
      * Given a {@link com.alibaba.jstorm.common.metric.old.window.Metric}, registers it under the given name.
      *
-     * @param name   the metric node
+     * @param name the metric node
      * @param metric the metric
-     * @param <T>    the type of the metric
+     * @param <T> the type of the metric
      * @return {@code metric}
      * @throws IllegalArgumentException if the name is already registered
      */
@@ -97,7 +107,7 @@ public class AsmMetricRegistry implements AsmMetricSet {
      * @return all the gauges in the registry
      */
     public SortedMap<String, AsmGauge> getGauges() {
-        return getGauges(AsmMetricFilter.ALL);
+        return this.getGauges(AsmMetricFilter.ALL);
     }
 
     /**
@@ -107,7 +117,7 @@ public class AsmMetricRegistry implements AsmMetricSet {
      * @return all the gauges in the registry
      */
     public SortedMap<String, AsmGauge> getGauges(AsmMetricFilter filter) {
-        return getMetrics(AsmGauge.class, filter);
+        return this.getMetrics(AsmGauge.class, filter);
     }
 
     /**
@@ -116,7 +126,7 @@ public class AsmMetricRegistry implements AsmMetricSet {
      * @return all the counters in the registry
      */
     public SortedMap<String, AsmCounter> getCounters() {
-        return getCounters(AsmMetricFilter.ALL);
+        return this.getCounters(AsmMetricFilter.ALL);
     }
 
     /**
@@ -126,7 +136,7 @@ public class AsmMetricRegistry implements AsmMetricSet {
      * @return all the counters in the registry
      */
     public SortedMap<String, AsmCounter> getCounters(AsmMetricFilter filter) {
-        return getMetrics(AsmCounter.class, filter);
+        return this.getMetrics(AsmCounter.class, filter);
     }
 
     /**
@@ -135,7 +145,7 @@ public class AsmMetricRegistry implements AsmMetricSet {
      * @return all the histograms in the registry
      */
     public SortedMap<String, AsmHistogram> getHistograms() {
-        return getHistograms(AsmMetricFilter.ALL);
+        return this.getHistograms(AsmMetricFilter.ALL);
     }
 
     /**
@@ -145,7 +155,7 @@ public class AsmMetricRegistry implements AsmMetricSet {
      * @return all the histograms in the registry
      */
     public SortedMap<String, AsmHistogram> getHistograms(AsmMetricFilter filter) {
-        return getMetrics(AsmHistogram.class, filter);
+        return this.getMetrics(AsmHistogram.class, filter);
     }
 
     /**
@@ -154,7 +164,7 @@ public class AsmMetricRegistry implements AsmMetricSet {
      * @return all the meters in the registry
      */
     public SortedMap<String, AsmMeter> getMeters() {
-        return getMeters(AsmMetricFilter.ALL);
+        return this.getMeters(AsmMetricFilter.ALL);
     }
 
     /**
@@ -164,7 +174,7 @@ public class AsmMetricRegistry implements AsmMetricSet {
      * @return all the meters in the registry
      */
     public SortedMap<String, AsmMeter> getMeters(AsmMetricFilter filter) {
-        return getMetrics(AsmMeter.class, filter);
+        return this.getMetrics(AsmMeter.class, filter);
     }
 
     @SuppressWarnings("unchecked")

@@ -144,8 +144,9 @@ public class WorkerData {
     private ConcurrentHashMap<Integer, DisruptorQueue> controlQueues;
     private ConcurrentHashMap<Integer, DisruptorQueue> deserializeQueues;
 
-    // <taskId, component>
+    /** [task_id, component_id] */
     private ConcurrentHashMap<Integer, String> tasksToComponent;
+    /** [component_id, List<task_id>] */
     private ConcurrentHashMap<String, List<Integer>> componentToSortedTasks;
 
     private Map<String, Object> defaultResources;
@@ -214,6 +215,7 @@ public class WorkerData {
         this.workerInitConnectionStatus = new AtomicBoolean(false);
 
         if (StormConfig.cluster_mode(conf).equals("distributed")) {
+            // ${storm.local.dir}/workers/${worker_id}/pids
             String pidDir = StormConfig.worker_pids_root(conf, workerId);
             JStormServerUtils.createPid(pidDir);
         }
@@ -222,15 +224,16 @@ public class WorkerData {
         this.zkClusterState = ZkTool.mk_distributed_cluster_state(conf);
         this.zkCluster = Cluster.mk_storm_cluster_state(zkClusterState);
 
+        // 加载 topology 配置信息
         Map rawConf = StormConfig.read_supervisor_topology_conf(conf, topologyId);
         this.stormConf = new HashMap<>();
-        this.stormConf.putAll(conf);
-        this.stormConf.putAll(rawConf);
+        this.stormConf.putAll(conf); // 集群配置
+        this.stormConf.putAll(rawConf); // topology 配置
 
         // init topology.debug and other debug args
         JStormDebugger.update(stormConf);
         // register dynamic updaters
-        registerUpdateListeners();
+        this.registerUpdateListeners();
 
         JStormMetrics.setHistogramValueSize(ConfigExtension.getTopologyHistogramSize(stormConf));
         JStormMetrics.setTopologyId(topologyId);
@@ -284,11 +287,11 @@ public class WorkerData {
         JStormMetrics.registerWorkerMetric(MetricUtils.workerMetricName("GCTime", MetricType.GAUGE),
                 new AsmGauge(new Gauge<Double>() {
                     final List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
-                    double lastGcTime = getGcTime();
+                    double lastGcTime = this.getGcTime();
 
                     @Override
                     public Double getValue() {
-                        double newGcTime = getGcTime();
+                        double newGcTime = this.getGcTime();
                         double delta = newGcTime - lastGcTime;
                         lastGcTime = newGcTime;
                         return delta;
@@ -309,11 +312,11 @@ public class WorkerData {
         JStormMetrics.registerWorkerMetric(MetricUtils.workerMetricName("GCCount", MetricType.GAUGE),
                 new AsmGauge(new Gauge<Double>() {
                     final List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
-                    double lastGcNum = getGcNum();
+                    double lastGcNum = this.getGcNum();
 
                     @Override
                     public Double getValue() {
-                        double newGcNum = getGcNum();
+                        double newGcNum = this.getGcNum();
                         double delta = newGcNum - lastGcNum;
                         lastGcNum = newGcNum;
                         return delta;
@@ -353,8 +356,9 @@ public class WorkerData {
                 urlArray = urls.toArray(new URL[0]);
             }
 
-            WorkerClassLoader.mkInstance(urlArray, ClassLoader.getSystemClassLoader(),
-                    ClassLoader.getSystemClassLoader().getParent(), enableClassloader, enableDebugClassloader);
+            WorkerClassLoader.mkInstance(urlArray,
+                    ClassLoader.getSystemClassLoader(), ClassLoader.getSystemClassLoader().getParent(),
+                    enableClassloader, enableDebugClassloader);
         } catch (Exception e) {
             LOG.error("init jarClassLoader error!", e);
             throw new InvalidParameterException();
@@ -367,7 +371,6 @@ public class WorkerData {
             this.context = TransportFactory.makeContext(stormConf);
         }
 
-        // this.transferCtrlQueue = new LinkedBlockingQueue<TransferData>();
         int queueSize = JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_CTRL_BUFFER_SIZE), 256);
         long timeout = JStormUtils.parseLong(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT), 10);
         WaitStrategy waitStrategy = new TimeoutBlockingWaitStrategy(timeout, TimeUnit.MILLISECONDS);
@@ -403,12 +406,14 @@ public class WorkerData {
         }
         LOG.info("Current worker taskList:" + taskIds);
 
-        // deserialize topology code from local dir
+        // 加载 topology 的 StormTopology 对象
         rawTopology = StormConfig.read_supervisor_topology_code(conf, topologyId);
+        // 添加 system topology
         sysTopology = Common.system_topology(stormConf, rawTopology);
 
-        generateMaps();
+        this.generateMaps();
 
+        // TODO by zhenchao 2018-08-11 18:32:52
         contextMaker = new ContextMaker(this);
 
         outTaskStatus = new ConcurrentHashMap<>();
@@ -444,7 +449,7 @@ public class WorkerData {
         outboundTasks = new HashSet<>();
 
         // kryo
-        updateKryoSerializer();
+        this.updateKryoSerializer();
 
         LOG.info("Successfully created WorkerData");
     }
@@ -456,7 +461,7 @@ public class WorkerData {
         updateListener.registerUpdater(new UpdateListener.IUpdater() {
             @Override
             public void update(Map conf) {
-                metricReporter.updateMetricConfig(combineConf(conf));
+                metricReporter.updateMetricConfig(WorkerData.this.combineConf(conf));
             }
         });
 
@@ -464,7 +469,7 @@ public class WorkerData {
         updateListener.registerUpdater(new UpdateListener.IUpdater() {
             @Override
             public void update(Map conf) {
-                JStormDebugger.update(combineConf(conf));
+                JStormDebugger.update(WorkerData.this.combineConf(conf));
             }
         });
 
@@ -472,7 +477,7 @@ public class WorkerData {
         updateListener.registerUpdater(new UpdateListener.IUpdater() {
             @Override
             public void update(Map conf) {
-                LogUtils.update(combineConf(conf));
+                LogUtils.update(WorkerData.this.combineConf(conf));
             }
         });
     }
@@ -510,7 +515,8 @@ public class WorkerData {
      * @throws Exception
      */
     private void generateMaps() throws Exception {
-        updateTaskComponentMap();
+        // 获取当前 topology 所有的组件 ID 与 taskId 的正向与反向映射关系
+        this.updateTaskComponentMap();
         this.defaultResources = new HashMap<>();
         this.userResources = new HashMap<>();
         this.executorData = new HashMap<>();
@@ -719,9 +725,9 @@ public class WorkerData {
     }
 
     public void updateWorkerData(Assignment assignment) throws Exception {
-        updateTaskIds(assignment);
-        updateTaskComponentMap();
-        updateStormTopology();
+        this.updateTaskIds(assignment);
+        this.updateTaskComponentMap();
+        this.updateStormTopology();
     }
 
     public void updateTaskIds(Assignment assignment) {
@@ -745,16 +751,21 @@ public class WorkerData {
         return outboundTasks;
     }
 
+    /**
+     * 获取当前 topology 所有的组件 ID 与 taskId 的正向与反向映射关系
+     *
+     * @throws Exception
+     */
     private void updateTaskComponentMap() throws Exception {
+        // 获取当前 topology 对应的所有 [task_id, component_id]
         Map<Integer, String> tmp = Common.getTaskToComponent(Cluster.get_all_taskInfo(zkCluster, topologyId));
 
         this.tasksToComponent.putAll(tmp);
         LOG.info("Updated tasksToComponentMap:" + tasksToComponent);
 
         this.componentToSortedTasks.putAll(JStormUtils.reverse_map(tmp));
-        for (java.util.Map.Entry<String, List<Integer>> entry : componentToSortedTasks.entrySet()) {
+        for (Map.Entry<String, List<Integer>> entry : componentToSortedTasks.entrySet()) {
             List<Integer> tasks = entry.getValue();
-
             Collections.sort(tasks);
         }
     }
@@ -773,8 +784,8 @@ public class WorkerData {
             return;
         }
 
-        updateTopology(rawTopology, rawTmp);
-        updateTopology(sysTopology, sysTmp);
+        this.updateTopology(rawTopology, rawTmp);
+        this.updateTopology(sysTopology, sysTmp);
     }
 
     private void updateTopology(StormTopology oldTopology, StormTopology newTopology) {

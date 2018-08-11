@@ -271,7 +271,7 @@ public class Cluster {
     }
 
     /**
-     * 从 ZK 上获取当前 topology 对应的所有 {@link TaskInfo}
+     * 从 ZK:tasks/${topology_id} 上获取当前 topology 对应的所有 {@link TaskInfo}
      *
      * @param zkCluster
      * @param topologyId

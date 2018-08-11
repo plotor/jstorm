@@ -25,8 +25,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * UpdateListener is used to dynamically update configurations in worker
- * triggered by update topology action
+ * UpdateListener is used to dynamically update configurations in worker triggered by update topology action
  *
  * @author Jark (wuchong.wc@alibaba-inc.com)
  */

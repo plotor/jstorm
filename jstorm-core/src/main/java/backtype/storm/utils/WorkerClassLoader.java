@@ -15,8 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import sun.misc.CompoundEnumeration;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,11 +31,6 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import sun.misc.CompoundEnumeration;
-
 
 public class WorkerClassLoader extends URLClassLoader {
     private static final Logger LOG = LoggerFactory.getLogger(WorkerClassLoader.class);
@@ -60,7 +59,7 @@ public class WorkerClassLoader extends URLClassLoader {
     }
 
     protected boolean isLoadByDefault(String name) {
-        return name.startsWith("backtype.storm") || name.startsWith("com.alibaba.jstorm") || isLogByDefault(name);
+        return name.startsWith("backtype.storm") || name.startsWith("com.alibaba.jstorm") || this.isLogByDefault(name);
     }
 
     @Override
@@ -74,14 +73,15 @@ public class WorkerClassLoader extends URLClassLoader {
 
             try {
                 result = JDKClassLoader.loadClass(name);
-                if (result != null)
+                if (result != null) {
                     return result;
+                }
             } catch (Exception ignored) {
             }
 
             try {
-                if (!isLoadByDefault(name)) {
-                    result = findClass(name);
+                if (!this.isLoadByDefault(name)) {
+                    result = this.findClass(name);
                     if (result != null) {
                         return result;
                     }
@@ -107,7 +107,8 @@ public class WorkerClassLoader extends URLClassLoader {
 
     }
 
-    public static WorkerClassLoader mkInstance(URL[] urls, ClassLoader DefaultClassLoader, ClassLoader JDKClassLoader,
+    public static WorkerClassLoader mkInstance(URL[] urls,
+                                               ClassLoader DefaultClassLoader, ClassLoader JDKClassLoader,
                                                boolean enable, boolean isDebug) {
         WorkerClassLoader.enable = enable;
         if (!enable) {
@@ -167,6 +168,7 @@ public class WorkerClassLoader extends URLClassLoader {
         return rtn;
     }
 
+    @Override
     public Enumeration<URL> getResources(String name) throws IOException {
         Enumeration<URL>[] tmp = (Enumeration<URL>[]) new Enumeration<?>[2];
         tmp[0] = super.getResources(name);
@@ -174,6 +176,7 @@ public class WorkerClassLoader extends URLClassLoader {
         return new CompoundEnumeration<>(tmp);
     }
 
+    @Override
     public InputStream getResourceAsStream(String name) {
         InputStream is = super.getResourceAsStream(name);
         if (is == null) {

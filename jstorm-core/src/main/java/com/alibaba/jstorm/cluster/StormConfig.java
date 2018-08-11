@@ -182,7 +182,7 @@ public class StormConfig {
     }
 
     /**
-     * 创建并返回 ${local_dir}/workers/${worker_id}/pids
+     * 创建并返回 ${storm.local.dir}/workers/${worker_id}/pids
      *
      * @param conf
      * @param id
@@ -573,8 +573,18 @@ public class StormConfig {
         return (Map) readLocalObject(topologyId, confPath);
     }
 
+    /**
+     * 加载 topology 的 {@link StormTopology} 对象
+     *
+     * @param conf
+     * @param topologyId
+     * @return
+     * @throws IOException
+     */
     public static StormTopology read_supervisor_topology_code(Map conf, String topologyId) throws IOException {
+        // ${storm.local.dir}/supervisor/stormdist/${topology_id}
         String topologyRoot = StormConfig.supervisor_stormdist_root(conf, topologyId);
+        // ${storm.local.dir}/supervisor/stormdist/${topology_id}/stormcode.cer
         String codePath = StormConfig.stormcode_path(topologyRoot);
         return (StormTopology) readLocalObject(topologyId, codePath);
     }

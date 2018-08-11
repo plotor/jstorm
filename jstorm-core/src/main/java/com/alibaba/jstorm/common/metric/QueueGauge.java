@@ -15,16 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.common.metric;
 
+import backtype.storm.utils.DisruptorQueue;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.health.HealthCheck;
 import com.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import backtype.storm.utils.DisruptorQueue;
-
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.health.HealthCheck;
 
 public class QueueGauge extends HealthCheck implements Gauge<Double> {
     private static final Logger LOG = LoggerFactory.getLogger(QueueGauge.class);

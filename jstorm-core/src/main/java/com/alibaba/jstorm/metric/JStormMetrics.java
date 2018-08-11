@@ -49,6 +49,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 @SuppressWarnings({"unused", "unchecked"})
 public class JStormMetrics implements Serializable {
+
     private static final long serialVersionUID = -2580242512743243267L;
 
     public static final String NIMBUS_METRIC_KEY = "__NIMBUS__";

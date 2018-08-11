@@ -15,23 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.metric;
+
+import backtype.storm.utils.NimbusClientWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.utils.NimbusClientWrapper;
 
 /**
  * @author Cody (weiyue.wy@alibaba-inc.com)
  * @since 2.1.2
  */
 public class MetricsRegister {
-    private final Logger LOG = LoggerFactory.getLogger(getClass());
+    private final Logger LOG = LoggerFactory.getLogger(this.getClass());
 
     private Map conf;
     private String topologyId;
@@ -48,7 +48,7 @@ public class MetricsRegister {
             return new HashMap<>();
         }
         try {
-            synchronized (lock){
+            synchronized (lock) {
                 if (client == null) {
                     client = new NimbusClientWrapper();
                     client.init(conf);

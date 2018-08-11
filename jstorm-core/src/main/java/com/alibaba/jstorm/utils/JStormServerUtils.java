@@ -137,10 +137,10 @@ public class JStormServerUtils {
     }
 
     /**
-     * 创建当前 JVM 进程对应的目录：${storm.local.dir}/nimbus/pids/${pid} or ${storm.local.dir}/supervisor/pids/${pid}
-     * 如果存在历史进程目录，则会进行清除
+     * 创建当前 JVM 进程对应的目录，如果存在历史进程目录，则会进行清除：
+     * ${storm.local.dir}/nimbus/pids/${pid} or ${storm.local.dir}/supervisor/pids/${pid} or ${storm.local.dir}/workers/${worker_id}/pids
      *
-     * @param dir ${storm.local.dir}/nimbus/pids or ${storm.local.dir}/supervisor/pids
+     * @param dir ${storm.local.dir}/nimbus/pids or ${storm.local.dir}/supervisor/pids or ${storm.local.dir}/workers/${worker_id}/pids
      * @throws Exception
      */
     public static void createPid(String dir) throws Exception {

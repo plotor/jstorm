@@ -15,18 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.messaging;
+
+import backtype.storm.Config;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
-
 public class TransportFactory {
+
     public static final Logger LOG = LoggerFactory.getLogger(TransportFactory.class);
 
     public static IContext makeContext(Map storm_conf) {

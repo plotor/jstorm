@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.common.metric;
 
 import backtype.storm.utils.MutableInt;
@@ -29,15 +30,21 @@ import com.codahale.metrics.Metric;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AsmMetric<T extends Metric> {
-    protected final Logger logger = LoggerFactory.getLogger(getClass());
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private static final Joiner JOINER = Joiner.on(".");
 
@@ -106,11 +113,11 @@ public abstract class AsmMetric<T extends Metric> {
      */
     public abstract void updateTime(long obj);
 
-
     public void updateDirectly(Number obj) {
-        update(obj);
+        this.update(obj);
     }
 
+    @Override
     public abstract AsmMetric clone();
 
     public AsmMetric setOp(int op) {
@@ -174,25 +181,25 @@ public abstract class AsmMetric<T extends Metric> {
 
     public void flush() {
         long time = TimeUtils.current_time_secs();
-        List<Integer> windows = getValidWindows();
+        List<Integer> windows = this.getValidWindows();
         if (windows.size() == 0) {
             return;
         }
 
-        doFlush();
+        this.doFlush();
 
-        List<Integer> rollWindows = rollWindows(time, windows);
+        List<Integer> rollWindows = this.rollWindows(time, windows);
         for (int win : windows) {
             if (rollWindows.contains(win)) {
-                updateSnapshot(win);
+                this.updateSnapshot(win);
 
-                Map<Integer, T> metricMap = getWindowMetricMap();
+                Map<Integer, T> metricMap = this.getWindowMetricMap();
                 if (metricMap != null) {
-                    metricMap.put(win, mkInstance());
+                    metricMap.put(win, this.mkInstance());
                 }
             } else if (!rollingDirtyMap.get(win)) {
                 //if this window has never been passed, we still update this window snapshot
-                updateSnapshot(win);
+                this.updateSnapshot(win);
             }
         }
         this.lastFlushTime = TimeUtils.current_time_secs();
@@ -200,15 +207,15 @@ public abstract class AsmMetric<T extends Metric> {
 
     @VisibleForTesting
     public void forceFlush() {
-        doFlush();
+        this.doFlush();
 
-        List<Integer> windows = getWindows();
+        List<Integer> windows = this.getWindows();
         for (int win : windows) {
-            updateSnapshot(win);
+            this.updateSnapshot(win);
 
-            Map<Integer, T> metricMap = getWindowMetricMap();
+            Map<Integer, T> metricMap = this.getWindowMetricMap();
             if (metricMap != null) {
-                metricMap.put(win, mkInstance());
+                metricMap.put(win, this.mkInstance());
             }
         }
         this.lastFlushTime = TimeUtils.current_time_secs();
@@ -286,7 +293,6 @@ public abstract class AsmMetric<T extends Metric> {
 
         return windowSeconds;
     }
-
 
     public boolean isAggregate() {
         return aggregate;
