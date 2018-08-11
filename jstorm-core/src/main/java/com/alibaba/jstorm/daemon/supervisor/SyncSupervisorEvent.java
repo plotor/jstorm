@@ -83,6 +83,11 @@ class SyncSupervisorEvent extends RunnableCallback {
         this.heartbeat = heartbeat;
     }
 
+    /**
+     * 1. 从 ZK 下载任务分配信息，并更新到本地
+     * 2. 从 nimbus 上下载 topology 对应的 jar 和配置文件
+     * 3. 启动 worker 执行分配给当前 supervisor 的 topology 任务
+     */
     @SuppressWarnings("unchecked")
     @Override
     public void run() {
@@ -92,12 +97,11 @@ class SyncSupervisorEvent extends RunnableCallback {
         HealthStatus healthStatus = heartbeat.getHealthStatus(); // 获取当前 supervisor 心跳状态
         try {
             RunnableCallback syncCallback = new EventManagerZkPusher(this, syncSupEventManager);
-            // 从本地获取任务分配的版本信息
+            // 从本地获取任务分配信息，以及版本信息
             Map<String, Integer> assignmentVersion = (Map<String, Integer>) localState.get(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION);
             if (assignmentVersion == null) {
                 assignmentVersion = new HashMap<>();
             }
-            // 从本地获取任务分配信息
             Map<String, Assignment> assignments = (Map<String, Assignment>) localState.get(Common.LS_LOCAl_ZK_ASSIGNMENTS);
             if (assignments == null) {
                 assignments = new HashMap<>();
@@ -106,11 +110,10 @@ class SyncSupervisorEvent extends RunnableCallback {
             LOG.debug("get local assignments version " + assignmentVersion);
 
             /*
-             * 1: 同步所有 topology 的任务分配信息及其版本到本地，同时为 assignments 路径添加监听回调
+             * 1.1: 同步所有 topology 的任务分配信息及其版本信息到本地
              */
             if (healthStatus.isMoreSeriousThan(HealthStatus.ERROR)) {
                 // 检查当前 supervisor 的状态信息，如果是 PANIC 或 ERROR，则清除所有本地的任务分配相关信息
-                // if status is panic or error, clear all assignments and kill all workers
                 assignmentVersion.clear();
                 assignments.clear();
                 LOG.warn("Supervisor machine check status: " + healthStatus + ", killing all workers.");
@@ -121,20 +124,20 @@ class SyncSupervisorEvent extends RunnableCallback {
             LOG.debug("Get all assignments " + assignments);
 
             /*
-             * 2: 从 supervisor 本地（supervisor/stormdist/）获取所有的 topologyId
+             * 1.2: 从 supervisor 本地（supervisor/stormdist/）获取已经下载的所有的 topologyId
              */
             List<String> downloadedTopologyIds = StormConfig.get_supervisor_toplogy_list(conf);
             LOG.debug("Downloaded storm ids: " + downloadedTopologyIds);
 
             /*
-             * 3: 获取当前 supervisor 的任务分配信息：<port, LocalAssignments>
+             * 1.3: 获取当前 supervisor 的任务分配信息：<port, LocalAssignments>
              * 遍历所有的 topology，记录当前 supervisor 的 worker_port 到 LocalAssignment 的映射信息
              * 对于同一台 supervisor，一个 worker 端口只能分配一个任务
              */
             Map<Integer, LocalAssignment> zkAssignment = this.getLocalAssign(stormClusterState, supervisorId, assignments);
 
             /*
-             * 4: 更新 supervisor 本地的任务分配信息
+             * 1.4: 更新 supervisor 本地的任务分配信息
              */
             Map<Integer, LocalAssignment> localAssignment;
             try {
@@ -150,7 +153,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             }
 
             /*
-             * 5: 获取所有需要执行下载操作的 topology_id 集合（包括需要更新的、需要重新下载，以及在当前节点灰度的）
+             * 2.1: 获取所有需要执行下载操作的 topology_id 集合（包括需要更新的、需要重新下载，以及在当前节点灰度的）
              */
             Set<String> updateTopologies = this.getUpdateTopologies(localAssignment, zkAssignment, assignments);
             Set<String> reDownloadTopologies = this.getNeedReDownloadTopologies(localAssignment);
@@ -168,7 +171,7 @@ class SyncSupervisorEvent extends RunnableCallback {
             }
 
             /*
-             * 6: 从 nimbus 下载对应的 topology 任务代码
+             * 2.2: 从 nimbus 下载对应的 topology 任务代码
              */
             // 从 ZK 上获取分配给当前 supervisor 的 [topologyId, master-code-dir] 信息
             Map<String, String> topologyCodes = getTopologyCodeLocations(assignments, supervisorId);
@@ -178,12 +181,12 @@ class SyncSupervisorEvent extends RunnableCallback {
             this.downloadTopology(topologyCodes, downloadedTopologyIds, updateTopologies, assignments, downloadFailedTopologyIds);
 
             /*
-             * 7: 删除无用的 topology 相关文件（之前下载过，但是本次未分配给当前 supervisor）
+             * 2.3: 删除无用的 topology 相关文件（之前下载过，但是本次未分配给当前 supervisor）
              */
             this.removeUselessTopology(topologyCodes, downloadedTopologyIds);
 
             /*
-             * 8: 运行同步进程事件
+             * 3: kill bad workers, start new workers
              */
             syncProcesses.run(zkAssignment, downloadFailedTopologyIds, upgradeTopologyPorts);
 

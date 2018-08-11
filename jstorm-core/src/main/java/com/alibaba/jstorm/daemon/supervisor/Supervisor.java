@@ -141,8 +141,7 @@ public class Supervisor {
         }
 
         /*
-         * Step 5: create and start sync Supervisor thread every
-         * ${supervisor.monitor.frequency.secs} second run SyncSupervisor
+         * Step 5: 启动并定期执行 SyncSupervisorEvent#run() 方法（默认间隔 10 秒）
          */
         ConcurrentHashMap<String, String> workerThreadPids = new ConcurrentHashMap<>();
         SyncProcessEvent syncProcessEvent = new SyncProcessEvent(

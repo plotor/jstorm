@@ -15,17 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.supervisor;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.container.CgroupCenter;
@@ -35,6 +26,15 @@ import com.alibaba.jstorm.container.cgroup.CgroupCommon;
 import com.alibaba.jstorm.container.cgroup.core.CgroupCore;
 import com.alibaba.jstorm.container.cgroup.core.CpuCore;
 import com.alibaba.jstorm.utils.JStormUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Johnfang (xiaojian.fxj@alibaba-inc.com)
@@ -75,8 +75,9 @@ public class CgroupManager {
                     "consistent with configuration file.");
         }
         center = CgroupCenter.getInstance();
-        if (center == null)
+        if (center == null) {
             throw new RuntimeException("Cgroup error, please check /proc/cgroups");
+        }
         this.prepareSubSystem();
     }
 
@@ -84,21 +85,22 @@ public class CgroupManager {
         /*
          * Valid value is -1 or 1~10 -1 means no control
          */
-        if (value > 10)
+        if (value > 10) {
             value = 10;
-        else if (value < 1 && value != -1)
+        } else if (value < 1 && value != -1) {
             value = 1;
+        }
 
         return value;
     }
 
     private void setCpuUsageUpperLimit(CpuCore cpuCore, int cpuCoreUpperLimit) throws IOException {
         /*
-         * User cfs_period & cfs_quota to control the upper limit use of cpu core e.g. 
+         * User cfs_period & cfs_quota to control the upper limit use of cpu core e.g.
          * If making a process to fully use two cpu cores, set cfs_period_us to
          * 100000 and set cfs_quota_us to 200000 The highest value of "cpu core upper limit" is 10
          */
-        cpuCoreUpperLimit = validateCpuUpperLimitValue(cpuCoreUpperLimit);
+        cpuCoreUpperLimit = this.validateCpuUpperLimitValue(cpuCoreUpperLimit);
 
         if (cpuCoreUpperLimit == -1) {
             // No control of cpu usage
@@ -115,7 +117,7 @@ public class CgroupManager {
         CgroupCore cpu = workerGroup.getCores().get(SubSystemType.cpu);
         CpuCore cpuCore = (CpuCore) cpu;
         cpuCore.setCpuShares(cpuNum * ONE_CPU_SLOT);
-        setCpuUsageUpperLimit(cpuCore, ConfigExtension.getWorkerCpuCoreUpperLimit(conf));
+        this.setCpuUsageUpperLimit(cpuCore, ConfigExtension.getWorkerCpuCoreUpperLimit(conf));
 
         StringBuilder sb = new StringBuilder();
         sb.append("cgexec -g cpu:").append(workerGroup.getName()).append(" ");

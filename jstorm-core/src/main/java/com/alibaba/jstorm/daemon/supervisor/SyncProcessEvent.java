@@ -86,6 +86,8 @@ class SyncProcessEvent extends ShutdownWork {
 
     /**
      * Due to the worker startTime is put in Supervisor memory, When supervisor restart, the starting worker is likely to be killed
+     *
+     * [worker_id, [start_time, worker_port]]
      */
     private Map<String, Pair<Integer, Integer>> workerIdToStartTimeAndPort;
 
@@ -141,6 +143,8 @@ class SyncProcessEvent extends ShutdownWork {
     }
 
     /**
+     * kill bad workers, start new workers
+     *
      * @param localAssignments 本地 topology 分配信息, key is port
      * @param downloadFailedTopologyIds 下载失败的 topologyId
      * @param upgradeTopologyPorts [topology_id, Pair(host, port)]
@@ -178,23 +182,23 @@ class SyncProcessEvent extends ShutdownWork {
             try {
                 // [topology_id, cleanup_second]
                 taskCleanupTimeoutMap = (Map<String, Integer>) localState.get(Common.LS_TASK_CLEANUP_TIMEOUT); // task-cleanup-timeout
-                // TODO by zhenchao 2018-08-10 19:25:47
+                // 对于一些状态为 disallowed/timedOut 的 worker 进行 kill，并清空相应的数据，同时返可用的 worker port
                 keepPorts = this.killUselessWorkers(localWorkerStats, localAssignments, taskCleanupTimeoutMap);
                 localState.put(Common.LS_TASK_CLEANUP_TIMEOUT, taskCleanupTimeoutMap);
             } catch (IOException e) {
                 LOG.error("Failed to kill workers", e);
             }
 
-            // 检测新的 worker
+            // 4. 检测 worker 是否启动成功，对于启动失败的 worker 则清空相应数据
             this.checkNewWorkers(conf);
 
-            // 检测哪些 topology 需要更新
+            // 5. 检查需要重新下载的 topology：未启动成功，同时下载时间已经超过 2 分钟
             this.checkNeedUpdateTopologies(localWorkerStats, localAssignments);
 
-            // 为下载失败的 topology 在空闲端口上启动新的 worker
+            // 6. 为下载失败的 topology 在空闲端口上启动新的 worker
             this.startNewWorkers(keepPorts, localAssignments, downloadFailedTopologyIds);
 
-            // restart upgraded workers
+            // 7. 启动灰度的 worker
             this.restartUpgradingWorkers(localAssignments, localWorkerStats, upgradeTopologyPorts);
 
         } catch (Exception e) {
@@ -210,6 +214,7 @@ class SyncProcessEvent extends ShutdownWork {
             return;
         }
 
+        // 记录所有具备心跳信息的 <worker_port, worker_id>
         Map<Integer, String> portToWorkerId = new HashMap<>();
         for (Entry<String, StateHeartbeat> entry : localWorkerStats.entrySet()) {
             String workerId = entry.getKey();
@@ -237,8 +242,7 @@ class SyncProcessEvent extends ShutdownWork {
                     if (!upgradingHostPorts.contains(hostPort)) {
                         killingWorkers.put(workerId, TimeUtils.current_time_secs());
                         workerIdToTopology.put(workerId, topologyId);
-                        workerIdToHostPort.put(workerId,
-                                topologyId + "[" + hostPort.getFirst() + ":" + hostPort.getSecond() + "]");
+                        workerIdToHostPort.put(workerId, topologyId + "[" + hostPort.getFirst() + ":" + hostPort.getSecond() + "]");
                         upgradingHostPorts.add(hostPort);
                     }
                 }
@@ -279,17 +283,22 @@ class SyncProcessEvent extends ShutdownWork {
     }
 
     /**
-     * check all workers is failed or not
+     * 检查需要重新下载的 topology：未启动成功，同时下载时间已经超过 2 分钟
+     *
+     * @param localWorkerStats
+     * @param localAssignments
+     * @throws Exception
      */
     @SuppressWarnings("unchecked")
     private void checkNeedUpdateTopologies(Map<String, StateHeartbeat> localWorkerStats,
                                            Map<Integer, LocalAssignment> localAssignments) throws Exception {
-        Set<String> topologies = new HashSet<>();
+        Set<String> topologies = new HashSet<>(); // 记录 topology_id
 
         for (Map.Entry<Integer, LocalAssignment> entry : localAssignments.entrySet()) {
             topologies.add(entry.getValue().getTopologyId());
         }
 
+        // 移除已经启动的 topology_id
         for (StateHeartbeat stateHb : localWorkerStats.values()) {
             State state = stateHb.getState();
             if (!state.equals(State.notStarted)) {
@@ -297,12 +306,15 @@ class SyncProcessEvent extends ShutdownWork {
                 topologies.remove(topologyId);
             }
         }
+
         long currTime = System.currentTimeMillis();
         Set<String> needRemoveTopologies = new HashSet<>();
         for (String topologyId : topologies) {
             try {
+                // 获取 ${storm.local.dir}/supervisor/stormdist/${topology_id} 最近一次修改时间
                 long lastModifyTime = StormConfig.get_supervisor_topology_Bianrymodify_time(conf, topologyId);
                 if ((currTime - lastModifyTime) / 1000 < (JStormUtils.MIN_1 * 2)) {
+                    // topology 下载时间距离当前小于 2 分钟
                     LOG.debug("less than 2 minute, removing " + topologyId);
                     needRemoveTopologies.add(topologyId);
                 }
@@ -350,10 +362,14 @@ class SyncProcessEvent extends ShutdownWork {
             LocalState ls = StormConfig.worker_state(conf, workerId);
             WorkerHeartbeat whb = (WorkerHeartbeat) ls.get(Common.LS_WORKER_HEARTBEAT);
             if (whb == null) {
+                // 对应 worker 没有心跳信息
                 if ((TimeUtils.current_time_secs() - startTime) <
+                        // 默认为 120 秒
                         JStormUtils.parseInt(conf.get(Config.SUPERVISOR_WORKER_START_TIMEOUT_SECS))) {
+                    // 如果启动时间距离当前不超过两分钟，则认为 worker 还没有启动起来
                     LOG.info(workerId + " still hasn't started");
                 } else {
+                    // 否则任务 worker 启动失败
                     LOG.error("Failed to start Worker " + workerId);
                     workers.add(workerId);
                 }
@@ -362,6 +378,8 @@ class SyncProcessEvent extends ShutdownWork {
                 workers.add(workerId);
             }
         }
+
+        // 对于启动失败的 worker，则清空相关数据
         for (String workerId : workers) {
             Integer port = this.workerIdToStartTimeAndPort.get(workerId).getSecond();
             this.workerIdToStartTimeAndPort.remove(workerId);
@@ -978,6 +996,8 @@ class SyncProcessEvent extends ShutdownWork {
     }
 
     /**
+     * 对于一些状态为 disallowed/timedOut 的 worker 进行 kill，并清空相应的数据，同时返回可用的 worker port
+     *
      * @param localWorkerStats Map[workerId, [worker heartbeat, state]]
      * @param localAssignments
      * @param taskCleanupTimeoutMap task-cleanup-timeout
@@ -986,38 +1006,38 @@ class SyncProcessEvent extends ShutdownWork {
     private Set<Integer> killUselessWorkers(Map<String, StateHeartbeat> localWorkerStats,
                                             Map<Integer, LocalAssignment> localAssignments,
                                             Map<String, Integer> taskCleanupTimeoutMap) {
-        Map<String, String> removed = new HashMap<>();
+        Map<String, String> removed = new HashMap<>();  // [worker_id, topology_id]
         Set<Integer> keepPorts = new HashSet<>();
 
         for (Entry<String, StateHeartbeat> entry : localWorkerStats.entrySet()) {
-
             String workerId = entry.getKey();
             StateHeartbeat hbState = entry.getValue();
             if (workerIdToStartTimeAndPort.containsKey(workerId) && hbState.getState().equals(State.notStarted)) {
+                // 之前启动过但是现在的状态为未启动
                 continue;
             }
-
             if (hbState.getState().equals(State.valid)) {
                 // hbstate.getHeartbeat() won't be null
                 keepPorts.add(hbState.getHeartbeat().getPort());
             } else {
+                // not valid
                 if (hbState.getHeartbeat() != null) {
                     removed.put(workerId, hbState.getHeartbeat().getTopologyId());
                 } else {
                     removed.put(workerId, null);
                 }
-
                 if (!killingWorkers.containsKey(workerId)) {
                     LOG.info("Shutting down and clearing state for id {}, State:{}", workerId, hbState);
                 }
             }
         }
 
+        // kill 掉 removed 中所有不位于 killingWorkers 中的 worker
         this.shutWorker(conf, supervisorId, removed, workerThreadPids, cgroupManager, false, killingWorkers, taskCleanupTimeoutMap);
         Set<String> activeTopologies = new HashSet<>();
         if (killingWorkers.size() == 0) {
             // When all workers under killing are killed successfully,
-            // clean the task cleanup timeout map correspondingly.
+            // clean the task cleanup timeout map correspondingly（相应的）.
             for (Entry<Integer, LocalAssignment> entry : localAssignments.entrySet()) {
                 activeTopologies.add(entry.getValue().getTopologyId());
             }
@@ -1036,6 +1056,7 @@ class SyncProcessEvent extends ShutdownWork {
         for (String removedWorkerId : removed.keySet()) {
             localWorkerStats.remove(removedWorkerId);
         }
+
         // Keep the workers which are still under starting
         for (Entry<String, Pair<Integer, Integer>> entry : workerIdToStartTimeAndPort.entrySet()) {
             String workerId = entry.getKey();
@@ -1069,7 +1090,7 @@ class SyncProcessEvent extends ShutdownWork {
     /**
      * 启动新的 worker:
      *
-     * @param keepPorts
+     * @param keepPorts 已经处理运行状态的 worker ports
      * @param localAssignments
      * @param downloadFailedTopologyIds
      * @throws Exception
@@ -1079,11 +1100,13 @@ class SyncProcessEvent extends ShutdownWork {
             throws Exception {
         /*
          * 4: 获取所有需要重新分配 worker 的 task，即 localAssignments 中端口不包含在 keepPorts 中的
+         *
+         * 从 localAssignments 中剔除所有位于 keepPorts 中的 key
          */
         Map<Integer, LocalAssignment> newWorkers = JStormUtils.select_keys_pred(keepPorts, localAssignments);
 
         /*
-         * 5: 生成新的 worker id，generate new work ids
+         * 5: 移除所有分配的 topology 下载失败的 worker，并调用命令行启动相应的 worker
          */
         for (Iterator<Entry<Integer, LocalAssignment>> entryItr = newWorkers.entrySet().iterator(); entryItr.hasNext(); ) {
             Entry<Integer, LocalAssignment> entry = entryItr.next();
@@ -1095,8 +1118,7 @@ class SyncProcessEvent extends ShutdownWork {
                 entryItr.remove();
             }
         }
-
-        // 调用命令行启动 Worker
+        // 调用命令行启动 worker，同时记录相应数据
         this.startWorkers(newWorkers);
     }
 
@@ -1113,7 +1135,7 @@ class SyncProcessEvent extends ShutdownWork {
 
             // create new worker Id directory
             try {
-                // 创建 ${local_dir}/workers/${worker_id}/pids
+                // 创建 ${storm.local.dir}/workers/${worker_id}/pids
                 StormConfig.worker_pids_root(conf, workerId);
             } catch (IOException e1) {
                 LOG.error("Failed to create local dir for worker:" + workerId, e1);
@@ -1132,7 +1154,7 @@ class SyncProcessEvent extends ShutdownWork {
             }
         }
 
-        // 记录
+        // 记录 worker 相应数据
         this.markAllNewWorkers(newWorkerIds);
     }
 

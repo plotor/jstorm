@@ -725,7 +725,16 @@ public class StormConfig {
         return ret;
     }
 
+    /**
+     * 获取 ${storm.local.dir}/supervisor/stormdist/${topology_id} 最近一次修改时间
+     *
+     * @param conf
+     * @param topologyId
+     * @return
+     * @throws IOException
+     */
     public static long get_supervisor_topology_Bianrymodify_time(Map conf, String topologyId) throws IOException {
+        // ${storm.local.dir}/supervisor/stormdist/${topology_id}
         String topologyRoot = StormConfig.supervisor_stormdist_root(conf, topologyId);
         File f = new File(topologyRoot);
         return f.lastModified();

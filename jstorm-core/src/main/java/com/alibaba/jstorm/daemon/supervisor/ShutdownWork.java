@@ -44,7 +44,7 @@ public class ShutdownWork extends RunnableCallback {
     private static final Logger LOG = LoggerFactory.getLogger(ShutdownWork.class);
 
     /**
-     * shutdown all workers
+     * shutdown all workers in <code>workerIdToTopology</code>
      *
      * @param conf storm conf
      * @param supervisorId supervisor id
@@ -71,6 +71,7 @@ public class ShutdownWork extends RunnableCallback {
             killingWorkers = new HashMap<>();
         }
 
+        // 对于 workerIdToTopology 中的进程，如果不在 killingWorkers 中，执行 kill
         for (Entry<String, String> entry : workerIdToTopology.entrySet()) {
             String workerId = entry.getKey();
             String topologyId = entry.getValue();
@@ -91,6 +92,7 @@ public class ShutdownWork extends RunnableCallback {
                     String threadPid = workerThreadPids.get(workerId);
                     // local mode
                     if (threadPid != null) {
+                        // kill worker
                         ProcessSimulator.killProcess(threadPid);
                         localMode = true;
                         continue;
@@ -169,8 +171,8 @@ public class ShutdownWork extends RunnableCallback {
      * @param workerId worker id
      */
     public static List<String> getPid(Map conf, String workerId) throws IOException {
+        // ${local_dir}/workers/${worker_id}/pids
         String workerPidPath = StormConfig.worker_pids_root(conf, workerId);
-
         return PathUtils.read_dir_contents(workerPidPath);
     }
 }
