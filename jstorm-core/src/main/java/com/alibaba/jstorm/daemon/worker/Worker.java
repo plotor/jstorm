@@ -250,7 +250,6 @@ public class Worker {
 
         LOG.info("Begin to run worker:" + sb.toString());
         Worker w = new Worker(conf, context, topologyId, supervisorId, port, workerId, jarPath);
-        //   w.redirectOutput();
         return w.execute();
     }
 

@@ -20,7 +20,11 @@ package com.alibaba.jstorm.metric;
 
 import backtype.storm.generated.MetricInfo;
 import backtype.storm.generated.MetricSnapshot;
-import com.alibaba.jstorm.common.metric.*;
+import com.alibaba.jstorm.common.metric.AsmCounter;
+import com.alibaba.jstorm.common.metric.AsmGauge;
+import com.alibaba.jstorm.common.metric.AsmHistogram;
+import com.alibaba.jstorm.common.metric.AsmMeter;
+import com.alibaba.jstorm.common.metric.AsmMetric;
 import com.alibaba.jstorm.common.metric.snapshot.AsmSnapshot;
 import com.alibaba.jstorm.utils.NetWorkUtils;
 import com.google.common.base.Joiner;
@@ -31,7 +35,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -302,8 +311,8 @@ public class JStormMetrics implements Serializable {
      * simplified helper method to register a worker histogram
      *
      * @param topologyId topology id
-     * @param name       metric name, NOTE it's not a full-qualified name.
-     * @param histogram  histogram
+     * @param name metric name, NOTE it's not a full-qualified name.
+     * @param histogram histogram
      * @return registered histogram
      */
     public static AsmHistogram registerWorkerHistogram(String topologyId, String name, AsmHistogram histogram) {

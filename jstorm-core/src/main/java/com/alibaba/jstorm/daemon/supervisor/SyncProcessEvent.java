@@ -671,7 +671,7 @@ class SyncProcessEvent extends ShutdownWork {
     public String getWorkerClassPath(String stormJar, Map totalConf, String stormRoot) {
         StringBuilder sb = new StringBuilder();
 
-        if (!StringUtils.isBlank((String) totalConf.get(Config.TOPOLOGY_CLASSPATH))) {
+        if (!StringUtils.isBlank((String) totalConf.get(Config.TOPOLOGY_CLASSPATH))) { // topology.classpath
             sb.append(totalConf.get(Config.TOPOLOGY_CLASSPATH)).append(":");
         }
         List<String> otherLibs = (List<String>) totalConf.get(GenericOptionsParser.TOPOLOGY_LIB_NAME);
