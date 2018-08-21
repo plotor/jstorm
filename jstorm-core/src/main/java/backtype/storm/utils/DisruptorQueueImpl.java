@@ -173,7 +173,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
     }
 
     public void consumeBatchWhenAvailable(EventHandler<Object> handler) {
-        consumeBatchWhenAvailable(handler, true);
+        this.consumeBatchWhenAvailable(handler, true);
     }
 
     public void consumeBatchWhenAvailableWithCallback(EventHandler<Object> handler) {

@@ -413,7 +413,6 @@ public class WorkerData {
 
         this.generateMaps();
 
-        // TODO by zhenchao 2018-08-11 18:32:52
         contextMaker = new ContextMaker(this);
 
         outTaskStatus = new ConcurrentHashMap<>();
@@ -424,9 +423,11 @@ public class WorkerData {
         threadPool = Executors.newScheduledThreadPool(THREAD_POOL_NUM);
         TimerTrigger.setScheduledExecutorService(threadPool);
 
+        // ${worker.flush.pool.min.size}
         if (ConfigExtension.getWorkerFlushPoolMinSize(stormConf) != null) {
             minPoolSize = ConfigExtension.getWorkerFlushPoolMinSize(stormConf);
         }
+        // ${worker.flush.pool.max.size}
         if (ConfigExtension.getWorkerFlushPoolMaxSize(stormConf) != null) {
             maxPoolSize = ConfigExtension.getWorkerFlushPoolMaxSize(stormConf);
         }

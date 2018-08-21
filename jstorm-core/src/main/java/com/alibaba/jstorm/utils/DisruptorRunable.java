@@ -21,9 +21,10 @@ import backtype.storm.utils.DisruptorQueue;
 import com.alibaba.jstorm.callback.AsyncLoopRunnable;
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.lmax.disruptor.EventHandler;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Disruptor Consumer thread
@@ -54,7 +55,7 @@ public abstract class DisruptorRunable extends RunnableCallback implements Event
         if (event == null) {
             return;
         }
-        handleEvent(event, endOfBatch);
+        this.handleEvent(event, endOfBatch);
     }
 
     @Override

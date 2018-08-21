@@ -15,18 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.task;
 
 import backtype.storm.generated.StormTopology;
 import backtype.storm.tuple.Fields;
+import com.alibaba.jstorm.cluster.StormConfig;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-
-import com.alibaba.jstorm.cluster.StormConfig;
 
 public class WorkerTopologyContext extends GeneralTopologyContext {
     public static final String SHARED_EXECUTOR = "executor";

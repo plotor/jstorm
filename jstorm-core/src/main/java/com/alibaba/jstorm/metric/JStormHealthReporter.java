@@ -57,6 +57,7 @@ public class JStormHealthReporter extends RunnableCallback {
             for (Map.Entry<String, Result> result : results.entrySet()) {
                 if (!result.getValue().isHealthy()) {
                     try {
+                        // taskerrors/${topology_id}/${task_id}
                         clusterState.report_task_error(topologyId, taskId, result.getValue().getMessage(),
                                 ErrorConstants.WARN, ErrorConstants.CODE_QUEUE_FULL, ErrorConstants.DURATION_SECS_QUEUE_FULL);
                         cnt++;

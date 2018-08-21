@@ -142,6 +142,9 @@ public class Worker {
         return shutdownTasks;
     }
 
+    /**
+     * @return
+     */
     private AsyncLoopThread startDispatchThread() {
         // send tuple directly from netty server
         // send control tuple to dispatch thread
@@ -150,27 +153,27 @@ public class Worker {
         IContext context = workerData.getContext();
         String topologyId = workerData.getTopologyId();
 
-        //create recv connection
+        // create recv connection
         Map stormConf = workerData.getStormConf();
         long timeout = JStormUtils.parseLong(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT), 10);
         WaitStrategy waitStrategy = new TimeoutBlockingWaitStrategy(timeout, TimeUnit.MILLISECONDS);
         int queueSize = JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_CTRL_BUFFER_SIZE), 256);
         DisruptorQueue recvControlQueue = DisruptorQueue.mkInstance("Dispatch-control", ProducerType.MULTI, queueSize, waitStrategy, false, 0, 0);
 
-        //metric for recvControlQueue
+        // metric for recvControlQueue
         QueueGauge revCtrlGauge = new QueueGauge(recvControlQueue, MetricDef.RECV_CTRL_QUEUE);
-        JStormMetrics.registerWorkerMetric(JStormMetrics.workerMetricName(MetricDef.RECV_CTRL_QUEUE, MetricType.GAUGE), new AsmGauge(
-                revCtrlGauge));
+        JStormMetrics.registerWorkerMetric(JStormMetrics.workerMetricName(MetricDef.RECV_CTRL_QUEUE, MetricType.GAUGE), new AsmGauge(revCtrlGauge));
 
-        IConnection recvConnection = context.bind(topologyId, workerData.getPort(), workerData.getDeserializeQueues(),
-                recvControlQueue, false, workerData.getTaskIds());
+        // 创建并返回一个 Socket 连接（主要用于接收消息）
+        IConnection recvConnection = context.bind(
+                topologyId, workerData.getPort(), workerData.getDeserializeQueues(), recvControlQueue, false, workerData.getTaskIds());
         workerData.setRecvConnection(recvConnection);
 
         // create recvice control messages's thread
-        RunnableCallback recvControlDispather = new VirtualPortCtrlDispatch(
+        RunnableCallback recvControlDispatcher = new VirtualPortCtrlDispatch(
                 workerData, recvConnection, recvControlQueue, MetricDef.RECV_THREAD);
 
-        return new AsyncLoopThread(recvControlDispather, false, Thread.MAX_PRIORITY, true);
+        return new AsyncLoopThread(recvControlDispatcher, false, Thread.MAX_PRIORITY, true);
     }
 
     public WorkerShutdown execute() throws Exception {

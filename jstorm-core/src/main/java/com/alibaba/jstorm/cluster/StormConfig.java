@@ -670,8 +670,18 @@ public class StormConfig {
         }
     }
 
+    /**
+     * 获取 supervisor timestamp
+     *
+     * @param conf
+     * @param topologyId
+     * @return
+     * @throws IOException
+     */
     public static long read_supervisor_topology_timestamp(Map conf, String topologyId) throws IOException {
+        // ${storm.local.dir}/supervisor/stormdist/${topology_id}
         String stormRoot = supervisor_stormdist_root(conf, topologyId);
+        // ${storm.local.dir}/supervisor/stormdist/${topology_id}/timestamp
         String timeStampPath = stormts_path(stormRoot);
 
         byte[] data = FileUtils.readFileToByteArray(new File(timeStampPath));
