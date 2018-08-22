@@ -69,9 +69,9 @@ public class RefreshActive extends RunnableCallback {
     @Override
     public void run() {
         try {
+            // 从 ZK 上获取 topology 的状态信息
             StatusType newTopologyStatus;
-            // topology/${topology_id}
-            StormBase base = zkCluster.storm_base(topologyId, this);
+            StormBase base = zkCluster.storm_base(topologyId, this); // topology/${topology_id}
             if (base == null) {
                 // normally the topology has been removed
                 LOG.warn("Failed to get StormBase from ZK of " + topologyId);
@@ -82,7 +82,6 @@ public class RefreshActive extends RunnableCallback {
 
             // Process the topology status change
             StatusType oldTopologyStatus = workerData.getTopologyStatus();
-
             List<TaskShutdownDameon> tasks = workerData.getShutdownTasks();
             if (tasks == null) {
                 LOG.info("Tasks aren't ready or are beginning to shutdown");
@@ -97,10 +96,12 @@ public class RefreshActive extends RunnableCallback {
                 }
             }
 
+            // 当本地与 ZK 关于当前 topology 的状态不一致
             if (oldTopologyStatus == null || !newTopologyStatus.equals(oldTopologyStatus)) {
                 LOG.info("Old TopologyStatus:" + oldTopologyStatus + ", new TopologyStatus:" + newTopologyStatus);
-                if (newTopologyStatus.equals(StatusType.active) || newTopologyStatus.equals(StatusType.upgrading) ||
-                        newTopologyStatus.equals(StatusType.rollback)) {
+                if (newTopologyStatus.equals(StatusType.active)
+                        || newTopologyStatus.equals(StatusType.upgrading)
+                        || newTopologyStatus.equals(StatusType.rollback)) {
                     for (TaskShutdownDameon task : tasks) {
                         if (task.getTask().getTaskStatus().isInit()) {
                             task.getTask().getTaskStatus().setStatus(TaskStatus.RUN);

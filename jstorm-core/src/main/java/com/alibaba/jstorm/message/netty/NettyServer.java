@@ -42,7 +42,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 class NettyServer implements IConnection {
+
     private static final Logger LOG = LoggerFactory.getLogger(NettyServer.class);
+
     @SuppressWarnings("rawtypes")
     Map stormConf;
     int port;

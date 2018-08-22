@@ -46,7 +46,7 @@ import java.util.concurrent.Future;
 
 /**
  * Update current worker connections with other workers.
- * When a worker shuts down or is created, the connections need to be updated
+ * When a worker shutdown or is created, the connections need to be updated
  *
  * @author yannian/Longda
  */
@@ -100,8 +100,8 @@ public class RefreshConnections extends RunnableCallback {
             synchronized (this) {
                 // 获取当前 topology 任务分配版本
                 Integer recordedVersion = zkCluster.assignment_version(topologyId, this);
-                boolean isUpdateAssignment = !(recordedVersion != null && recordedVersion.equals(assignmentVersion)); // 是否有更新
-                boolean isUpdateSupervisorTimeStamp = false; // 基于时间戳判定是否有更新
+                boolean isUpdateAssignment = !(recordedVersion != null && recordedVersion.equals(assignmentVersion)); // ZK 上的任务分配信息是否有更新
+                boolean isUpdateSupervisorTimeStamp = false; // 本地任务分配数据是否有更新
                 Long localAssignmentTS = null;
                 try {
                     // 获取任务分配的时间戳
@@ -118,7 +118,6 @@ public class RefreshConnections extends RunnableCallback {
                     if (assignment == null) {
                         String errMsg = "Failed to get assignment of " + topologyId;
                         LOG.error(errMsg);
-                        // throw new RuntimeException(errMsg);
                         return;
                     }
 
@@ -126,6 +125,7 @@ public class RefreshConnections extends RunnableCallback {
                      * Compare the assignment timestamp of ${storm.local.dir}/supervisor/stormdist/${topology_id}/timestamp
                      * with the one in workerData to check if the topology code is updated. If so, the outbound task map should be updated accordingly.
                      */
+                    // 如果本地任务分配信息有更新
                     if (isUpdateSupervisorTimeStamp) {
                         try {
                             if (assignment.getAssignmentType() == AssignmentType.UpdateTopology) {
@@ -218,7 +218,6 @@ public class RefreshConnections extends RunnableCallback {
                         }
                     }
                     taskToNodePort.putAll(taskNodePortTmp);
-                    //workerData.setLocalTasks(localTasks);
                     workerData.setLocalNodeTasks(localNodeTasks);
 
                     // get which connection need to be remove or add
@@ -362,6 +361,11 @@ public class RefreshConnections extends RunnableCallback {
         }
     }
 
+    /**
+     * 关闭指定的 task
+     *
+     * @param tasks
+     */
     private void shutdownTasks(Set<Integer> tasks) {
         if (tasks == null) {
             return;

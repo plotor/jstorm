@@ -31,14 +31,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author yannian
  */
-public abstract class DisruptorRunable extends RunnableCallback implements EventHandler {
-    private final static Logger LOG = LoggerFactory.getLogger(DisruptorRunable.class);
+public abstract class DisruptorRunnable extends RunnableCallback implements EventHandler {
+
+    private final static Logger LOG = LoggerFactory.getLogger(DisruptorRunnable.class);
 
     protected DisruptorQueue queue;
     protected String idStr;
     protected AtomicBoolean shutdown = AsyncLoopRunnable.getShutdown();
 
-    public DisruptorRunable(DisruptorQueue queue, String idStr) {
+    public DisruptorRunnable(DisruptorQueue queue, String idStr) {
         this.queue = queue;
         this.idStr = idStr;
     }
@@ -61,7 +62,6 @@ public abstract class DisruptorRunable extends RunnableCallback implements Event
     @Override
     public void run() {
         LOG.info("Successfully start thread " + idStr);
-        //queue.consumerStarted();
         while (!shutdown.get()) {
             queue.consumeBatchWhenAvailable(this);
         }

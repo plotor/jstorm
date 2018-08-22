@@ -170,8 +170,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
                 } else {
                     for (Object value : values) {
                         Pair<MessageId, List<Object>> val = (Pair<MessageId, List<Object>>) value;
-                        TupleImplExt t = new TupleImplExt(
-                                sysTopologyCtx, val.getSecond(), val.getFirst(), ((TupleImplExt) event));
+                        TupleImplExt t = new TupleImplExt(sysTopologyCtx, val.getSecond(), val.getFirst(), ((TupleImplExt) event));
                         this.processTupleEvent(t);
                     }
                 }

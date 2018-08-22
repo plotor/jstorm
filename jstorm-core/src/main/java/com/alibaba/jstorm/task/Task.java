@@ -100,6 +100,7 @@ public class Task implements Runnable {
     private ConcurrentHashMap<WorkerSlot, IConnection> nodePortToSocket;
     private ConcurrentHashMap<Integer, WorkerSlot> taskToNodePort;
 
+    /** 当前 task 对应的执行器 */
     private BaseExecutors baseExecutors;
 
     @SuppressWarnings("rawtypes")
@@ -227,6 +228,7 @@ public class Task implements Runnable {
 
     /**
      * create executor to receive tuples and run bolt/spout execute function
+     * 基于组件类型创建对应的 Executor
      */
     private RunnableCallback prepareExecutor() {
         // 基于组件类型创建对应的 Executor
@@ -245,8 +247,9 @@ public class Task implements Runnable {
         taskSendTargets = this.echoToSystemBolt();
 
         // create thread to get tuple from zeroMQ, and pass the tuple to bolt/spout
-        // 创建线程获取数据，并封装成 tuple 专递给 spout/bolt
+        // 创建线程获取数据，并封装成 tuple 传递给 spout/bolt
         taskTransfer = this.mkTaskSending(workerData);
+        // 创建并获取组件对应的 executor
         RunnableCallback baseExecutor = this.prepareExecutor();
         // set baseExecutors for update
         this.setBaseExecutors((BaseExecutors) baseExecutor);
@@ -260,10 +263,17 @@ public class Task implements Runnable {
 
         LOG.info("Finished loading task " + componentId + ":" + taskId);
 
+        // 创建并返回 Task 的管理对象
         taskShutdownDameon = this.getShutdown(allThreads, baseExecutor);
         return taskShutdownDameon;
     }
 
+    /**
+     * 创建 {@link TaskTransfer} 对象，用于发送 tuple
+     *
+     * @param workerData
+     * @return
+     */
     private TaskTransfer mkTaskSending(WorkerData workerData) {
         // sending tuple's serializer
         // 创建一个用于发送 tuple 的 serializer

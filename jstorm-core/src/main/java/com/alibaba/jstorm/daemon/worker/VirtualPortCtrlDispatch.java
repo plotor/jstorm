@@ -24,7 +24,7 @@ import backtype.storm.serialization.KryoTupleDeserializer;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
-import com.alibaba.jstorm.utils.DisruptorRunable;
+import com.alibaba.jstorm.utils.DisruptorRunnable;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.esotericsoftware.kryo.KryoException;
 import org.slf4j.Logger;
@@ -38,10 +38,11 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
-public class VirtualPortCtrlDispatch extends DisruptorRunable {
+public class VirtualPortCtrlDispatch extends DisruptorRunnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(VirtualPortCtrlDispatch.class);
 
+    /** [task_id, DisruptorQueue] */
     protected ConcurrentHashMap<Integer, DisruptorQueue> controlQueues;
     protected IConnection recvConnection;
     protected AtomicReference<KryoTupleDeserializer> atomKryoDeserializer;

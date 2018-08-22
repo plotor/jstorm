@@ -76,8 +76,7 @@ public class Worker {
     private WorkerData workerData;
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public Worker(Map conf, IContext context, String topologyId, String supervisorId,
-                  int port, String workerId, String jarPath) throws Exception {
+    public Worker(Map conf, IContext context, String topologyId, String supervisorId, int port, String workerId, String jarPath) throws Exception {
         workerData = new WorkerData(conf, context, topologyId, supervisorId, port, workerId, jarPath);
     }
 
@@ -95,8 +94,7 @@ public class Worker {
         for (Integer taskId : taskIds) {
             TopologyContext context = context_maker.makeTopologyContext(topology, taskId, null);
 
-            // 获取 task 对应的组件的下游组件 ID，以及消息分组方式
-            // <StreamId, <ComponentId, Grouping>>
+            // 获取 task 对应的组件的下游组件 ID，以及消息分组方式：<StreamId, <ComponentId, Grouping>>
             Map<String, Map<String, Grouping>> targets = context.getThisTargets();
             for (Map<String, Grouping> e : targets.values()) {
                 for (String componentId : e.keySet()) {
@@ -120,6 +118,12 @@ public class Worker {
         return new RefreshConnections(workerData);
     }
 
+    /**
+     * 创建 Task
+     *
+     * @return
+     * @throws Exception
+     */
     private List<TaskShutdownDameon> createTasks() throws Exception {
         List<TaskShutdownDameon> shutdownTasks = new ArrayList<>();
 
@@ -146,14 +150,14 @@ public class Worker {
     }
 
     /**
-     * send tuple directly from netty server
-     * send control tuple to dispatch thread
-     * startDispatchDisruptor();
+     * 消息分发：
+     * 为当前 worker 基于 Netty 创建并返回一个 Socket 连接用于接收消息，
+     * 同时会起一个线程循环对接收到的消息分发给对应的 task，消息均基于 disruptor 进行传递
      *
      * @return
      */
     private AsyncLoopThread startDispatchThread() {
-        IContext context = workerData.getContext();
+        IContext context = workerData.getContext(); // NettyContext
         String topologyId = workerData.getTopologyId();
 
         // create recv connection
@@ -168,7 +172,7 @@ public class Worker {
         QueueGauge revCtrlGauge = new QueueGauge(recvControlQueue, MetricDef.RECV_CTRL_QUEUE);
         JStormMetrics.registerWorkerMetric(JStormMetrics.workerMetricName(MetricDef.RECV_CTRL_QUEUE, MetricType.GAUGE), new AsmGauge(revCtrlGauge));
 
-        // 创建并返回一个 Socket 连接（主要用于接收消息）
+        // 为当前 worker 基于 Netty 创建并返回一个 Socket 连接用于接收消息
         IConnection recvConnection = context.bind(
                 topologyId, workerData.getPort(), workerData.getDeserializeQueues(), recvControlQueue, false, workerData.getTaskIds());
         workerData.setRecvConnection(recvConnection);
@@ -177,35 +181,33 @@ public class Worker {
         RunnableCallback recvControlDispatcher = new VirtualPortCtrlDispatch(
                 workerData, recvConnection, recvControlQueue, MetricDef.RECV_THREAD);
 
-        // 对于缓存的事件，遍历应用 DisruptorRunable.onEvent 方法
+        // 消费 recvControlQueue 中的消息，对于缓存的事件，遍历应用 DisruptorRunable.onEvent 方法
         return new AsyncLoopThread(recvControlDispatcher, false, Thread.MAX_PRIORITY, true);
     }
 
     public WorkerShutdown execute() throws Exception {
         List<AsyncLoopThread> threads = new ArrayList<>();
 
-        // 创建接收数据的线程连接, reduce the count of netty client reconnect
+        // 1. 为 worker 创建一个 socket 连接，并分发接收到的消息给对应的 task
         AsyncLoopThread controlRvthread = this.startDispatchThread();
         threads.add(controlRvthread);
 
-        // create client before create task
-        // so create client connection before create task refresh connection
-        // 创建用于更新的连接
+        // 2. 创建线程用于在 worker 关闭或者新启动时更新与其他 worker 之间的连接信息
         RefreshConnections refreshConn = this.makeRefreshConnections();
         AsyncLoopThread refreshconn = new AsyncLoopThread(refreshConn, false, Thread.MIN_PRIORITY, true);
         threads.add(refreshconn);
 
-        // 更新 ZK 的活跃状态，refresh ZK active status
+        // 3. 获取 topology 在 ZK 上的状态，当状态发生变更时更新本地 task 状态
         RefreshActive refreshZkActive = new RefreshActive(workerData);
         AsyncLoopThread refreshZk = new AsyncLoopThread(refreshZkActive, false, Thread.MIN_PRIORITY, true);
         threads.add(refreshZk);
 
-        // create send control message thread
+        // 4. create send control message thread
         DrainerCtrlRunable drainerCtrlRunable = new DrainerCtrlRunable(workerData, MetricDef.SEND_THREAD);
         AsyncLoopThread controlSendThread = new AsyncLoopThread(drainerCtrlRunable, false, Thread.MAX_PRIORITY, true);
         threads.add(controlSendThread);
 
-        // Sync heartbeat to Apsara Container
+        // 5. Sync heartbeat to Apsara Container
         AsyncLoopThread syncContainerHbThread = SyncContainerHb.mkWorkerInstance(workerData.getStormConf());
         if (syncContainerHbThread != null) {
             threads.add(syncContainerHbThread);
@@ -215,17 +217,16 @@ public class Worker {
         metricReporter.init();
         workerData.setMetricsReporter(metricReporter);
 
-        // 更新心跳信息到本地目录, refresh heartbeat to Local dir
+        // 6. 更新本地心跳信息
         RunnableCallback heartbeatFn = new WorkerHeartbeatRunable(workerData);
         AsyncLoopThread hb = new AsyncLoopThread(heartbeatFn, false, null, Thread.NORM_PRIORITY, true);
         threads.add(hb);
 
-        // shutdown task callbacks
-        // 创建 task，并注册 task 停止的回调监听
+        // 7. 创建并启动 task
         List<TaskShutdownDameon> shutdownTasks = this.createTasks();
         workerData.setShutdownTasks(shutdownTasks);
 
-        // create worker serializes/deserialize threads
+        // 8. create worker serializes/deserialize threads
         List<AsyncLoopThread> serializeThreads = workerData.setSerializeThreads();
         threads.addAll(serializeThreads);
         List<AsyncLoopThread> deserializeThreads = workerData.setDeserializeThreads();

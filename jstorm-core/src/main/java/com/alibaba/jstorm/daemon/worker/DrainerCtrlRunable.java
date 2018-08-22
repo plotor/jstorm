@@ -25,7 +25,7 @@ import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.tuple.ITupleExt;
 import backtype.storm.tuple.TupleExt;
 import backtype.storm.utils.Utils;
-import com.alibaba.jstorm.utils.DisruptorRunable;
+import com.alibaba.jstorm.utils.DisruptorRunnable;
 import com.esotericsoftware.kryo.KryoException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
-public class DrainerCtrlRunable extends DisruptorRunable {
+public class DrainerCtrlRunable extends DisruptorRunnable {
 
     private final static Logger LOG = LoggerFactory.getLogger(DrainerCtrlRunable.class);
 
@@ -92,7 +92,7 @@ public class DrainerCtrlRunable extends DisruptorRunable {
         if (conn != null) {
             byte[] tupleMessage = null;
             try {
-                //there might be errors when calling update_topology
+                // there might be errors when calling update_topology
                 tupleMessage = this.serialize(tuple);
             } catch (Throwable e) {
                 if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e)) {

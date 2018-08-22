@@ -15,16 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.jstorm.message.netty;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+package com.alibaba.jstorm.message.netty;
 
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class StormChannelGroup extends DefaultChannelGroup {
     private static final Logger LOG = LoggerFactory.getLogger(StormChannelGroup.class);
@@ -39,6 +40,7 @@ public class StormChannelGroup extends DefaultChannelGroup {
         super(name);
     }
 
+    @Override
     public synchronized boolean add(Channel channel) {
         if (channel != null) {
             if (channel.getRemoteAddress() != null) {

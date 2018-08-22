@@ -213,11 +213,11 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
 
     /**
      * Gets information about who is consuming the outputs of this component, and how.
+     * 获取 task 对应的组件的下游组件 ID，以及消息分组方式
      *
      * @return Map from stream id to component id to the Grouping used.
      */
     public Map<String, Map<String, Grouping>> getThisTargets() {
-        // 获取 task 对应的组件的下游组件 ID，以及消息分组方式
         return this.getTargets(this.getThisComponentId());
     }
 

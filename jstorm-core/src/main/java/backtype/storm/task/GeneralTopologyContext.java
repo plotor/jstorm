@@ -175,15 +175,23 @@ public class GeneralTopologyContext implements JSONAware {
      * Gets information about who is consuming the outputs of the specified component, and how.
      * 获取当前组件的下游组件 ID，以及消息分组方式
      *
+     * struct GlobalStreamId {
+     * 1: required string componentId; // 当前组件输入流来源组件 ID
+     * 2: required string streamId; // 当前组件所输出的特定的流
+     * }
+     *
      * @param componentId 组件 ID
      * @return Map from stream id to component id to the Grouping used.
      */
     public Map<String, Map<String, Grouping>> getTargets(String componentId) {
         Map<String, Map<String, Grouping>> ret = new HashMap<>();
+        // 遍历处理当前 topology 中所有的组件
         for (String otherComponentId : this.getComponentIds()) {
+            // 获取当前组件从哪些 GlobalStreamId 以何种方式获取数据
             Map<GlobalStreamId, Grouping> inputs = this.getComponentCommon(otherComponentId).get_inputs();
             for (GlobalStreamId id : inputs.keySet()) {
                 if (id.get_componentId().equals(componentId)) {
+                    // 如果 id 是当前 componentId 的下游
                     Map<String, Grouping> curr = ret.get(id.get_streamId());
                     if (curr == null) {
                         curr = new HashMap<>();

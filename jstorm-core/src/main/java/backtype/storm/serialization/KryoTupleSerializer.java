@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.serialization;
 
 import backtype.storm.Config;
@@ -22,7 +23,6 @@ import backtype.storm.generated.StormTopology;
 import backtype.storm.tuple.MessageId;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.TupleExt;
-
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.Pair;
@@ -48,9 +48,10 @@ public class KryoTupleSerializer implements ITupleSerializer {
         _isTransactionTuple = JStormUtils.parseBoolean(conf.get(ConfigExtension.TRANSACTION_TOPOLOGY), false);
     }
 
+    @Override
     public byte[] serialize(Tuple tuple) {
         _kryoOut.clear();
-        serializeTuple(_kryoOut, tuple);
+        this.serializeTuple(_kryoOut, tuple);
         return _kryoOut.toBytes();
     }
 

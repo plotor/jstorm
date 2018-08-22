@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.message.netty;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
+import backtype.storm.messaging.ControlMessage;
+import backtype.storm.messaging.TaskMessage;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
@@ -30,8 +30,8 @@ import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.messaging.ControlMessage;
-import backtype.storm.messaging.TaskMessage;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 class StormServerHandler extends SimpleChannelUpstreamHandler {
     private static final Logger LOG = LoggerFactory.getLogger(StormServerHandler.class);
@@ -100,8 +100,9 @@ class StormServerHandler extends SimpleChannelUpstreamHandler {
     public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) {
 
         Object msg = e.getMessage();
-        if (msg == null)
+        if (msg == null) {
             return;
+        }
 
         // end of batch?
         if (msg == ControlMessage.EOB_MESSAGE) {
