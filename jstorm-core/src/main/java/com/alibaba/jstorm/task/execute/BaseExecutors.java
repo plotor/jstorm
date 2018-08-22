@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.execute;
 
 import backtype.storm.Config;
@@ -24,7 +25,6 @@ import backtype.storm.task.TopologyContext;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
 import backtype.storm.utils.WorkerClassLoader;
-
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.common.metric.AsmGauge;
@@ -49,15 +49,13 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Base executor, shared between spout and bolt
@@ -149,13 +147,13 @@ public class BaseExecutors extends RunnableCallback {
 
         QueueGauge exeQueueGauge = new QueueGauge(exeQueue, idStr, MetricDef.EXECUTE_QUEUE);
         JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(
-                        topologyId, componentId, taskId, MetricDef.EXECUTE_QUEUE, MetricType.GAUGE),
+                topologyId, componentId, taskId, MetricDef.EXECUTE_QUEUE, MetricType.GAUGE),
                 new AsmGauge(exeQueueGauge));
         JStormHealthCheck.registerTaskHealthCheck(taskId, MetricDef.EXECUTE_QUEUE, exeQueueGauge);
         //metric for control queue
         QueueGauge controlQueueGauge = new QueueGauge(controlQueue, idStr, MetricDef.CONTROL_QUEUE);
         JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(
-                        topologyId, componentId, taskId, MetricDef.CONTROL_QUEUE, MetricType.GAUGE),
+                topologyId, componentId, taskId, MetricDef.CONTROL_QUEUE, MetricType.GAUGE),
                 new AsmGauge(controlQueueGauge));
         JStormHealthCheck.registerTaskHealthCheck(taskId, MetricDef.CONTROL_QUEUE, controlQueueGauge);
 
@@ -176,10 +174,10 @@ public class BaseExecutors extends RunnableCallback {
         try {
             LOG.info("{} begin to init", idStr);
 
-            init();
+            this.init();
 
-            if (taskId == getMinTaskIdOfWorker()) {
-                metricsReporter.setOutputCollector(getOutputCollector());
+            if (taskId == this.getMinTaskIdOfWorker()) {
+                metricsReporter.setOutputCollector(this.getOutputCollector());
             }
 
             isFinishInit = true;
@@ -288,7 +286,8 @@ public class BaseExecutors extends RunnableCallback {
             exeQueue.consumeBatch(handler);
             isConsumeEvent = true;
         }
-        if (!isConsumeEvent)
+        if (!isConsumeEvent) {
             JStormUtils.sleepMs(1);
+        }
     }
 }

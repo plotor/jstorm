@@ -15,14 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.alibaba.jstorm.task.comm;
 
-import java.util.List;
+package com.alibaba.jstorm.task.comm;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.tuple.TupleImplExt;
-
 import com.alibaba.jstorm.task.TaskTransfer;
+
+import java.util.List;
 
 /**
  * Send init/ack/fail tuple to acker
@@ -31,6 +31,7 @@ import com.alibaba.jstorm.task.TaskTransfer;
  */
 
 public class UnanchoredSend {
+
     public static void send(TopologyContext topologyContext, TaskSendTargets taskTargets,
                             TaskTransfer transferFn, String stream, List<Object> values) {
         List<Integer> tasks = taskTargets.get(stream, values, null, values.get(0));
@@ -42,8 +43,8 @@ public class UnanchoredSend {
         for (Integer task : tasks) {
             TupleImplExt tup = new TupleImplExt(topologyContext, values, taskId, stream);
             tup.setTargetTaskId(task);
-
             transferFn.transfer(tup);
         }
     }
+
 }

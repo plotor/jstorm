@@ -190,6 +190,7 @@ public class Task implements Runnable {
         // create task receive object
         TaskSendTargets sendTargets = this.makeSendTargets();
 
+        // 基于 disruptor
         UnanchoredSend.send(topologyContext, sendTargets, taskTransfer, Common.SYSTEM_STREAM_ID, msg);
         return sendTargets;
     }
@@ -199,6 +200,11 @@ public class Task implements Runnable {
         return isOnePending || ConfigExtension.isSpoutSingleThread(conf);
     }
 
+    /**
+     * 基于组件类型创建对应的 Executor
+     *
+     * @return
+     */
     public BaseExecutors mkExecutor() {
         BaseExecutors baseExecutor = null;
 
@@ -223,17 +229,15 @@ public class Task implements Runnable {
      * create executor to receive tuples and run bolt/spout execute function
      */
     private RunnableCallback prepareExecutor() {
+        // 基于组件类型创建对应的 Executor
         return this.mkExecutor();
     }
 
     public TaskReceiver mkTaskReceiver() {
+        // componentId:taskId
         String taskName = JStormServerUtils.getName(componentId, taskId);
-        //if (isTaskBatchTuple)
-        //    taskReceiver = new TaskBatchReceiver(this, taskId, stormConf, topologyContext, innerTaskTransfer, taskStatus, taskName);
-        //else
         taskReceiver = new TaskReceiver(this, taskId, stormConf, topologyContext, innerTaskTransfer, taskStatus, taskName);
         deserializeQueues.put(taskId, taskReceiver.getDeserializeQueue());
-
         return taskReceiver;
     }
 
@@ -244,10 +248,10 @@ public class Task implements Runnable {
         // 创建线程获取数据，并封装成 tuple 专递给 spout/bolt
         taskTransfer = this.mkTaskSending(workerData);
         RunnableCallback baseExecutor = this.prepareExecutor();
-        //set baseExecutors for update
+        // set baseExecutors for update
         this.setBaseExecutors((BaseExecutors) baseExecutor);
-
         AsyncLoopThread executor_threads = new AsyncLoopThread(baseExecutor, false, Thread.MAX_PRIORITY, true);
+
         // 创建一个 task 接收器
         taskReceiver = this.mkTaskReceiver();
 
@@ -320,10 +324,10 @@ public class Task implements Runnable {
      * Update task data which can be changed dynamically e.g. when scale-out of a task parallelism
      */
     public void updateTaskData() {
-        // Only update the local task list of topologyContext here. Because
-        // other
-        // relative parts in context shall be updated while the updating of
-        // WorkerData (Task2Component and Component2Task map)
+        /*
+         * Only update the local task list of topologyContext here.
+         * Because other relative parts in context shall be updated while the updating of WorkerData (Task2Component and Component2Task map)
+         */
         List<Integer> localTasks = JStormUtils.mk_list(workerData.getTaskIds());
         topologyContext.setThisWorkerTasks(localTasks);
         userContext.setThisWorkerTasks(localTasks);

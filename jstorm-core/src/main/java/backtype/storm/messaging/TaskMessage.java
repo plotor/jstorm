@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.messaging;
 
 import org.jboss.netty.buffer.ChannelBuffer;
@@ -22,6 +23,7 @@ import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 
 public class TaskMessage implements NettyMessage {
+
     public final static short NORMAL_MESSAGE = 0;
     public final static short CONTROL_MESSAGE = 1;
     public final static short BACK_PRESSURE_REQUEST = 2;
@@ -91,20 +93,23 @@ public class TaskMessage implements NettyMessage {
     @Override
     public ChannelBuffer buffer() throws Exception {
         int payloadLen = 0;
-        if (_message != null)
+        if (_message != null) {
             payloadLen = _message.length;
+        }
 
         int totalLen = 8 + payloadLen;
         ChannelBufferOutputStream bout = new ChannelBufferOutputStream(ChannelBuffers.directBuffer(totalLen));
         bout.writeShort(_type);
 
-        if (_task > Short.MAX_VALUE)
+        if (_task > Short.MAX_VALUE) {
             throw new RuntimeException("Task ID should not exceed " + Short.MAX_VALUE);
+        }
 
         bout.writeShort((short) _task);
         bout.writeInt(payloadLen);
-        if (payloadLen > 0)
+        if (payloadLen > 0) {
             bout.write(_message);
+        }
 
         bout.close();
         return bout.buffer();

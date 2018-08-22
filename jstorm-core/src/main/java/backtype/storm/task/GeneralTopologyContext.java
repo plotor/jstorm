@@ -106,7 +106,7 @@ public class GeneralTopologyContext implements JSONAware {
      * Gets the set of streams declared for the specified component.
      */
     public Set<String> getComponentStreams(String componentId) {
-        return getComponentCommon(componentId).get_streams().keySet();
+        return this.getComponentCommon(componentId).get_streams().keySet();
     }
 
     /**
@@ -133,8 +133,8 @@ public class GeneralTopologyContext implements JSONAware {
     }
 
     public int getTaskIndexById(int taskId) {
-        String componentId = getComponentId(taskId);
-        List<Integer> tasks = new ArrayList<>(getComponentTasks(componentId));
+        String componentId = this.getComponentId(taskId);
+        List<Integer> tasks = new ArrayList<>(this.getComponentTasks(componentId));
         Collections.sort(tasks);
         for (int i = 0; i < tasks.size(); i++) {
             if (tasks.get(i) == taskId) {
@@ -159,7 +159,7 @@ public class GeneralTopologyContext implements JSONAware {
      * Gets the declared output fields for the specified global stream id.
      */
     public Fields getComponentOutputFields(GlobalStreamId id) {
-        return getComponentOutputFields(id.get_componentId(), id.get_streamId());
+        return this.getComponentOutputFields(id.get_componentId(), id.get_streamId());
     }
 
     /**
@@ -168,18 +168,20 @@ public class GeneralTopologyContext implements JSONAware {
      * @return A map from subscribed component/stream to the grouping subscribed with.
      */
     public Map<GlobalStreamId, Grouping> getSources(String componentId) {
-        return getComponentCommon(componentId).get_inputs();
+        return this.getComponentCommon(componentId).get_inputs();
     }
 
     /**
      * Gets information about who is consuming the outputs of the specified component, and how.
+     * 获取当前组件的下游组件 ID，以及消息分组方式
      *
+     * @param componentId 组件 ID
      * @return Map from stream id to component id to the Grouping used.
      */
     public Map<String, Map<String, Grouping>> getTargets(String componentId) {
         Map<String, Map<String, Grouping>> ret = new HashMap<>();
-        for (String otherComponentId : getComponentIds()) {
-            Map<GlobalStreamId, Grouping> inputs = getComponentCommon(otherComponentId).get_inputs();
+        for (String otherComponentId : this.getComponentIds()) {
+            Map<GlobalStreamId, Grouping> inputs = this.getComponentCommon(otherComponentId).get_inputs();
             for (GlobalStreamId id : inputs.keySet()) {
                 if (id.get_componentId().equals(componentId)) {
                     Map<String, Grouping> curr = ret.get(id.get_streamId());
@@ -212,17 +214,17 @@ public class GeneralTopologyContext implements JSONAware {
      * Gets a list of all component ids in this topology
      */
     public Set<String> getComponentIds() {
-        return ThriftTopologyUtils.getComponentIds(getRawTopology());
+        return ThriftTopologyUtils.getComponentIds(this.getRawTopology());
     }
 
     public ComponentCommon getComponentCommon(String componentId) {
-        return ThriftTopologyUtils.getComponentCommon(getRawTopology(), componentId);
+        return ThriftTopologyUtils.getComponentCommon(this.getRawTopology(), componentId);
     }
 
     public int maxTopologyMessageTimeout() {
         Integer max = Utils.getInt(_stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
-        for (String spout : getRawTopology().get_spouts().keySet()) {
-            ComponentCommon common = getComponentCommon(spout);
+        for (String spout : this.getRawTopology().get_spouts().keySet()) {
+            ComponentCommon common = this.getComponentCommon(spout);
             String jsonConf = common.get_json_conf();
             if (jsonConf != null) {
                 Map conf = (Map) Utils.from_json(jsonConf);

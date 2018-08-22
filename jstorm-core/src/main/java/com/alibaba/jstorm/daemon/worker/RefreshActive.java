@@ -15,24 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import com.alibaba.jstorm.task.TaskStatus;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import backtype.storm.Config;
-
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.utils.JStormUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Periodically check whether a topology is active or not
@@ -64,14 +63,14 @@ public class RefreshActive extends RunnableCallback {
         this.frequency = JStormUtils.parseInt(conf.get(Config.TASK_REFRESH_POLL_SECS), 10);
         LOG.info("init RefreshActive finished.");
         //call run() firstly to make task be active as soon as
-        run();
+        this.run();
     }
 
     @Override
     public void run() {
         try {
             StatusType newTopologyStatus;
-            // /ZK-DIR/topology
+            // topology/${topology_id}
             StormBase base = zkCluster.storm_base(topologyId, this);
             if (base == null) {
                 // normally the topology has been removed

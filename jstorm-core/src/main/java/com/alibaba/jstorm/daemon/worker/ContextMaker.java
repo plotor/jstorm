@@ -74,10 +74,8 @@ public class ContextMaker {
         }
     }
 
-    public TopologyContext makeTopologyContext(StormTopology topology, Integer taskId,
-                                               clojure.lang.Atom openOrPrepareWasCalled) {
-        Map stormConf = new HashMap();
-        stormConf.putAll(workerData.getStormConf());
+    public TopologyContext makeTopologyContext(StormTopology topology, Integer taskId, clojure.lang.Atom openOrPrepareWasCalled) {
+        Map stormConf = new HashMap(workerData.getStormConf());
         String topologyId = workerData.getTopologyId();
 
         HashMap<String, Map<String, Fields>> componentToStreamToFields =

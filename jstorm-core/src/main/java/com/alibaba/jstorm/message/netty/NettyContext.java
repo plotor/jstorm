@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.message.netty;
 
 import backtype.storm.Config;
@@ -22,10 +23,12 @@ import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.IContext;
 import backtype.storm.utils.DisruptorQueue;
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.utils.JStormUtils;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -33,10 +36,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class NettyContext implements IContext {
     private final static Logger LOG = LoggerFactory.getLogger(NettyContext.class);
@@ -52,6 +51,7 @@ public class NettyContext implements IContext {
     /**
      * initialization per Storm configuration
      */
+    @Override
     @SuppressWarnings("rawtypes")
     public void prepare(Map stormConf) {
         this.stormConf = stormConf;
@@ -82,7 +82,6 @@ public class NettyContext implements IContext {
             LOG.error("Failed to create NettyServer", e);
             JStormUtils.halt_process(-1, "Failed to bind " + port);
         }
-
         return retConnection;
     }
 
@@ -99,6 +98,7 @@ public class NettyContext implements IContext {
     /**
      * terminate this context
      */
+    @Override
     public void term() {
 /*        clientScheduleService.shutdown();
         try {

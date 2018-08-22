@@ -17,6 +17,14 @@
  */
 package com.alibaba.jstorm.message.netty;
 
+import backtype.storm.utils.DisruptorQueue;
+import com.alibaba.jstorm.callback.BackPressureCallback;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.utils.JStormUtils;
+import org.jboss.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,17 +32,8 @@ import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import org.jboss.netty.channel.Channel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.utils.DisruptorQueue;
-
-import com.alibaba.jstorm.callback.BackPressureCallback;
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.utils.JStormUtils;
-
 public class NettyServerFlowCtrlHandler {
+
     private static final Logger LOG = LoggerFactory.getLogger(NettyServerFlowCtrlHandler.class);
 
     private StormChannelGroup allChannels;

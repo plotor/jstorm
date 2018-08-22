@@ -15,24 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-
+import backtype.storm.messaging.IConnection;
 import backtype.storm.messaging.TaskMessage;
+import backtype.storm.scheduler.WorkerSlot;
 import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.tuple.ITupleExt;
 import backtype.storm.tuple.TupleExt;
 import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.utils.DisruptorRunable;
 import com.esotericsoftware.kryo.KryoException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import backtype.storm.messaging.IConnection;
-import backtype.storm.scheduler.WorkerSlot;
-import com.alibaba.jstorm.utils.DisruptorRunable;
-
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * send control message
@@ -40,6 +39,7 @@ import com.alibaba.jstorm.utils.DisruptorRunable;
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public class DrainerCtrlRunable extends DisruptorRunable {
+
     private final static Logger LOG = LoggerFactory.getLogger(DrainerCtrlRunable.class);
 
     private ConcurrentHashMap<WorkerSlot, IConnection> nodePortToSocket;
@@ -88,12 +88,12 @@ public class DrainerCtrlRunable extends DisruptorRunable {
         ITupleExt tuple = (ITupleExt) event;
         int targetTask = tuple.getTargetTaskId();
 
-        IConnection conn = getConnection(targetTask);
+        IConnection conn = this.getConnection(targetTask);
         if (conn != null) {
             byte[] tupleMessage = null;
             try {
                 //there might be errors when calling update_topology
-                tupleMessage = serialize(tuple);
+                tupleMessage = this.serialize(tuple);
             } catch (Throwable e) {
                 if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e)) {
                     throw new RuntimeException(e);

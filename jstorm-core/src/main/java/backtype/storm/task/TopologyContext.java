@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.task;
 
 import backtype.storm.generated.GlobalStreamId;
@@ -45,13 +46,12 @@ import java.util.Set;
 
 /**
  * A TopologyContext is given to bolts and spouts in their "prepare" and "open" methods, respectively.
- * This object provides information about the component's
- * place within the topology, such as task ids, inputs and outputs, etc.
+ * This object provides information about the component's place within the topology, such as task ids, inputs and outputs, etc.
  *
- * The TopologyContext is also used to declare ISubscribedState objects to synchronize state with StateSpouts
- * this object is subscribed to.
+ * The TopologyContext is also used to declare ISubscribedState objects to synchronize state with StateSpouts this object is subscribed to.
  */
 public class TopologyContext extends WorkerTopologyContext implements IMetricsContext {
+
     private Integer _taskId;
     private Map<String, Object> _taskData = new HashMap<>();
     private List<ITaskHook> _hooks = new ArrayList<>();
@@ -108,7 +108,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * @return Returns the ISubscribedState object provided
      */
     public <T extends ISubscribedState> T setSubscribedState(String componentId, T obj) {
-        return setSubscribedState(componentId, Utils.DEFAULT_STREAM_ID, obj);
+        return this.setSubscribedState(componentId, Utils.DEFAULT_STREAM_ID, obj);
     }
 
     /**
@@ -138,18 +138,19 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /**
-     * Gets the component id for this task. The component id maps to a component id specified for a Spout or Bolt
-     * in the topology definition.
+     * 获取当前 task 对应的组件 ID
+     * Gets the component id for this task.
+     * The component id maps to a component id specified for a Spout or Bolt in the topology definition.
      */
     public String getThisComponentId() {
-        return getComponentId(_taskId);
+        return this.getComponentId(_taskId);
     }
 
     /**
      * Gets the declared output fields for the specified stream id for the component this task is a part of.
      */
     public Fields getThisOutputFields(String streamId) {
-        return getComponentOutputFields(getThisComponentId(), streamId);
+        return this.getComponentOutputFields(this.getThisComponentId(), streamId);
     }
 
     /**
@@ -167,7 +168,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * Gets the set of streams declared for the component of this task.
      */
     public Set<String> getThisStreams() {
-        return getComponentStreams(getThisComponentId());
+        return this.getComponentStreams(this.getThisComponentId());
     }
 
     /**
@@ -176,10 +177,10 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * resource in a distributed resource to ensure an even distribution.
      */
     public int getThisTaskIndex() {
-        List<Integer> tasks = new ArrayList<>(getComponentTasks(getThisComponentId()));
+        List<Integer> tasks = new ArrayList<>(this.getComponentTasks(this.getThisComponentId()));
         Collections.sort(tasks);
         for (int i = 0; i < tasks.size(); i++) {
-            if (tasks.get(i) == getThisTaskId()) {
+            if (tasks.get(i) == this.getThisTaskId()) {
                 return i;
             }
         }
@@ -192,12 +193,12 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * @return A map from subscribed component/stream to the grouping subscribed with.
      */
     public Map<GlobalStreamId, Grouping> getThisSources() {
-        return getSources(getThisComponentId());
+        return this.getSources(this.getThisComponentId());
     }
 
     public Map<String, List<Integer>> getThisSourceComponentTasks() {
         Map<String, List<Integer>> ret = new HashMap<>();
-        Map<GlobalStreamId, Grouping> sources = getThisSources();
+        Map<GlobalStreamId, Grouping> sources = this.getThisSources();
         Set<String> sourceComponents = new HashSet<>();
         if (sources != null) {
             for (GlobalStreamId globalStreamId : sources.keySet()) {
@@ -205,7 +206,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
             }
         }
         for (String component : sourceComponents) {
-            ret.put(component, getComponentTasks(component));
+            ret.put(component, this.getComponentTasks(component));
         }
         return ret;
     }
@@ -216,11 +217,12 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * @return Map from stream id to component id to the Grouping used.
      */
     public Map<String, Map<String, Grouping>> getThisTargets() {
-        return getTargets(getThisComponentId());
+        // 获取 task 对应的组件的下游组件 ID，以及消息分组方式
+        return this.getTargets(this.getThisComponentId());
     }
 
     public Map<String, List<Integer>> getThisTargetComponentTasks() {
-        Map<String, Map<String, Grouping>> outputGroupings = getThisTargets();
+        Map<String, Map<String, Grouping>> outputGroupings = this.getThisTargets();
         Map<String, List<Integer>> ret = new HashMap<>();
         Set<String> targetComponents = new HashSet<>();
 
@@ -229,7 +231,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
             targetComponents.addAll(componentGrouping.keySet());
         }
         for (String component : targetComponents) {
-            ret.put(component, getComponentTasks(component));
+            ret.put(component, this.getComponentTasks(component));
         }
         return ret;
     }
@@ -308,9 +310,10 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /*
      * Register a IMetric instance. Storm will then call getValueAndReset on the metric every timeBucketSizeInSecs and the returned value is sent to all metrics
      * consumers. You must call this during IBolt::prepare or ISpout::open.
-     * 
+     *
      * @return The IMetric argument unchanged.
      */
+    @Override
     @SuppressWarnings("unchecked")
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
         if ((Boolean) _openOrPrepareWasCalled.deref()) {
@@ -327,7 +330,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
                     + "greater than or equal to 1 second.");
         }
 
-        if (getRegisteredMetricByName(name) != null) {
+        if (this.getRegisteredMetricByName(name) != null) {
             throw new RuntimeException("The same metric name `" + name + "` was registered twice.");
         }
 
@@ -377,15 +380,17 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /*
      * helper method for registering ReducedMetric.
      */
+    @Override
     public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
-        return registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
+        return this.registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
     }
 
     /*
      * helper method for registering CombinedMetric.
      */
+    @Override
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
-        return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
+        return this.registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
     }
 
     public StormClusterState getZkCluster() {
@@ -393,10 +398,10 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     /*
-    * Task error report callback
-    * */
+     * Task error report callback
+     * */
     public void reportError(String errorMsg) throws Exception {
-        _zkCluster.report_task_error(getTopologyId(), _taskId, errorMsg);
+        _zkCluster.report_task_error(this.getTopologyId(), _taskId, errorMsg);
     }
 
     public void applyHooks(String methodName, Object object) throws Exception {

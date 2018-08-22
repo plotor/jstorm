@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker;
 
 import backtype.storm.Config;
@@ -30,6 +31,9 @@ import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Task;
 import com.alibaba.jstorm.task.TaskShutdownDameon;
 import com.alibaba.jstorm.utils.JStormUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,8 +43,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Update current worker connections with other workers.
@@ -96,18 +98,20 @@ public class RefreshConnections extends RunnableCallback {
     public void run() {
         try {
             synchronized (this) {
+                // 获取当前 topology 任务分配版本
                 Integer recordedVersion = zkCluster.assignment_version(topologyId, this);
-                boolean isUpdateAssignment = !(recordedVersion != null && recordedVersion.equals(assignmentVersion));
-                boolean isUpdateSupervisorTimeStamp = false;
+                boolean isUpdateAssignment = !(recordedVersion != null && recordedVersion.equals(assignmentVersion)); // 是否有更新
+                boolean isUpdateSupervisorTimeStamp = false; // 基于时间戳判定是否有更新
                 Long localAssignmentTS = null;
                 try {
+                    // 获取任务分配的时间戳
                     localAssignmentTS = StormConfig.read_supervisor_topology_timestamp(conf, topologyId);
                     isUpdateSupervisorTimeStamp = localAssignmentTS > workerData.getAssignmentTs();
                 } catch (FileNotFoundException e) {
-                    LOG.warn("Failed to read supervisor topology timestamp for " + topologyId +
-                            " port=" + workerData.getPort(), e);
+                    LOG.warn("Failed to read supervisor topology timestamp for " + topologyId + " port=" + workerData.getPort(), e);
                 }
 
+                // 任务分配信息有更新
                 if (isUpdateAssignment || isUpdateSupervisorTimeStamp) {
                     LOG.info("update worker data due to changed assignment!!!");
                     Assignment assignment = zkCluster.assignment_info(topologyId, this);
@@ -118,9 +122,10 @@ public class RefreshConnections extends RunnableCallback {
                         return;
                     }
 
-                    // Compare the assignment timestamp of jstorm_home/data/supervisor/topo-id/timestamp
-                    // with the one in workerData to check if the topology code is updated.
-                    // If so, the outbound task map should be updated accordingly.
+                    /*
+                     * Compare the assignment timestamp of ${storm.local.dir}/supervisor/stormdist/${topology_id}/timestamp
+                     * with the one in workerData to check if the topology code is updated. If so, the outbound task map should be updated accordingly.
+                     */
                     if (isUpdateSupervisorTimeStamp) {
                         try {
                             if (assignment.getAssignmentType() == AssignmentType.UpdateTopology) {
@@ -134,25 +139,29 @@ public class RefreshConnections extends RunnableCallback {
                                 }
                                 // disable/enable metrics on the fly
                                 workerData.getUpdateListener().update(newConf);
-
                                 workerData.setAssignmentType(AssignmentType.UpdateTopology);
                             } else {
-                                Set<Integer> addedTasks = getAddedTasks(assignment);
-                                Set<Integer> removedTasks = getRemovedTasks(assignment);
-                                Set<Integer> updatedTasks = getUpdatedTasks(assignment);
+                                // 获取新增的 task
+                                Set<Integer> addedTasks = this.getAddedTasks(assignment);
+                                // 获取需要删除的 taskId 列表
+                                Set<Integer> removedTasks = this.getRemovedTasks(assignment);
+                                // 获取需要更新的 taskId
+                                Set<Integer> updatedTasks = this.getUpdatedTasks(assignment);
 
                                 workerData.updateWorkerData(assignment);
                                 workerData.updateKryoSerializer();
 
-                                shutdownTasks(removedTasks);
-                                createTasks(addedTasks);
-                                updateTasks(updatedTasks);
+                                this.shutdownTasks(removedTasks);
+                                this.createTasks(addedTasks);
+                                this.updateTasks(updatedTasks);
 
+                                // 获取当前 worker 上所有 task 的下游 task 列表
                                 Set<Integer> tmpOutboundTasks = Worker.worker_output_tasks(workerData);
                                 if (!outboundTasks.equals(tmpOutboundTasks)) {
                                     for (int taskId : tmpOutboundTasks) {
-                                        if (!outboundTasks.contains(taskId))
+                                        if (!outboundTasks.contains(taskId)) {
                                             workerData.addOutboundTaskStatusIfAbsent(taskId);
+                                        }
                                     }
                                     for (int taskId : workerData.getOutboundTaskStatus().keySet()) {
                                         if (!tmpOutboundTasks.contains(taskId)) {
@@ -167,8 +176,9 @@ public class RefreshConnections extends RunnableCallback {
 
                             // If everything is OK, update the assignment TS.
                             // the tasks will update the related data.
-                            if (localAssignmentTS != null)
+                            if (localAssignmentTS != null) {
                                 workerData.setAssignmentTs(localAssignmentTS);
+                            }
                         } catch (Exception e) {
                             LOG.warn("Failed to update worker data", e);
                         }
@@ -193,10 +203,12 @@ public class RefreshConnections extends RunnableCallback {
 
                     if (outboundTasks != null) {
                         for (ResourceWorkerSlot worker : workers) {
-                            if (supervisorId.equals(worker.getNodeId()))
+                            if (supervisorId.equals(worker.getNodeId())) {
                                 localNodeTasks.addAll(worker.getTasks());
-                            if (supervisorId.equals(worker.getNodeId()) && worker.getPort() == workerData.getPort())
+                            }
+                            if (supervisorId.equals(worker.getNodeId()) && worker.getPort() == workerData.getPort()) {
                                 localTasks.addAll(worker.getTasks());
+                            }
                             for (Integer id : worker.getTasks()) {
                                 taskNodePortTmp.put(id, worker);
                                 if (outboundTasks.contains(id)) {
@@ -245,17 +257,19 @@ public class RefreshConnections extends RunnableCallback {
                 // check the status of connections to all outbound tasks
                 boolean allConnectionReady = true;
                 for (Integer taskId : outboundTasks) {
-                    boolean isConnected = isOutTaskConnected(taskId);
-                    if (!isConnected)
+                    boolean isConnected = this.isOutTaskConnected(taskId);
+                    if (!isConnected) {
                         allConnectionReady = isConnected;
+                    }
                     workerData.updateOutboundTaskStatus(taskId, isConnected);
                 }
                 if (allConnectionReady) {
                     workerData.getWorkerInitConnectionStatus().getAndSet(allConnectionReady);
                 }
 
-                if (recordedVersion != null)
+                if (recordedVersion != null) {
                     assignmentVersion = recordedVersion;
+                }
 
             }
         } catch (Exception e) {
@@ -269,13 +283,21 @@ public class RefreshConnections extends RunnableCallback {
         return frequency;
     }
 
+    /**
+     * 获取新增的 taskId 列表
+     *
+     * @param assignment
+     * @return
+     */
     private Set<Integer> getAddedTasks(Assignment assignment) {
         Set<Integer> ret = new HashSet<>();
         try {
+            // 获取分配给当前 worker 的 taskId 列表
             Set<Integer> taskIds = assignment.getCurrentWorkerTasks(workerData.getSupervisorId(), workerData.getPort());
             for (Integer taskId : taskIds) {
-                if (!(workerData.getTaskIds().contains(taskId)))
+                if (!(workerData.getTaskIds().contains(taskId))) {
                     ret.add(taskId);
+                }
             }
         } catch (Exception e) {
             LOG.warn("Failed to get added task list for" + workerData.getTopologyId());
@@ -283,13 +305,20 @@ public class RefreshConnections extends RunnableCallback {
         return ret;
     }
 
+    /**
+     * 获取需要删除的 taskId 列表
+     *
+     * @param assignment
+     * @return
+     */
     private Set<Integer> getRemovedTasks(Assignment assignment) {
         Set<Integer> ret = new HashSet<>();
         try {
             Set<Integer> taskIds = assignment.getCurrentWorkerTasks(workerData.getSupervisorId(), workerData.getPort());
             for (Integer taskId : workerData.getTaskIds()) {
-                if (!(taskIds.contains(taskId)))
+                if (!(taskIds.contains(taskId))) {
                     ret.add(taskId);
+                }
             }
         } catch (Exception e) {
             LOG.warn("Failed to get removed task list for" + workerData.getTopologyId());
@@ -297,13 +326,20 @@ public class RefreshConnections extends RunnableCallback {
         return ret;
     }
 
+    /**
+     * 获取需要更新的 taskId
+     *
+     * @param assignment
+     * @return
+     */
     private Set<Integer> getUpdatedTasks(Assignment assignment) {
         Set<Integer> ret = new HashSet<>();
         try {
             Set<Integer> taskIds = assignment.getCurrentWorkerTasks(workerData.getSupervisorId(), workerData.getPort());
             for (Integer taskId : taskIds) {
-                if ((workerData.getTaskIds().contains(taskId)))
+                if ((workerData.getTaskIds().contains(taskId))) {
                     ret.add(taskId);
+                }
             }
         } catch (Exception e) {
             LOG.warn("Failed to get updated task list for" + workerData.getTopologyId());
@@ -312,9 +348,9 @@ public class RefreshConnections extends RunnableCallback {
     }
 
     private void createTasks(Set<Integer> tasks) {
-        if (tasks == null)
+        if (tasks == null) {
             return;
-
+        }
         for (Integer taskId : tasks) {
             try {
                 TaskShutdownDameon shutdown = Task.mk_task(workerData, taskId);
@@ -327,8 +363,9 @@ public class RefreshConnections extends RunnableCallback {
     }
 
     private void shutdownTasks(Set<Integer> tasks) {
-        if (tasks == null)
+        if (tasks == null) {
             return;
+        }
 
         List<TaskShutdownDameon> shutdowns = workerData.getShutdownDaemonbyTaskIds(tasks);
         List<Future> futures = new ArrayList<>();
@@ -349,8 +386,9 @@ public class RefreshConnections extends RunnableCallback {
     }
 
     private void updateTasks(Set<Integer> tasks) {
-        if (tasks == null)
+        if (tasks == null) {
             return;
+        }
 
         List<TaskShutdownDameon> shutdowns = workerData.getShutdownDaemonbyTaskIds(tasks);
         for (TaskShutdownDameon shutdown : shutdowns) {

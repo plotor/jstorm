@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.execute.spout;
 
 import backtype.storm.utils.WorkerClassLoader;
@@ -27,9 +28,10 @@ import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.task.acker.Acker;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.RotatingMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * multi-thread spout executor, all spout msgs will be handled here
@@ -44,6 +46,7 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
         ackerRunnableThread = new AsyncLoopThread(new AckerRunnable(), false, Thread.NORM_PRIORITY, false);
     }
 
+    @Override
     public void mkPending() {
         pending = new RotatingMap<>(Acker.TIMEOUT_BUCKET_NUM, null, false);
     }
@@ -62,7 +65,7 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
     @Override
     public void run() {
         if (!checkTopologyFinishInit) {
-            initWrapper();
+            this.initWrapper();
             int delayRun = ConfigExtension.getSpoutDelayRunSeconds(storm_conf);
             long now = System.currentTimeMillis();
             while (!checkTopologyFinishInit) {
@@ -115,7 +118,7 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
             LOG.info("Successfully start Spout's acker thread " + idStr);
             while (!shutdown.get()) {
                 try {
-                    consumeBatch(MultipleThreadSpoutExecutors.this);
+                    MultipleThreadSpoutExecutors.this.consumeBatch(MultipleThreadSpoutExecutors.this);
                 } catch (Exception e) {
                     if (!shutdown.get()) {
                         LOG.error("unknown exception:", e);
@@ -127,6 +130,7 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
             LOG.info("Successfully shutdown spout's acker thread " + idStr);
         }
 
+        @Override
         public Object getResult() {
             LOG.info("Begin to shutdown spout's acker thread " + idStr);
             return -1;

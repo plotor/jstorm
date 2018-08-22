@@ -76,7 +76,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
 
     public DisruptorQueueImpl(String queueName, ProducerType producerType, int bufferSize,
                               WaitStrategy wait, boolean isBatch, int batchSize, long flushMs) {
-        _queueName = PREFIX + queueName;
+        _queueName = PREFIX + queueName; // disruptor-Dispatch-control
         _buffer = RingBuffer.create(producerType, new ObjectEventFactory(), bufferSize, wait);
         _consumer = new Sequence();
         _barrier = _buffer.newBarrier();
@@ -94,33 +94,38 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         }
     }
 
+    @Override
     public String getName() {
         return _queueName;
     }
 
+    @Override
     public void consumeBatch(EventHandler<Object> handler) {
         // write pos > read pos
         // Asynchronous release the queue, but still is single thread
         if (_buffer.getCursor() > _consumer.get()) {
-            consumeBatchWhenAvailable(handler);
+            this.consumeBatchWhenAvailable(handler);
         }
     }
 
+    @Override
     public void haltWithInterrupt() {
-        publish(INTERRUPT);
+        this.publish(INTERRUPT);
     }
 
+    @Override
     public Object poll() {
-        return getEvent(false);
+        return this.getEvent(false);
     }
 
+    @Override
     public Object take() {
-        return getEvent(true);
+        return this.getEvent(true);
     }
 
     private Object getEvent(boolean block) {
         Object ret = null;
-        if (cacheSize() > 0) {
+        if (this.cacheSize() > 0) {
             synchronized (_cacheLock) {
                 ret = _cache.remove(0);
             }
@@ -149,7 +154,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
 
             }
         }
-        handlerCallback();
+        this.handlerCallback();
         return ret;
     }
 
@@ -172,24 +177,35 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         }
     }
 
+    @Override
     public void consumeBatchWhenAvailable(EventHandler<Object> handler) {
         this.consumeBatchWhenAvailable(handler, true);
     }
 
+    @Override
     public void consumeBatchWhenAvailableWithCallback(EventHandler<Object> handler) {
-        consumeBatchWhenAvailable(handler);
-        handlerCallback();
+        this.consumeBatchWhenAvailable(handler);
+        this.handlerCallback();
     }
 
+    @Override
     public void multiConsumeBatchWhenAvailable(EventHandler<Object> handler) {
-        consumeBatchWhenAvailable(handler, false);
+        this.consumeBatchWhenAvailable(handler, false);
     }
 
+    @Override
     public void multiConsumeBatchWhenAvailableWithCallback(EventHandler<Object> handler) {
-        consumeBatchWhenAvailable(handler, false);
-        handlerCallback();
+        this.consumeBatchWhenAvailable(handler, false);
+        this.handlerCallback();
     }
 
+    /**
+     * 对于缓存的 event，遍历应用 {@link EventHandler#onEvent(java.lang.Object, long, boolean)} 方法
+     *
+     * @param handler
+     * @param isSync
+     */
+    @Override
     public void consumeBatchWhenAvailable(EventHandler<Object> handler, boolean isSync) {
         List<Object> cache = null;
         synchronized (_cacheLock) {
@@ -211,9 +227,9 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         } else {
             try {
                 if (isSync) {
-                    consumeBatchToCursor(handler);
+                    this.consumeBatchToCursor(handler);
                 } else {
-                    asyncConsumeBatchToCursor(handler);
+                    this.asyncConsumeBatchToCursor(handler);
                 }
             } catch (AlertException e) {
                 LOG.error(e.getMessage(), e);
@@ -240,7 +256,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
      * @throws TimeoutException
      */
     public void consumeBatchToCursor(EventHandler<Object> handler) throws AlertException, InterruptedException, TimeoutException {
-        long endCursor = getAvailableConsumeCursor();
+        long endCursor = this.getAvailableConsumeCursor();
         long curr = _consumer.get() + 1;
         for (; curr <= endCursor; curr++) {
             try {
@@ -261,7 +277,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
     }
 
     public void asyncConsumeBatchToCursor(EventHandler<Object> handler) throws AlertException, InterruptedException, TimeoutException {
-        List<Object> batch = getConsumeBatch();
+        List<Object> batch = this.getConsumeBatch();
         if (batch == null) {
             return;
         }
@@ -277,7 +293,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
     }
 
     private synchronized List<Object> getConsumeBatch() throws AlertException, InterruptedException, TimeoutException {
-        long endCursor = getAvailableConsumeCursor();
+        long endCursor = this.getAvailableConsumeCursor();
         long currCursor = _consumer.get();
         long eventNumber = endCursor - currCursor;
         List<Object> batch = new ArrayList<>((int) eventNumber);
@@ -300,12 +316,13 @@ public class DisruptorQueueImpl extends DisruptorQueue {
     @Override
     public List<Object> retreiveAvailableBatch() throws AlertException, InterruptedException, TimeoutException {
         // get all events in disruptor queue
-        return getConsumeBatch();
+        return this.getConsumeBatch();
     }
 
     /*
      * Caches until consumerStarted is called, upon which the cache is flushed to the consumer
      */
+    @Override
     public void publish(Object obj) {
         try {
             if (_isBatch) {
@@ -318,14 +335,14 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         }
     }
 
+    @Override
     public void publishBatch(Object obj) {
         _batcher.addAndFlush(obj);
     }
 
     public void publishDirect(List<Object> batch, boolean block) throws InsufficientCapacityException {
-        int size = 0;
         if (batch != null) {
-            size = batch.size();
+            int size = batch.size();
             if (block) {
                 int left = size;
                 int batchIndex = 0;
@@ -334,8 +351,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
                     if (availableCapacity > 0) {
                         int n = availableCapacity >= left ? left : availableCapacity;
                         final long end = _buffer.next(n);
-                        publishBuffer(batch, batchIndex, end - n + 1, end);
-
+                        this.publishBuffer(batch, batchIndex, end - n + 1, end);
                         left -= n;
                         batchIndex += n;
                     } else {
@@ -344,7 +360,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
                 }
             } else {
                 final long end = _buffer.tryNext(size);
-                publishBuffer(batch, 0, end - size + 1, end);
+                this.publishBuffer(batch, 0, end - size + 1, end);
             }
         }
     }
@@ -361,7 +377,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
     }
 
     public void tryPublish(Object obj) throws InsufficientCapacityException {
-        publish(obj, false);
+        this.publish(obj, false);
     }
 
     /**
@@ -371,6 +387,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
      * @param block 取消息是否阻塞
      * @throws InsufficientCapacityException
      */
+    @Override
     public void publish(Object obj, boolean block) throws InsufficientCapacityException {
         this.publishDirect(obj, block);
     }
@@ -390,50 +407,58 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         _buffer.publish(id);
     }
 
+    @Override
     public void publishCache(Object obj) {
         synchronized (_cacheLock) {
             _cache.add(obj);
         }
     }
 
+    @Override
     public int cacheSize() {
         synchronized (_cacheLock) {
             return _cache.size();
         }
     }
 
+    @Override
     public void clear() {
-        while (population() != 0L) {
-            poll();
+        while (this.population() != 0L) {
+            this.poll();
         }
     }
 
+    @Override
     public long population() {
-        return (writePos() - readPos());
+        return (this.writePos() - this.readPos());
     }
 
+    @Override
     public long capacity() {
         return _buffer.getBufferSize();
     }
 
+    @Override
     public long writePos() {
         return _buffer.getCursor();
     }
 
+    @Override
     public long readPos() {
         return _consumer.get();
     }
 
+    @Override
     public float pctFull() {
-        return (1.0F * population() / capacity());
+        return (1.0F * this.population() / this.capacity());
     }
 
     @Override
     public Object getState() {
         // get readPos then writePos so it's never an under-estimate
-        long rp = readPos();
-        long wp = writePos();
-        state.put("capacity", capacity());
+        long rp = this.readPos();
+        long wp = this.writePos();
+        state.put("capacity", this.capacity());
         state.put("population", wp - rp);
         state.put("write_pos", wp);
         state.put("read_pos", rp);
@@ -448,6 +473,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         return _barrier;
     }
 
+    @Override
     public void publishCallback(Callback cb) {
         if (cb != null) {
             synchronized (_callbackLock) {
@@ -475,10 +501,10 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         }
 
         public synchronized void addAndFlush(Object obj) {
-            ArrayList<Object> batchTobeFlushed = add(obj);
+            ArrayList<Object> batchTobeFlushed = this.add(obj);
             if (batchTobeFlushed != null) {
                 try {
-                    publishDirect(batchTobeFlushed, true);
+                    DisruptorQueueImpl.this.publishDirect(batchTobeFlushed, true);
                 } catch (InsufficientCapacityException e) {
                     LOG.warn("Failed to publish batch");
                 }
@@ -499,7 +525,7 @@ public class DisruptorQueueImpl extends DisruptorQueue {
         public synchronized void flush() {
             try {
                 if (_batcher != null && _batcher.size() > 0) {
-                    publishDirect(_batcher, true);
+                    DisruptorQueueImpl.this.publishDirect(_batcher, true);
                     _batcher = new ArrayList<>(_inputBatchSize);
                 }
             } catch (InsufficientCapacityException e) {
@@ -509,12 +535,14 @@ public class DisruptorQueueImpl extends DisruptorQueue {
     }
 
     private class DisruptorFlusher extends Flusher {
+
         private AtomicBoolean _isFlushing = new AtomicBoolean(false);
 
         public DisruptorFlusher(long flushInterval) {
             flushIntervalMs = flushInterval;
         }
 
+        @Override
         public void run() {
             if (_isFlushing.compareAndSet(false, true)) {
                 _batcher.flush();

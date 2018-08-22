@@ -62,7 +62,6 @@ public abstract class DisruptorRunable extends RunnableCallback implements Event
     public void run() {
         LOG.info("Successfully start thread " + idStr);
         //queue.consumerStarted();
-
         while (!shutdown.get()) {
             queue.consumeBatchWhenAvailable(this);
         }

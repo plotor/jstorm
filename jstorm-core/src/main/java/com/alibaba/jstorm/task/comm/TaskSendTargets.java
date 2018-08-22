@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.comm;
 
 import backtype.storm.task.TopologyContext;
@@ -24,14 +25,15 @@ import com.alibaba.jstorm.task.TaskBaseMetric;
 import com.alibaba.jstorm.task.execute.MsgInfo;
 import com.alibaba.jstorm.task.group.GrouperType;
 import com.alibaba.jstorm.task.group.MkGrouper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * tuple sending object, which get which task should tuple be send to, and update statics
@@ -83,7 +85,7 @@ public class TaskSendTargets {
         // "Cannot emitDirect to a task expecting a regular grouping");
         // }
 
-        if (isDebug(anchors, root_id)) {
+        if (this.isDebug(anchors, root_id)) {
             LOG.info(debugIdStr + stream + " to " + out_task_id + ":" + tuple);
         }
 
@@ -118,7 +120,7 @@ public class TaskSendTargets {
             outTasks.addAll(g.grouper(tuple));
         }
 
-        if (isDebug(anchors, rootId)) {
+        if (this.isDebug(anchors, rootId)) {
             LOG.info(debugIdStr + stream + " to " + outTasks + ":" + tuple.toString());
         }
         int num_out_tasks = outTasks.size();

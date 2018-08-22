@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
 public class VirtualPortCtrlDispatch extends DisruptorRunable {
+
     private static final Logger LOG = LoggerFactory.getLogger(VirtualPortCtrlDispatch.class);
 
     protected ConcurrentHashMap<Integer, DisruptorQueue> controlQueues;
@@ -74,7 +75,7 @@ public class VirtualPortCtrlDispatch extends DisruptorRunable {
     public void shutdown() {
         super.shutdown();
         LOG.info("Begin to shutdown VirtualPortCtrlDispatch");
-        shutdownRecv();
+        this.shutdownRecv();
         LOG.info("Successfully shutdown VirtualPortCtrlDispatch");
     }
 
@@ -114,8 +115,8 @@ public class VirtualPortCtrlDispatch extends DisruptorRunable {
 
         Object tuple = null;
         try {
-            //there might be errors when calling update_topology
-            tuple = deserialize(message.message(), task);
+            // there might be errors when calling update_topology
+            tuple = this.deserialize(message.message(), task);
         } catch (Throwable e) {
             if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e)) {
                 throw new RuntimeException(e);

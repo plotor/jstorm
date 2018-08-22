@@ -281,6 +281,13 @@ public class Assignment implements Serializable {
         return workerSet;
     }
 
+    /**
+     * 获取指定 worker 上的 taskId 列表
+     *
+     * @param supervisorId
+     * @param port
+     * @return
+     */
     public Set<Integer> getCurrentWorkerTasks(String supervisorId, int port) {
         for (ResourceWorkerSlot worker : workers) {
             if (worker.getNodeId().equals(supervisorId) && worker.getPort() == port) {

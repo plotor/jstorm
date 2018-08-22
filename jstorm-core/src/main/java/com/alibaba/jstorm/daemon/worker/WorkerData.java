@@ -368,6 +368,7 @@ public class WorkerData {
         Config.registerSerialization(stormConf, "java.nio.HeapByteBuffer", KryoByteBufferSerializer.class);
 
         if (this.context == null) {
+            // default is NettyContext
             this.context = TransportFactory.makeContext(stormConf);
         }
 
@@ -726,8 +727,11 @@ public class WorkerData {
     }
 
     public void updateWorkerData(Assignment assignment) throws Exception {
+        // 更新当前 worker 的 taskId 列表
         this.updateTaskIds(assignment);
+        // 更新当前 topology 所有的组件 ID 与 taskId 的正向与反向映射关系
         this.updateTaskComponentMap();
+        // 更新当前 worker 对应的 topology 对象（原生、系统）
         this.updateStormTopology();
     }
 
@@ -753,7 +757,7 @@ public class WorkerData {
     }
 
     /**
-     * 获取当前 topology 所有的组件 ID 与 taskId 的正向与反向映射关系
+     * 更新当前 topology 所有的组件 ID 与 taskId 的正向与反向映射关系
      *
      * @throws Exception
      */
@@ -772,8 +776,7 @@ public class WorkerData {
     }
 
     private void updateStormTopology() {
-        StormTopology rawTmp;
-        StormTopology sysTmp;
+        StormTopology rawTmp, sysTmp;
         try {
             rawTmp = StormConfig.read_supervisor_topology_code(conf, topologyId);
             sysTmp = Common.system_topology(stormConf, rawTopology);

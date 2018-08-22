@@ -15,19 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.daemon.worker.hearbeat;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArraySet;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import backtype.storm.Config;
 import backtype.storm.utils.LocalState;
-
 import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.cluster.StormConfig;
@@ -35,6 +27,13 @@ import com.alibaba.jstorm.daemon.worker.WorkerData;
 import com.alibaba.jstorm.daemon.worker.WorkerHeartbeat;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.TimeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * worker heartbeat thread
@@ -42,6 +41,7 @@ import com.alibaba.jstorm.utils.TimeUtils;
  * @author yannian/Longda
  */
 public class WorkerHeartbeatRunable extends RunnableCallback {
+
     private static Logger LOG = LoggerFactory.getLogger(WorkerHeartbeatRunable.class);
 
     @SuppressWarnings("unused")
@@ -82,20 +82,19 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
     /**
      * do heartbeat and update LocalState
      */
-
     public void doHeartbeat() throws IOException {
         int curTime = TimeUtils.current_time_secs();
         WorkerHeartbeat hb = new WorkerHeartbeat(curTime, topologyId, taskIds, port);
 
         LOG.debug("Doing heartbeat:" + workerId + ",port:" + port + ",hb" + hb.toString());
-        LocalState state = getWorkerState();
+        LocalState state = this.getWorkerState();
         state.put(Common.LS_WORKER_HEARTBEAT, hb);
     }
 
     @Override
     public void run() {
         try {
-            doHeartbeat();
+            this.doHeartbeat();
         } catch (IOException e) {
             LOG.error("worker heartbeat failed", e);
             throw new RuntimeException(e);

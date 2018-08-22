@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>com.alibaba.jstorm.task.execute.BaseExecutors</OriginalElement>
+  <nodes>
+    <node x="597.0" y="255.0">com.alibaba.jstorm.task.execute.spout.SingleThreadSpoutExecutors</node>
+    <node x="295.0" y="255.0">com.alibaba.jstorm.task.execute.spout.MultipleThreadSpoutExecutors</node>
+    <node x="0.0" y="255.0">com.alibaba.jstorm.task.execute.TopologyMasterBoltExecutors</node>
+    <node x="499.75" y="170.0">com.alibaba.jstorm.task.execute.spout.SpoutExecutors</node>
+    <node x="62.0" y="170.0">com.alibaba.jstorm.task.execute.BoltExecutors</node>
+    <node x="320.75" y="0.0">com.alibaba.jstorm.callback.RunnableCallback</node>
+    <node x="334.75" y="85.0">com.alibaba.jstorm.task.execute.BaseExecutors</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="com.alibaba.jstorm.task.execute.spout.SpoutExecutors" target="com.alibaba.jstorm.task.execute.BaseExecutors">
+      <point x="0.0" y="-17.5" />
+      <point x="582.75" y="145.0" />
+      <point x="451.75" y="145.0" />
+      <point x="39.0" y="17.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.task.execute.spout.SingleThreadSpoutExecutors" target="com.alibaba.jstorm.task.execute.spout.SpoutExecutors">
+      <point x="0.0" y="-17.5" />
+      <point x="729.5" y="230.0" />
+      <point x="624.25" y="230.0" />
+      <point x="41.5" y="17.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.task.execute.TopologyMasterBoltExecutors" target="com.alibaba.jstorm.task.execute.BoltExecutors">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.task.execute.BaseExecutors" target="com.alibaba.jstorm.callback.RunnableCallback">
+      <point x="0.0" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.task.execute.BoltExecutors" target="com.alibaba.jstorm.task.execute.BaseExecutors">
+      <point x="0.0" y="-17.5" />
+      <point x="137.5" y="145.0" />
+      <point x="373.75" y="145.0" />
+      <point x="-39.0" y="17.5" />
+    </edge>
+    <edge source="com.alibaba.jstorm.task.execute.spout.MultipleThreadSpoutExecutors" target="com.alibaba.jstorm.task.execute.spout.SpoutExecutors">
+      <point x="0.0" y="-17.5" />
+      <point x="436.0" y="230.0" />
+      <point x="541.25" y="230.0" />
+      <point x="-41.5" y="17.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="215.0" y="102.5" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

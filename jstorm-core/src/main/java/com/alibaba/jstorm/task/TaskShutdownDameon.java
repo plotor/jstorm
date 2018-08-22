@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task;
 
 import backtype.storm.hooks.ITaskHook;
@@ -28,11 +29,12 @@ import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.daemon.worker.ShutdownableDameon;
 import com.alibaba.jstorm.daemon.worker.timer.TaskHeartbeatTrigger;
 import com.alibaba.jstorm.utils.JStormUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * shutdown one task
@@ -73,7 +75,7 @@ public class TaskShutdownDameon implements ShutdownableDameon {
             TopologyContext userContext = task.getUserContext();
             for (ITaskHook iTaskHook : userContext.getHooks())
                 iTaskHook.cleanup();
-            closeComponent(taskObj);
+            this.closeComponent(taskObj);
             taskHeartbeatTrigger.updateExecutorStatus(TaskStatus.SHUTDOWN);
 
             // wait 1 sec for executor thread to shutdown to make sure to send shutdown info to TM
@@ -174,7 +176,7 @@ public class TaskShutdownDameon implements ShutdownableDameon {
 
     @Override
     public void run() {
-        shutdown();
+        this.shutdown();
     }
 
     public int getTaskId() {

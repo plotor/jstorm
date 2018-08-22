@@ -31,14 +31,14 @@ public class TransportFactory {
     public static final Logger LOG = LoggerFactory.getLogger(TransportFactory.class);
 
     public static IContext makeContext(Map storm_conf) {
-        // get factory class name
+        // ${storm.messaging.transport}, default is com.alibaba.jstorm.message.netty.NettyContext
         String transportPluginKlassName = (String) storm_conf.get(Config.STORM_MESSAGING_TRANSPORT);
         LOG.info("JStorm peer transport plugin:" + transportPluginKlassName);
 
         IContext transport;
         try {
             // create a factory class
-            Class klass = Class.forName(transportPluginKlassName);
+            Class klass = Class.forName(transportPluginKlassName); // default is com.alibaba.jstorm.message.netty.NettyContext
             // obtain a context object
             // Object obj = klass.newInstance();
             Constructor constructor = klass.getDeclaredConstructor();

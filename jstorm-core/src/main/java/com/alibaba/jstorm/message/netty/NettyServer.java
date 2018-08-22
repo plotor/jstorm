@@ -15,7 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.message.netty;
+
+import backtype.storm.Config;
+import backtype.storm.messaging.IConnection;
+import backtype.storm.messaging.TaskMessage;
+import backtype.storm.utils.DisruptorQueue;
+import backtype.storm.utils.Utils;
+import com.alibaba.jstorm.client.ConfigExtension;
+import com.alibaba.jstorm.utils.JStormUtils;
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
 import java.util.List;
@@ -25,22 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import backtype.storm.Config;
-import backtype.storm.messaging.IConnection;
-import backtype.storm.messaging.TaskMessage;
-import backtype.storm.utils.DisruptorQueue;
-import backtype.storm.utils.Utils;
-
-import com.alibaba.jstorm.client.ConfigExtension;
-import com.alibaba.jstorm.utils.JStormUtils;
 
 class NettyServer implements IConnection {
     private static final Logger LOG = LoggerFactory.getLogger(NettyServer.class);
@@ -62,8 +61,8 @@ class NettyServer implements IConnection {
     private final Set<Integer> workerTasks;
 
     @SuppressWarnings("rawtypes")
-    NettyServer(Map stormConf, int port, ConcurrentHashMap<Integer, DisruptorQueue> deserializeQueues, DisruptorQueue recvControlQueue, boolean bstartRec,
-            Set<Integer> workerTasks) {
+    NettyServer(Map stormConf, int port, ConcurrentHashMap<Integer, DisruptorQueue> deserializeQueues,
+                DisruptorQueue recvControlQueue, boolean bstartRec, Set<Integer> workerTasks) {
         this.stormConf = stormConf;
         this.port = port;
         this.deserializeQueues = deserializeQueues;
@@ -74,8 +73,6 @@ class NettyServer implements IConnection {
         // Configure the server.
         int buffer_size = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_RECEIVE_BUFFER_SIZE));
         int maxWorkers = Utils.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
-
-        // asyncBatch = ConfigExtension.isNettyTransferAsyncBatch(storm_conf);
 
         ThreadFactory bossFactory = new NettyRenameThreadFactory("server" + "-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("server" + "-worker");
@@ -115,6 +112,7 @@ class NettyServer implements IConnection {
     /**
      * enqueue a received message
      */
+    @Override
     public void enqueue(TaskMessage message, Channel channel) {
         // lots of messages may be lost when deserialize queue hasn't finished init operation
         while (!bstartRec) {
@@ -161,6 +159,7 @@ class NettyServer implements IConnection {
     /**
      * fetch a message from message queue synchronously (flags != 1) or asynchronously (flags==1)
      */
+    @Override
     public Object recv(Integer taskId, int flags) {
         try {
             DisruptorQueue recvQueue = deserializeQueues.get(taskId);
@@ -195,6 +194,7 @@ class NettyServer implements IConnection {
     /**
      * close all channels, and release resources
      */
+    @Override
     public void close() {
         LOG.info("Begin to shutdown NettyServer");
         if (allChannels != null) {

@@ -15,12 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.message.netty;
+
+import org.jboss.netty.util.ThreadNameDeterminer;
+import org.jboss.netty.util.ThreadRenamingRunnable;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.jboss.netty.util.ThreadNameDeterminer;
-import org.jboss.netty.util.ThreadRenamingRunnable;
 
 public class NettyRenameThreadFactory implements ThreadFactory {
     static {
@@ -38,12 +40,15 @@ public class NettyRenameThreadFactory implements ThreadFactory {
         this.name = name;
     }
 
+    @Override
     public Thread newThread(Runnable runnable) {
         Thread t = new Thread(group, runnable, name + "-" + index.getAndIncrement(), 0);
-        if (t.isDaemon())
+        if (t.isDaemon()) {
             t.setDaemon(false);
-        if (t.getPriority() != Thread.NORM_PRIORITY)
+        }
+        if (t.getPriority() != Thread.NORM_PRIORITY) {
             t.setPriority(Thread.NORM_PRIORITY);
+        }
         return t;
     }
 }

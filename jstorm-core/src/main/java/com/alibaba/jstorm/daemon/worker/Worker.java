@@ -83,10 +83,11 @@ public class Worker {
 
     /**
      * get current task's output task list
+     * 获取当前 worker 上所有 task 的下游 task 列表
      */
     public static Set<Integer> worker_output_tasks(WorkerData workerData) {
         ContextMaker context_maker = workerData.getContextMaker();
-        Set<Integer> taskIds = workerData.getTaskIds();
+        Set<Integer> taskIds = workerData.getTaskIds(); // 获取分配给当前 worker 的所有 taskId
         StormTopology topology = workerData.getSysTopology();
 
         Set<Integer> rtn = new HashSet<>();
@@ -94,6 +95,7 @@ public class Worker {
         for (Integer taskId : taskIds) {
             TopologyContext context = context_maker.makeTopologyContext(topology, taskId, null);
 
+            // 获取 task 对应的组件的下游组件 ID，以及消息分组方式
             // <StreamId, <ComponentId, Grouping>>
             Map<String, Map<String, Grouping>> targets = context.getThisTargets();
             for (Map<String, Grouping> e : targets.values()) {
@@ -109,6 +111,7 @@ public class Worker {
 
     private RefreshConnections makeRefreshConnections() {
         // get output streams of every task
+        // 获取当前 worker 上所有 task 的下游 task 列表
         Set<Integer> outboundTasks = worker_output_tasks(workerData);
 
         workerData.initOutboundTaskStatus(outboundTasks);
@@ -120,7 +123,7 @@ public class Worker {
     private List<TaskShutdownDameon> createTasks() throws Exception {
         List<TaskShutdownDameon> shutdownTasks = new ArrayList<>();
 
-        // 获取所有线程ID
+        // 获取所有 task ID
         Set<Integer> taskIds = workerData.getTaskIds();
 
         Set<Thread> threads = new HashSet<>();
@@ -143,21 +146,22 @@ public class Worker {
     }
 
     /**
+     * send tuple directly from netty server
+     * send control tuple to dispatch thread
+     * startDispatchDisruptor();
+     *
      * @return
      */
     private AsyncLoopThread startDispatchThread() {
-        // send tuple directly from netty server
-        // send control tuple to dispatch thread
-        // startDispatchDisruptor();
-
         IContext context = workerData.getContext();
         String topologyId = workerData.getTopologyId();
 
         // create recv connection
         Map stormConf = workerData.getStormConf();
-        long timeout = JStormUtils.parseLong(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT), 10);
+        long timeout = JStormUtils.parseLong(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT), 10); // 默认 10ms
         WaitStrategy waitStrategy = new TimeoutBlockingWaitStrategy(timeout, TimeUnit.MILLISECONDS);
         int queueSize = JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_CTRL_BUFFER_SIZE), 256);
+        // 创建 disruptor 消息队列
         DisruptorQueue recvControlQueue = DisruptorQueue.mkInstance("Dispatch-control", ProducerType.MULTI, queueSize, waitStrategy, false, 0, 0);
 
         // metric for recvControlQueue
@@ -169,10 +173,11 @@ public class Worker {
                 topologyId, workerData.getPort(), workerData.getDeserializeQueues(), recvControlQueue, false, workerData.getTaskIds());
         workerData.setRecvConnection(recvConnection);
 
-        // create recvice control messages's thread
+        // create receive control messages's thread
         RunnableCallback recvControlDispatcher = new VirtualPortCtrlDispatch(
                 workerData, recvConnection, recvControlQueue, MetricDef.RECV_THREAD);
 
+        // 对于缓存的事件，遍历应用 DisruptorRunable.onEvent 方法
         return new AsyncLoopThread(recvControlDispatcher, false, Thread.MAX_PRIORITY, true);
     }
 
@@ -196,8 +201,7 @@ public class Worker {
         threads.add(refreshZk);
 
         // create send control message thread
-        DrainerCtrlRunable drainerCtrlRunable;
-        drainerCtrlRunable = new DrainerCtrlRunable(workerData, MetricDef.SEND_THREAD);
+        DrainerCtrlRunable drainerCtrlRunable = new DrainerCtrlRunable(workerData, MetricDef.SEND_THREAD);
         AsyncLoopThread controlSendThread = new AsyncLoopThread(drainerCtrlRunable, false, Thread.MAX_PRIORITY, true);
         threads.add(controlSendThread);
 
@@ -211,8 +215,7 @@ public class Worker {
         metricReporter.init();
         workerData.setMetricsReporter(metricReporter);
 
-        // refresh heartbeat to Local dir
-        // 更新心跳信息到本地目录
+        // 更新心跳信息到本地目录, refresh heartbeat to Local dir
         RunnableCallback heartbeatFn = new WorkerHeartbeatRunable(workerData);
         AsyncLoopThread hb = new AsyncLoopThread(heartbeatFn, false, null, Thread.NORM_PRIORITY, true);
         threads.add(hb);
@@ -222,7 +225,7 @@ public class Worker {
         List<TaskShutdownDameon> shutdownTasks = this.createTasks();
         workerData.setShutdownTasks(shutdownTasks);
 
-        //create worker serializes/deserialize threads
+        // create worker serializes/deserialize threads
         List<AsyncLoopThread> serializeThreads = workerData.setSerializeThreads();
         threads.addAll(serializeThreads);
         List<AsyncLoopThread> deserializeThreads = workerData.setDeserializeThreads();

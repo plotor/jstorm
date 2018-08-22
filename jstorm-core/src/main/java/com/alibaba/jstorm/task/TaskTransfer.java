@@ -131,8 +131,7 @@ public class TaskTransfer {
         String taskId = taskName.substring(taskName.indexOf(":") + 1);
         QueueGauge serializeQueueGauge = new QueueGauge(serializeQueue, taskName, MetricDef.SERIALIZE_QUEUE);
         JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(
-                topologyId, componentId, this.taskId, MetricDef.SERIALIZE_QUEUE, MetricType.GAUGE),
-                new AsmGauge(serializeQueueGauge));
+                topologyId, componentId, this.taskId, MetricDef.SERIALIZE_QUEUE, MetricType.GAUGE), new AsmGauge(serializeQueueGauge));
         JStormHealthCheck.registerTaskHealthCheck(Integer.valueOf(taskId), MetricDef.SERIALIZE_QUEUE, serializeQueueGauge);
         AsmHistogram serializeTimerHistogram = new AsmHistogram();
         serializeTimerHistogram.setAggregate(false);
