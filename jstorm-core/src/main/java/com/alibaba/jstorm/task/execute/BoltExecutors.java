@@ -53,6 +53,7 @@ import java.util.Map.Entry;
  * @author yannian/Longda
  */
 public class BoltExecutors extends BaseExecutors implements EventHandler {
+
     private static Logger LOG = LoggerFactory.getLogger(BoltExecutors.class);
 
     protected IBolt bolt;
@@ -63,9 +64,6 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
     private boolean isSystemBolt;
 
-    //, IBolt _bolt, TaskTransfer _transfer_fn, Map<Integer, DisruptorQueue> innerTaskTransfer, Map storm_conf,
-    //TaskSendTargets _send_fn, TaskStatus taskStatus, TopologyContext sysTopologyCxt, TopologyContext userTopologyCxt, TaskBaseMetric _task_stats,
-    //ITaskReportErr _report_error, JStormMetricsReporter metricReport
     public BoltExecutors(Task task) {
         super(task);
 
@@ -84,8 +82,8 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
         }
         this.outputCollector = new OutputCollector(outputCollector);
 
-        //this task don't continue until it bulid connection with topologyMaster
-        Integer topologyId = sysTopologyCtx.getTopologyMasterId();
+        // this task don't continue until it build connection with topologyMaster
+        int topologyId = sysTopologyCtx.getTopologyMasterId();
         List<Integer> localWorkerTasks = sysTopologyCtx.getThisWorkerTasks();
         if (topologyId != 0 && !localWorkerTasks.contains(topologyId)) {
             while (this.getConnection(topologyId) == null) {
@@ -117,8 +115,9 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
 
     @Override
     public void init() {
+        // 执行 IBolt.prepare 方法
         bolt.prepare(storm_conf, userTopologyCtx, outputCollector);
-        //send the HbMsg to TM after finish prepare
+        // send the HbMsg to TM after finish prepare
         taskHbTrigger.updateExecutorStatus(TaskStatus.RUN);
         LOG.info("Successfully inited bolt.");
     }
@@ -131,10 +130,12 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
     @Override
     public void run() {
         if (!isFinishInit) {
+            // 执行初始化操作，主要是调用了 IBolt.prepare 方法
             this.initWrapper();
         }
         while (!taskStatus.isShutdown()) {
             try {
+                // 循环消费当前 task 的消息队列
                 this.consumeExecuteQueue();
             } catch (Throwable e) {
                 if (!taskStatus.isShutdown()) {
@@ -145,8 +146,8 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
     }
 
     public void consumeExecuteQueue() {
-        //Asynchronous release the queue, but still is single thread
-        controlQueue.consumeBatch(this);
+        // Asynchronous release the queue, but still is single thread
+        controlQueue.consumeBatch(this); // 最终还是调用了 onEvent 方法
         exeQueue.consumeBatchWhenAvailable(this);
     }
 
@@ -159,7 +160,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
         if (event instanceof Tuple) {
             Tuple tuple = (Tuple) event;
             int tupleNum = 1;
-            Long startTime = System.currentTimeMillis();
+            long startTime = System.currentTimeMillis();
             long lifeCycleStart = ((TupleExt) tuple).getCreationTimeStamp();
 
             if (((TupleExt) tuple).isBatchTuple()) {
@@ -231,6 +232,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
             if (!isSystemBolt && tuple.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_CONTROL_STREAM_ID)) {
                 TopoMasterCtrlEvent event = (TopoMasterCtrlEvent) tuple.getValue(0);
                 if (event.isTransactionEvent()) {
+                    // 调用 IBolt.execute 方法进行处理
                     bolt.execute(tuple);
                 } else {
                     LOG.warn("Received an unexpected control event, {}", event);
@@ -238,6 +240,7 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
             } else if (tuple.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_REGISTER_METRICS_RESP_STREAM_ID)) {
                 this.metricsReporter.updateMetricMeta((Map<String, Long>) tuple.getValue(0));
             } else {
+                // 调用 IBolt.execute 方法进行处理
                 bolt.execute(tuple);
             }
         } catch (Throwable e) {

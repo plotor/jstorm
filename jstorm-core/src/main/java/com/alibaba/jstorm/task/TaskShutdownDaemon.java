@@ -26,7 +26,7 @@ import backtype.storm.topology.IDynamicComponent;
 import backtype.storm.utils.WorkerClassLoader;
 import com.alibaba.jstorm.callback.AsyncLoopThread;
 import com.alibaba.jstorm.cluster.StormClusterState;
-import com.alibaba.jstorm.daemon.worker.ShutdownableDameon;
+import com.alibaba.jstorm.daemon.worker.ShutdownableDaemon;
 import com.alibaba.jstorm.daemon.worker.timer.TaskHeartbeatTrigger;
 import com.alibaba.jstorm.utils.JStormUtils;
 import org.slf4j.Logger;
@@ -41,8 +41,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author yannian/Longda
  */
-public class TaskShutdownDameon implements ShutdownableDameon {
-    private static Logger LOG = LoggerFactory.getLogger(TaskShutdownDameon.class);
+public class TaskShutdownDaemon implements ShutdownableDaemon {
+    private static Logger LOG = LoggerFactory.getLogger(TaskShutdownDaemon.class);
 
     private Task task;
     private TaskStatus taskStatus;
@@ -54,7 +54,7 @@ public class TaskShutdownDameon implements ShutdownableDameon {
     private AtomicBoolean isClosing = new AtomicBoolean(false);
     private TaskHeartbeatTrigger taskHeartbeatTrigger;
 
-    public TaskShutdownDameon(TaskStatus taskStatus, String topologyId, Integer taskId,
+    public TaskShutdownDaemon(TaskStatus taskStatus, String topologyId, Integer taskId,
                               List<AsyncLoopThread> allThreads, StormClusterState zkCluster,
                               Object taskObj, Task task, TaskHeartbeatTrigger taskHeartbeatTrigger) {
         this.taskStatus = taskStatus;
@@ -141,6 +141,7 @@ public class TaskShutdownDameon implements ShutdownableDameon {
             WorkerClassLoader.switchThreadContext();
 
             try {
+                // 调用 ISpout.deactivate 方法
                 ((ISpout) taskObj).deactivate();
             } finally {
                 WorkerClassLoader.restoreThreadContext();
@@ -155,6 +156,7 @@ public class TaskShutdownDameon implements ShutdownableDameon {
             taskStatus.setStatus(TaskStatus.RUN);
             WorkerClassLoader.switchThreadContext();
             try {
+                // 调用 ISpout.activate 方法
                 ((ISpout) taskObj).activate();
             } finally {
                 WorkerClassLoader.restoreThreadContext();

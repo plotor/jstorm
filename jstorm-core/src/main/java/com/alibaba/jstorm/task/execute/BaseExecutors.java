@@ -85,6 +85,7 @@ public class BaseExecutors extends RunnableCallback {
     protected ITaskReportErr reportError;
 
     protected DisruptorQueue exeQueue;
+    // 当前 task 对应的消息传输队列
     protected DisruptorQueue controlQueue;
     protected Map<Integer, DisruptorQueue> innerTaskTransfer;
 
@@ -136,11 +137,10 @@ public class BaseExecutors extends RunnableCallback {
 
         this.exeQueue = DisruptorQueue.mkInstance(idStr, ProducerType.MULTI, queue_size,
                 waitStrategy, isDisruptorBatchMode, disruptorBatch, flushMs);
-        //this.exeQueue.consumerStarted();
+
         queue_size = Utils.getInt(storm_conf.get(Config.TOPOLOGY_CTRL_BUFFER_SIZE), 32);
         this.controlQueue = DisruptorQueue.mkInstance(
                 idStr + " for control message", ProducerType.MULTI, queue_size, waitStrategy, false, 0, 0);
-        //this.controlQueue.consumerStarted();
 
         this.registerInnerTransfer(exeQueue);
         this.task.getControlQueues().put(taskId, this.controlQueue);

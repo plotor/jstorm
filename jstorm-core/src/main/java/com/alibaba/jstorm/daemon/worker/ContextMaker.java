@@ -78,6 +78,7 @@ public class ContextMaker {
         Map stormConf = new HashMap(workerData.getStormConf());
         String topologyId = workerData.getTopologyId();
 
+        // 获取当前 topology 各个组件所输出的流信息：[component_id, [stream_id, fields]]
         HashMap<String, Map<String, Fields>> componentToStreamToFields =
                 workerData.generateComponentToStreamToFields(topology);
 

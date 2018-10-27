@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author yannian/Longda
  */
 public class MultipleThreadSpoutExecutors extends SpoutExecutors {
+
     private static Logger LOG = LoggerFactory.getLogger(MultipleThreadSpoutExecutors.class);
 
     public MultipleThreadSpoutExecutors(Task task) {

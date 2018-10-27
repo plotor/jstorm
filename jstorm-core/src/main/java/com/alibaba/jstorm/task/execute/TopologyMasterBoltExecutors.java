@@ -21,6 +21,7 @@ package com.alibaba.jstorm.task.execute;
 import com.alibaba.jstorm.task.Task;
 
 public class TopologyMasterBoltExecutors extends BoltExecutors {
+
     public TopologyMasterBoltExecutors(Task task) {
         super(task);
     }

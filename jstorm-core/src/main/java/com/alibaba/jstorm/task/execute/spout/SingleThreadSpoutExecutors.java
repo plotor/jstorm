@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
  * @author yannian/Longda
  */
 public class SingleThreadSpoutExecutors extends SpoutExecutors {
+
     private static Logger LOG = LoggerFactory.getLogger(SingleThreadSpoutExecutors.class);
 
     public SingleThreadSpoutExecutors(Task task) {
@@ -88,13 +89,11 @@ public class SingleThreadSpoutExecutors extends SpoutExecutors {
         controlQueue.consumeBatch(this);
 
         super.nextTuple();
-
     }
 
     private void executeEvent() {
         try {
-            exeQueue.consumeBatch(this);
-
+            exeQueue.consumeBatch(this); // 最终执行 SpoutExecutors.onEvent
         } catch (Exception e) {
             if (!taskStatus.isShutdown()) {
                 LOG.error("unknown exception:", e);

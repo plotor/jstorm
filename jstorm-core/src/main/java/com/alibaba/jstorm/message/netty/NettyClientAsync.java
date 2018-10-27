@@ -15,39 +15,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.message.netty;
 
 import backtype.storm.Config;
 import backtype.storm.messaging.NettyMessage;
 import backtype.storm.messaging.TaskMessage;
 import backtype.storm.utils.Utils;
-
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.daemon.worker.Flusher;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.Pair;
-
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 class NettyClientAsync extends NettyClient {
     private static final Logger LOG = LoggerFactory.getLogger(NettyClientAsync.class);
@@ -72,16 +68,18 @@ class NettyClientAsync extends NettyClient {
             flushIntervalMs = flushInterval;
         }
 
+        @Override
         public void run() {
-            if (isFlushing.compareAndSet(false, true) && !isClosed()) {
+            if (isFlushing.compareAndSet(false, true) && !NettyClientAsync.this.isClosed()) {
                 synchronized (writeLock) {
-                    MessageBatch cache = getPendingCaches();
-                    Channel channel = waitForChannelReady();
+                    MessageBatch cache = NettyClientAsync.this.getPendingCaches();
+                    Channel channel = NettyClientAsync.this.waitForChannelReady();
                     if (channel != null) {
                         MessageBatch messageBatch = messageBuffer.drain();
-                        if (messageBatch != null)
+                        if (messageBatch != null) {
                             cache.add(messageBatch);
-                        flushRequest(channel, cache);
+                        }
+                        NettyClientAsync.this.flushRequest(channel, cache);
                     }
                 }
                 isFlushing.set(false);
@@ -94,13 +92,13 @@ class NettyClientAsync extends NettyClient {
         super(conf, factory, host, port, reconnector);
 
         clientChannelFactory = factory;
-        initFlowCtrl(conf, sourceTasks, targetTasks);
-        
+        this.initFlowCtrl(conf, sourceTasks, targetTasks);
+
         flushCheckInterval = Utils.getInt(conf.get(Config.STORM_NETTY_FLUSH_CHECK_INTERVAL_MS), 5);
         flusher = new NettyClientFlush(flushCheckInterval);
         flusher.start();
 
-        start();
+        this.start();
     }
 
     private void initFlowCtrl(Map conf, Set<Integer> sourceTasks, Set<Integer> targetTasks) {
@@ -131,7 +129,7 @@ class NettyClientAsync extends NettyClient {
     @Override
     public void send(List<TaskMessage> messages) {
         // throw exception if the client is being closed
-        if (isClosed()) {
+        if (this.isClosed()) {
             LOG.warn("Client is being closed, and does not take requests any more");
             return;
         }
@@ -139,7 +137,7 @@ class NettyClientAsync extends NettyClient {
         long start = enableNettyMetrics && sendTimer != null ? sendTimer.getTime() : 0L;
         try {
             for (TaskMessage message : messages) {
-                waitforFlowCtrlAndSend(message);
+                this.waitforFlowCtrlAndSend(message);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -153,12 +151,12 @@ class NettyClientAsync extends NettyClient {
     @Override
     public void send(TaskMessage message) {
         // throw exception if the client is being closed
-        if (isClosed()) {
+        if (this.isClosed()) {
             LOG.warn("Client is being closed, and does not take requests any more");
         } else {
             long start = enableNettyMetrics && sendTimer != null ? sendTimer.getTime() : 0L;
             try {
-                waitforFlowCtrlAndSend(message);
+                this.waitforFlowCtrlAndSend(message);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             } finally {
@@ -172,9 +170,8 @@ class NettyClientAsync extends NettyClient {
     @Override
     public void sendDirect(TaskMessage message) {
         synchronized (writeLock) {
-            Channel channel = waitForChannelReady();
-            if (channel != null)
-                flushRequest(channel, message);
+            Channel channel = this.waitForChannelReady();
+            if (channel != null) this.flushRequest(channel, message);
         }
     }
 
@@ -192,7 +189,7 @@ class NettyClientAsync extends NettyClient {
                 if (channel.isWritable()) {
                     MessageBatch messageBatch = messageBuffer.add(message);
                     if (messageBatch != null) {
-                        flushRequest(channel, messageBatch);
+                        this.flushRequest(channel, messageBatch);
                     }
                 } else {
                     messageBuffer.add(message, false);
@@ -200,10 +197,10 @@ class NettyClientAsync extends NettyClient {
             }
 
             if (messageBuffer.size() >= BATCH_THRESHOLD_WARN) {
-                channel = waitForChannelReady();
+                channel = this.waitForChannelReady();
                 if (channel != null) {
                     MessageBatch messageBatch = messageBuffer.drain();
-                    flushRequest(channel, messageBatch);
+                    this.flushRequest(channel, messageBatch);
                 }
             }
         }
@@ -221,10 +218,10 @@ class NettyClientAsync extends NettyClient {
     public Channel waitForChannelReady() {
         Channel channel = channelRef.get();
         long pendingTime = 0;
-        while ((channel == null && !isClosed()) || (channel != null && !channel.isWritable())) {
+        while ((channel == null && !this.isClosed()) || (channel != null && !channel.isWritable())) {
             JStormUtils.sleepMs(1);
             pendingTime++;
-            if (discardCheck(pendingTime, timeoutMs, messageBuffer.size())) {
+            if (this.discardCheck(pendingTime, timeoutMs, messageBuffer.size())) {
                 messageBuffer.clear();
                 return null;
             }
@@ -255,9 +252,9 @@ class NettyClientAsync extends NettyClient {
 
             //LOG.info("Received flow ctrl ({}) for target task-{}", startFlowCtrl, targetTaskId);
             if (startFlowCtrl) {
-                addFlowControl(channel, targetTaskId);
+                this.addFlowControl(channel, targetTaskId);
             } else {
-                Pair<Lock, Condition> pair = removeFlowControl(targetTaskId);
+                Pair<Lock, Condition> pair = this.removeFlowControl(targetTaskId);
                 /*if (pair != null) {
                     try {
                         pair.getFirst().lock();
@@ -296,7 +293,7 @@ class NettyClientAsync extends NettyClient {
 
     private MessageBatch flushCacheBatch(int sourceTaskId, int targetTaskId) {
         MessageBatch batch = null;
-        MessageBuffer buffer = getCacheBuffer(sourceTaskId, targetTaskId);
+        MessageBuffer buffer = this.getCacheBuffer(sourceTaskId, targetTaskId);
         synchronized (buffer) {
             batch = buffer.drain();
         }
@@ -305,7 +302,7 @@ class NettyClientAsync extends NettyClient {
 
     private MessageBatch addMessageIntoCache(int sourceTaskId, int targetTaskId, TaskMessage message) {
         MessageBatch batch = null;
-        MessageBuffer buffer = getCacheBuffer(sourceTaskId, targetTaskId);
+        MessageBuffer buffer = this.getCacheBuffer(sourceTaskId, targetTaskId);
         synchronized (buffer) {
             batch = buffer.add(message);
         }
@@ -318,10 +315,11 @@ class NettyClientAsync extends NettyClient {
             int sourceTaskId = entry.getKey();
             Map<Integer, MessageBuffer> MessageBuffers = entry.getValue();
             for (Integer targetTaskId : MessageBuffers.keySet()) {
-                if (!isUnderFlowCtrl(targetTaskId)) {
-                    MessageBatch batch = flushCacheBatch(sourceTaskId, targetTaskId);
-                    if (batch != null)
+                if (!this.isUnderFlowCtrl(targetTaskId)) {
+                    MessageBatch batch = this.flushCacheBatch(sourceTaskId, targetTaskId);
+                    if (batch != null) {
                         ret.add(batch);
+                    }
                 }
             }
         }
@@ -331,15 +329,15 @@ class NettyClientAsync extends NettyClient {
     private void waitforFlowCtrlAndSend(TaskMessage message) {
         // If backpressure is disable, just send directly.
         if (!isBackpressureEnable) {
-            pushBatch(message);
+            this.pushBatch(message);
             return;
         }
 
         int sourceTaskId = message.sourceTask();
         int targetTaskId = message.task();
-        if (isUnderFlowCtrl(targetTaskId)) {
+        if (this.isUnderFlowCtrl(targetTaskId)) {
             // If target task is under flow control
-            MessageBatch flushCache = addMessageIntoCache(sourceTaskId, targetTaskId, message);
+            MessageBatch flushCache = this.addMessageIntoCache(sourceTaskId, targetTaskId, message);
             if (flushCache != null) {
                 // Cache is full. Try to flush till flow control is released.
                 /*Pair<Lock, Condition> pair = targetTasksToLocks.get(targetTaskId);
@@ -365,22 +363,22 @@ class NettyClientAsync extends NettyClient {
                     }
                 }*/
                 long pendingTime = 0;
-                while (isUnderFlowCtrl(targetTaskId)) {
+                while (this.isUnderFlowCtrl(targetTaskId)) {
                     JStormUtils.sleepMs(1);
                     pendingTime++;
                     if (pendingTime % 30000 == 0) {
                         LOG.info("Pending total time={} since target task-{} is under flow control ", pendingTime, targetTaskId);
                     }
                 }
-                pushBatch(flushCache);
+                this.pushBatch(flushCache);
             }
         } else {
-            MessageBatch cache = flushCacheBatch(sourceTaskId, targetTaskId);
+            MessageBatch cache = this.flushCacheBatch(sourceTaskId, targetTaskId);
             if (cache != null) {
                 cache.add(message);
-                pushBatch(cache);
+                this.pushBatch(cache);
             } else {
-                pushBatch(message);
+                this.pushBatch(message);
             }
         }
     }
@@ -394,22 +392,22 @@ class NettyClientAsync extends NettyClient {
 
     @Override
     public void disconnectChannel(Channel channel) {
-        releaseFlowCtrlsForRemoteAddr(channel.getRemoteAddress().toString());
-        if (isClosed()) {
+        this.releaseFlowCtrlsForRemoteAddr(channel.getRemoteAddress().toString());
+        if (this.isClosed()) {
             return;
         }
 
         if (channel == channelRef.get()) {
-            setChannel(null);
-            reconnect();
+            this.setChannel(null);
+            this.reconnect();
         } else {
-            closeChannel(channel);
+            this.closeChannel(channel);
         }
     }
 
     @Override
     public boolean available(int taskId) {
-        return super.available(taskId) && !isUnderFlowCtrl(taskId);
+        return super.available(taskId) && !this.isUnderFlowCtrl(taskId);
     }
 
     @Override

@@ -40,9 +40,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *
  * @author yannian/Longda
  */
-public class WorkerHeartbeatRunable extends RunnableCallback {
+public class WorkerHeartbeatRunnable extends RunnableCallback {
 
-    private static Logger LOG = LoggerFactory.getLogger(WorkerHeartbeatRunable.class);
+    private static Logger LOG = LoggerFactory.getLogger(WorkerHeartbeatRunnable.class);
 
     @SuppressWarnings("unused")
     private WorkerData workerData;
@@ -55,7 +55,7 @@ public class WorkerHeartbeatRunable extends RunnableCallback {
     private Integer frequency;
     private Map<String, LocalState> workerStates;
 
-    public WorkerHeartbeatRunable(WorkerData workerData) {
+    public WorkerHeartbeatRunnable(WorkerData workerData) {
         this.workerData = workerData;
 
         this.conf = workerData.getStormConf();

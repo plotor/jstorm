@@ -78,6 +78,8 @@ public class Task implements Runnable {
     private TaskReceiver taskReceiver;
     private Map<Integer, DisruptorQueue> innerTaskTransfer;
     private Map<Integer, DisruptorQueue> deserializeQueues;
+
+    // task 消息传输队列集合
     private Map<Integer, DisruptorQueue> controlQueues;
     private AsyncLoopDefaultKill workHalt;
 
@@ -96,7 +98,7 @@ public class Task implements Runnable {
     private TaskReportErrorAndDie reportErrorDie;
 
     private boolean isTaskBatchTuple;
-    private TaskShutdownDameon taskShutdownDameon;
+    private TaskShutdownDaemon taskShutdownDameon;
     private ConcurrentHashMap<WorkerSlot, IConnection> nodePortToSocket;
     private ConcurrentHashMap<Integer, WorkerSlot> taskToNodePort;
 
@@ -183,6 +185,11 @@ public class Task implements Runnable {
         }
     }
 
+    /**
+     * send "startup" tuple to system bolt
+     *
+     * @return
+     */
     public TaskSendTargets echoToSystemBolt() {
         // send "startup" tuple to system bolt
         List<Object> msg = new ArrayList<>();
@@ -231,31 +238,34 @@ public class Task implements Runnable {
      * 基于组件类型创建对应的 Executor
      */
     private RunnableCallback prepareExecutor() {
-        // 基于组件类型创建对应的 Executor
         return this.mkExecutor();
     }
 
     public TaskReceiver mkTaskReceiver() {
-        // componentId:taskId
-        String taskName = JStormServerUtils.getName(componentId, taskId);
+        String taskName = JStormServerUtils.getName(componentId, taskId); // componentId:taskId
         taskReceiver = new TaskReceiver(this, taskId, stormConf, topologyContext, innerTaskTransfer, taskStatus, taskName);
         deserializeQueues.put(taskId, taskReceiver.getDeserializeQueue());
         return taskReceiver;
     }
 
-    public TaskShutdownDameon execute() throws Exception {
+    /**
+     * 启动 Task
+     *
+     * @return
+     * @throws Exception
+     */
+    public TaskShutdownDaemon execute() throws Exception {
+        // 发送 startup 信息给系统 bolt
         taskSendTargets = this.echoToSystemBolt();
 
-        // create thread to get tuple from zeroMQ, and pass the tuple to bolt/spout
-        // 创建线程获取数据，并封装成 tuple 传递给 spout/bolt
+        // 创建发射数据的 TaskTransfer 对象
         taskTransfer = this.mkTaskSending(workerData);
-        // 创建并获取组件对应的 executor
-        RunnableCallback baseExecutor = this.prepareExecutor();
-        // set baseExecutors for update
+
+        // 创建线程获取数据，并封装成 tuple 传递给 spout 或 bolt
+        RunnableCallback baseExecutor = this.prepareExecutor(); // 创建并获取组件对应的 executor
         this.setBaseExecutors((BaseExecutors) baseExecutor);
         AsyncLoopThread executor_threads = new AsyncLoopThread(baseExecutor, false, Thread.MAX_PRIORITY, true);
 
-        // 创建一个 task 接收器
         taskReceiver = this.mkTaskReceiver();
 
         List<AsyncLoopThread> allThreads = new ArrayList<>();
@@ -263,7 +273,7 @@ public class Task implements Runnable {
 
         LOG.info("Finished loading task " + componentId + ":" + taskId);
 
-        // 创建并返回 Task 的管理对象
+        // 创建并返回 Task 的管理对象 TaskShutdownDaemon
         taskShutdownDameon = this.getShutdown(allThreads, baseExecutor);
         return taskShutdownDameon;
     }
@@ -275,7 +285,6 @@ public class Task implements Runnable {
      * @return
      */
     private TaskTransfer mkTaskSending(WorkerData workerData) {
-        // sending tuple's serializer
         // 创建一个用于发送 tuple 的 serializer
         KryoTupleSerializer serializer = new KryoTupleSerializer(workerData.getStormConf(), topologyContext.getRawTopology());
         // 获取 task 名称：“componentId:taskId”
@@ -284,7 +293,7 @@ public class Task implements Runnable {
         return new TaskTransfer(this, taskName, serializer, taskStatus, workerData, topologyContext);
     }
 
-    public TaskShutdownDameon getShutdown(List<AsyncLoopThread> allThreads, RunnableCallback baseExecutor) {
+    public TaskShutdownDaemon getShutdown(List<AsyncLoopThread> allThreads, RunnableCallback baseExecutor) {
         AsyncLoopThread ackerThread;
         if (baseExecutor instanceof SpoutExecutors) {
             ackerThread = ((SpoutExecutors) baseExecutor).getAckerRunnableThread();
@@ -302,11 +311,11 @@ public class Task implements Runnable {
         allThreads.addAll(serializeThreads);
         TaskHeartbeatTrigger taskHeartbeatTrigger = ((BaseExecutors) baseExecutor).getTaskHbTrigger();
 
-        return new TaskShutdownDameon(
+        return new TaskShutdownDaemon(
                 taskStatus, topologyId, taskId, allThreads, zkCluster, taskObj, this, taskHeartbeatTrigger);
     }
 
-    public TaskShutdownDameon getTaskShutdownDameon() {
+    public TaskShutdownDaemon getTaskShutdownDameon() {
         return taskShutdownDameon;
     }
 
@@ -325,7 +334,7 @@ public class Task implements Runnable {
         }
     }
 
-    public static TaskShutdownDameon mk_task(WorkerData workerData, int taskId) throws Exception {
+    public static TaskShutdownDaemon mk_task(WorkerData workerData, int taskId) throws Exception {
         Task t = new Task(workerData, taskId);
         return t.execute();
     }

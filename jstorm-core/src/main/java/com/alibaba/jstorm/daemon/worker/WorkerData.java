@@ -60,7 +60,7 @@ import com.alibaba.jstorm.metric.MetricUtils;
 import com.alibaba.jstorm.schedule.Assignment;
 import static com.alibaba.jstorm.schedule.Assignment.AssignmentType;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
-import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.task.TaskShutdownDaemon;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.LogUtils;
@@ -176,7 +176,7 @@ public class WorkerData {
     private DisruptorQueue transferCtrlQueue;
 
     // 被终止的 task 列表
-    private List<TaskShutdownDameon> shutdownTasks;
+    private List<TaskShutdownDaemon> shutdownTasks;
 
     // 需要向外进行输出的任务状态
     private ConcurrentHashMap<Integer, Boolean> outTaskStatus; // true => active
@@ -196,6 +196,7 @@ public class WorkerData {
     @SuppressWarnings("unused")
     private AsyncLoopThread healthReporterThread;
 
+    // 标记 worker 正在初始化本地连接信息
     private AtomicBoolean workerInitConnectionStatus;
 
     // tuple 序列化
@@ -677,21 +678,21 @@ public class WorkerData {
         return registeredMetrics;
     }
 
-    public List<TaskShutdownDameon> getShutdownTasks() {
+    public List<TaskShutdownDaemon> getShutdownTasks() {
         return shutdownTasks;
     }
 
-    public void setShutdownTasks(List<TaskShutdownDameon> shutdownTasks) {
+    public void setShutdownTasks(List<TaskShutdownDaemon> shutdownTasks) {
         this.shutdownTasks = shutdownTasks;
     }
 
-    public void addShutdownTask(TaskShutdownDameon shutdownTask) {
+    public void addShutdownTask(TaskShutdownDaemon shutdownTask) {
         this.shutdownTasks.add(shutdownTask);
     }
 
-    public List<TaskShutdownDameon> getShutdownDaemonbyTaskIds(Set<Integer> taskIds) {
-        List<TaskShutdownDameon> ret = new ArrayList<>();
-        for (TaskShutdownDameon shutdown : shutdownTasks) {
+    public List<TaskShutdownDaemon> getShutdownDaemonbyTaskIds(Set<Integer> taskIds) {
+        List<TaskShutdownDaemon> ret = new ArrayList<>();
+        for (TaskShutdownDaemon shutdown : shutdownTasks) {
             if (taskIds.contains(shutdown.getTaskId())) {
                 ret.add(shutdown);
             }
@@ -841,19 +842,26 @@ public class WorkerData {
         this.metricReporter = metricReporter;
     }
 
+    /**
+     * 获取当前 topology 各个组件所输出的流信息：[component_id, [stream_id, fields]]
+     *
+     * @param topology
+     * @return
+     */
     public HashMap<String, Map<String, Fields>> generateComponentToStreamToFields(StormTopology topology) {
         HashMap<String, Map<String, Fields>> componentToStreamToFields = new HashMap<>();
 
+        // 获取当前 topology 的组件 ID 列表
         Set<String> components = ThriftTopologyUtils.getComponentIds(topology);
         for (String component : components) {
 
             Map<String, Fields> streamToFieldsMap = new HashMap<>();
 
+            // 获取当前组件输出的所有流信息
             Map<String, StreamInfo> streamInfoMap = ThriftTopologyUtils.getComponentCommon(topology, component).get_streams();
             for (Map.Entry<String, StreamInfo> entry : streamInfoMap.entrySet()) {
                 String streamId = entry.getKey();
                 StreamInfo streamInfo = entry.getValue();
-
                 streamToFieldsMap.put(streamId, new Fields(streamInfo.get_output_fields()));
             }
 

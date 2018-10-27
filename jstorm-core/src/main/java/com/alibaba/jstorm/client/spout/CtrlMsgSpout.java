@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.client.spout;
 
 import com.alibaba.jstorm.task.master.ctrlevent.TopoMasterCtrlEvent;
@@ -23,13 +24,13 @@ public class CtrlMsgSpout implements Runnable {
     private ICtrlMsgSpout spout;
     private TopoMasterCtrlEvent event;
 
-	public CtrlMsgSpout(ICtrlMsgSpout spout, TopoMasterCtrlEvent event) {
-		this.spout = spout;
-		this.event = event;
-	}
+    public CtrlMsgSpout(ICtrlMsgSpout spout, TopoMasterCtrlEvent event) {
+        this.spout = spout;
+        this.event = event;
+    }
 
     @Override
     public void run() {
-    	spout.procCtrlMsg(event);
+        spout.procCtrlMsg(event);
     }
 }

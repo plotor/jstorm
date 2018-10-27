@@ -21,11 +21,12 @@ import backtype.storm.serialization.KryoTupleSerializer;
 import backtype.storm.task.GeneralTopologyContext;
 import backtype.storm.utils.WorkerClassLoader;
 import com.alibaba.jstorm.callback.RunnableCallback;
-import com.alibaba.jstorm.task.TaskShutdownDameon;
-import java.util.List;
-import java.util.Map;
+import com.alibaba.jstorm.task.TaskShutdownDaemon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
@@ -33,12 +34,12 @@ import org.slf4j.LoggerFactory;
 public class WorkerSerializeRunnable extends RunnableCallback {
     private static Logger LOG = LoggerFactory.getLogger(WorkerSerializeRunnable.class);
 
-    private volatile List<TaskShutdownDameon> shutdownTasks;
+    private volatile List<TaskShutdownDaemon> shutdownTasks;
     private int threadIndex;
     private int startRunTaskIndex;
     private KryoTupleSerializer serializer;
 
-    public WorkerSerializeRunnable(List<TaskShutdownDameon> shutdownTasks, Map stormConf,
+    public WorkerSerializeRunnable(List<TaskShutdownDaemon> shutdownTasks, Map stormConf,
                                    GeneralTopologyContext topologyContext, int startRunTaskIndex, int threadIndex) {
         this.shutdownTasks = shutdownTasks;
         this.threadIndex = threadIndex;
@@ -66,7 +67,7 @@ public class WorkerSerializeRunnable extends RunnableCallback {
         LOG.info("Successfully started worker-serializer-{}", threadIndex);
         while (true) {
             try {
-                TaskShutdownDameon taskShutdownDameon = shutdownTasks.get(startRunTaskIndex);
+                TaskShutdownDaemon taskShutdownDameon = shutdownTasks.get(startRunTaskIndex);
                 taskShutdownDameon.getTask().getTaskTransfer().serializer(serializer);
                 startRunTaskIndex++;
             } catch (IndexOutOfBoundsException e) {
@@ -75,6 +76,7 @@ public class WorkerSerializeRunnable extends RunnableCallback {
         }
     }
 
+    @Override
     public Object getResult() {
         LOG.info("Begin to shutdown worker-serializer-{}", threadIndex);
         return -1;

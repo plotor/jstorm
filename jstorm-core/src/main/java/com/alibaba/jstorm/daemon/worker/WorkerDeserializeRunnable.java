@@ -22,9 +22,10 @@ import backtype.storm.task.GeneralTopologyContext;
 import backtype.storm.utils.WorkerClassLoader;
 import com.alibaba.jstorm.callback.AsyncLoopRunnable;
 import com.alibaba.jstorm.callback.RunnableCallback;
-import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.task.TaskShutdownDaemon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Map;
 
@@ -34,12 +35,12 @@ import java.util.Map;
 public class WorkerDeserializeRunnable extends RunnableCallback {
 
     private static Logger LOG = LoggerFactory.getLogger(WorkerDeserializeRunnable.class);
-    private volatile List<TaskShutdownDameon> shutdownTasks;
+    private volatile List<TaskShutdownDaemon> shutdownTasks;
     private int threadIndex;
     private int startRunTaskIndex;
     private KryoTupleDeserializer deserializer;
 
-    public WorkerDeserializeRunnable(List<TaskShutdownDameon> shutdownTasks,
+    public WorkerDeserializeRunnable(List<TaskShutdownDaemon> shutdownTasks,
                                      Map stormConf,
                                      GeneralTopologyContext topologyContext,
                                      int startRunTaskIndex,
@@ -67,7 +68,7 @@ public class WorkerDeserializeRunnable extends RunnableCallback {
 
     @Override
     public void run() {
-        LOG.info("Successfully started " + getThreadName());
+        LOG.info("Successfully started " + this.getThreadName());
         while (!AsyncLoopRunnable.getShutdown().get()) {
             int loopCount = shutdownTasks.size();
             //note: avoid to cpu idle
@@ -76,7 +77,7 @@ public class WorkerDeserializeRunnable extends RunnableCallback {
                 try {
                     if (startRunTaskIndex >= shutdownTasks.size())
                         startRunTaskIndex = 0;
-                    TaskShutdownDameon taskShutdownDameon = shutdownTasks.get(startRunTaskIndex);
+                    TaskShutdownDaemon taskShutdownDameon = shutdownTasks.get(startRunTaskIndex);
                     boolean ret = taskShutdownDameon.getTask().getTaskReceiver().deserializer(deserializer, false);
                     if (!ret) {
                         isIdling = false;
@@ -89,7 +90,7 @@ public class WorkerDeserializeRunnable extends RunnableCallback {
                 try {
                     if (startRunTaskIndex >= shutdownTasks.size())
                         startRunTaskIndex = 0;
-                    TaskShutdownDameon taskShutdownDameon = shutdownTasks.get(startRunTaskIndex);
+                    TaskShutdownDaemon taskShutdownDameon = shutdownTasks.get(startRunTaskIndex);
                     taskShutdownDameon.getTask().getTaskReceiver().deserializer(deserializer, true);
                     startRunTaskIndex++;
                 } catch (IndexOutOfBoundsException e) {
@@ -99,8 +100,9 @@ public class WorkerDeserializeRunnable extends RunnableCallback {
         }
     }
 
+    @Override
     public Object getResult() {
-        LOG.info("Begin to shutdown " + getThreadName());
+        LOG.info("Begin to shutdown " + this.getThreadName());
         return -1;
     }
 }

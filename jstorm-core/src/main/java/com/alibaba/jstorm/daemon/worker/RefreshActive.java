@@ -23,7 +23,7 @@ import com.alibaba.jstorm.callback.RunnableCallback;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.daemon.nimbus.StatusType;
-import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.task.TaskShutdownDaemon;
 import com.alibaba.jstorm.task.TaskStatus;
 import com.alibaba.jstorm.utils.JStormUtils;
 import org.slf4j.Logger;
@@ -73,7 +73,7 @@ public class RefreshActive extends RunnableCallback {
             StatusType newTopologyStatus;
             StormBase base = zkCluster.storm_base(topologyId, this); // topology/${topology_id}
             if (base == null) {
-                // normally the topology has been removed
+                // 对应的 topology 已经被移除，标记状态为 killed
                 LOG.warn("Failed to get StormBase from ZK of " + topologyId);
                 newTopologyStatus = StatusType.killed;
             } else {
@@ -82,14 +82,15 @@ public class RefreshActive extends RunnableCallback {
 
             // Process the topology status change
             StatusType oldTopologyStatus = workerData.getTopologyStatus();
-            List<TaskShutdownDameon> tasks = workerData.getShutdownTasks();
+            List<TaskShutdownDaemon> tasks = workerData.getShutdownTasks();
             if (tasks == null) {
                 LOG.info("Tasks aren't ready or are beginning to shutdown");
                 return;
             }
 
             // If initialization is on-going, check connection status first. 
-            // If all connections were done, start to update topology status. Otherwise, just return.
+            // If all connections were done, start to update topology status.
+            // Otherwise, just return.
             if (oldTopologyStatus == null) {
                 if (!workerData.getWorkerInitConnectionStatus().get()) {
                     return;
@@ -97,12 +98,12 @@ public class RefreshActive extends RunnableCallback {
             }
 
             // 当本地与 ZK 关于当前 topology 的状态不一致
-            if (oldTopologyStatus == null || !newTopologyStatus.equals(oldTopologyStatus)) {
+            if (!newTopologyStatus.equals(oldTopologyStatus)) {
                 LOG.info("Old TopologyStatus:" + oldTopologyStatus + ", new TopologyStatus:" + newTopologyStatus);
-                if (newTopologyStatus.equals(StatusType.active)
-                        || newTopologyStatus.equals(StatusType.upgrading)
-                        || newTopologyStatus.equals(StatusType.rollback)) {
-                    for (TaskShutdownDameon task : tasks) {
+                if (newTopologyStatus.equals(StatusType.active) // 激活
+                        || newTopologyStatus.equals(StatusType.upgrading) // 灰度
+                        || newTopologyStatus.equals(StatusType.rollback)) { // 回滚
+                    for (TaskShutdownDaemon task : tasks) {
                         if (task.getTask().getTaskStatus().isInit()) {
                             task.getTask().getTaskStatus().setStatus(TaskStatus.RUN);
                         } else {
@@ -110,7 +111,7 @@ public class RefreshActive extends RunnableCallback {
                         }
                     }
                 } else if (oldTopologyStatus == null || !oldTopologyStatus.equals(StatusType.inactive)) {
-                    for (TaskShutdownDameon task : tasks) {
+                    for (TaskShutdownDaemon task : tasks) {
                         if (task.getTask().getTaskStatus().isInit()) {
                             task.getTask().getTaskStatus().setStatus(TaskStatus.PAUSE);
                         } else {

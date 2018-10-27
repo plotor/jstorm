@@ -29,7 +29,7 @@ import com.alibaba.jstorm.schedule.Assignment;
 import com.alibaba.jstorm.schedule.Assignment.AssignmentType;
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
 import com.alibaba.jstorm.task.Task;
-import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.task.TaskShutdownDaemon;
 import com.alibaba.jstorm.utils.JStormUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,6 +106,7 @@ public class RefreshConnections extends RunnableCallback {
                 try {
                     // 获取任务分配的时间戳
                     localAssignmentTS = StormConfig.read_supervisor_topology_timestamp(conf, topologyId);
+                    // 任务分配时间大于记录的上次任务分配时间，表示本地任务分配数据是否有更新
                     isUpdateSupervisorTimeStamp = localAssignmentTS > workerData.getAssignmentTs();
                 } catch (FileNotFoundException e) {
                     LOG.warn("Failed to read supervisor topology timestamp for " + topologyId + " port=" + workerData.getPort(), e);
@@ -114,6 +115,7 @@ public class RefreshConnections extends RunnableCallback {
                 // 任务分配信息有更新
                 if (isUpdateAssignment || isUpdateSupervisorTimeStamp) {
                     LOG.info("update worker data due to changed assignment!!!");
+                    // 获取当前 topology 的任务分配信息
                     Assignment assignment = zkCluster.assignment_info(topologyId, this);
                     if (assignment == null) {
                         String errMsg = "Failed to get assignment of " + topologyId;
@@ -122,40 +124,44 @@ public class RefreshConnections extends RunnableCallback {
                     }
 
                     /*
-                     * Compare the assignment timestamp of ${storm.local.dir}/supervisor/stormdist/${topology_id}/timestamp
-                     * with the one in workerData to check if the topology code is updated. If so, the outbound task map should be updated accordingly.
+                     * 有新的任务分配（比本地记录的版本更新）
+                     * 需要依据当前任务的分配类型来更新本地的相关信息
                      */
-                    // 如果本地任务分配信息有更新
                     if (isUpdateSupervisorTimeStamp) {
                         try {
                             if (assignment.getAssignmentType() == AssignmentType.UpdateTopology) {
                                 LOG.info("Get config reload request for " + topologyId);
-                                // If config was updated, notify all tasks
-                                List<TaskShutdownDameon> taskShutdowns = workerData.getShutdownTasks();
+                                // 当前任务分配已经更新且是更新 topology 操作，则通知所有的 task
+                                List<TaskShutdownDaemon> taskShutdowns = workerData.getShutdownTasks();
                                 Map newConf = StormConfig.read_supervisor_topology_conf(conf, topologyId);
                                 workerData.getStormConf().putAll(newConf);
-                                for (TaskShutdownDameon taskSD : taskShutdowns) {
+                                for (TaskShutdownDaemon taskSD : taskShutdowns) {
+                                    // 通知所有的 task
                                     taskSD.update(newConf);
                                 }
                                 // disable/enable metrics on the fly
-                                workerData.getUpdateListener().update(newConf);
+                                workerData.getUpdateListener().update(newConf); // 回调更新监听器，更新配置
                                 workerData.setAssignmentType(AssignmentType.UpdateTopology);
                             } else {
-                                // 获取新增的 task
+                                // 获取新增的 taskId 列表
                                 Set<Integer> addedTasks = this.getAddedTasks(assignment);
-                                // 获取需要删除的 taskId 列表
+                                // 获取待删除的 taskId 列表
                                 Set<Integer> removedTasks = this.getRemovedTasks(assignment);
-                                // 获取需要更新的 taskId
+                                // 获取待更新的 taskId 列表
                                 Set<Integer> updatedTasks = this.getUpdatedTasks(assignment);
 
+                                // 基于新任务分配信息更新 workerData
                                 workerData.updateWorkerData(assignment);
                                 workerData.updateKryoSerializer();
 
+                                // 关闭需要移除的 task
                                 this.shutdownTasks(removedTasks);
+                                // 创建新增的 task
                                 this.createTasks(addedTasks);
+                                // 更新已有需要被更新的 task
                                 this.updateTasks(updatedTasks);
 
-                                // 获取当前 worker 上所有 task 的下游 task 列表
+                                // 更新当前 worker 上所有 task 的下游 task 列表信息
                                 Set<Integer> tmpOutboundTasks = Worker.worker_output_tasks(workerData);
                                 if (!outboundTasks.equals(tmpOutboundTasks)) {
                                     for (int taskId : tmpOutboundTasks) {
@@ -174,15 +180,14 @@ public class RefreshConnections extends RunnableCallback {
                                 workerData.setAssignmentType(AssignmentType.Assign);
                             }
 
-                            // If everything is OK, update the assignment TS.
-                            // the tasks will update the related data.
+                            // If everything is OK, update the assignment TS, the tasks will update the related data.
                             if (localAssignmentTS != null) {
                                 workerData.setAssignmentTs(localAssignmentTS);
                             }
                         } catch (Exception e) {
                             LOG.warn("Failed to update worker data", e);
                         }
-                    }
+                    } // end of if
 
                     Set<ResourceWorkerSlot> workers = assignment.getWorkers();
                     if (workers == null) {
@@ -194,6 +199,7 @@ public class RefreshConnections extends RunnableCallback {
                     workerData.updateWorkerToResource(workers);
 
                     Map<Integer, WorkerSlot> taskNodePortTmp = new HashMap<>();
+                    // 获取新的分配被分配到的 <supervisor_id, hostname>
                     Map<String, String> node = assignment.getNodeHost();
 
                     // only reserve outboundTasks
@@ -251,7 +257,7 @@ public class RefreshConnections extends RunnableCallback {
                         LOG.info("Remove connection to " + node_port);
                         nodePortToSocket.remove(node_port).close();
                     }
-                }
+                } // end of if
 
                 // check the status of connections to all outbound tasks
                 boolean allConnectionReady = true;
@@ -352,7 +358,7 @@ public class RefreshConnections extends RunnableCallback {
         }
         for (Integer taskId : tasks) {
             try {
-                TaskShutdownDameon shutdown = Task.mk_task(workerData, taskId);
+                TaskShutdownDaemon shutdown = Task.mk_task(workerData, taskId);
                 workerData.addShutdownTask(shutdown);
             } catch (Exception e) {
                 LOG.error("Failed to create task-" + taskId, e);
@@ -371,9 +377,9 @@ public class RefreshConnections extends RunnableCallback {
             return;
         }
 
-        List<TaskShutdownDameon> shutdowns = workerData.getShutdownDaemonbyTaskIds(tasks);
+        List<TaskShutdownDaemon> shutdowns = workerData.getShutdownDaemonbyTaskIds(tasks);
         List<Future> futures = new ArrayList<>();
-        for (ShutdownableDameon task : shutdowns) {
+        for (ShutdownableDaemon task : shutdowns) {
             Future<?> future = workerData.getFlusherPool().submit(task);
             futures.add(future);
         }
@@ -394,8 +400,8 @@ public class RefreshConnections extends RunnableCallback {
             return;
         }
 
-        List<TaskShutdownDameon> shutdowns = workerData.getShutdownDaemonbyTaskIds(tasks);
-        for (TaskShutdownDameon shutdown : shutdowns) {
+        List<TaskShutdownDaemon> shutdowns = workerData.getShutdownDaemonbyTaskIds(tasks);
+        for (TaskShutdownDaemon shutdown : shutdowns) {
             try {
                 shutdown.getTask().updateTaskData();
             } catch (Exception e) {

@@ -38,15 +38,15 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author JohnFang (xiaojian.fxj@alibaba-inc.com).
  */
-public class DrainerCtrlRunable extends DisruptorRunnable {
+public class DrainerCtrlRunnable extends DisruptorRunnable {
 
-    private final static Logger LOG = LoggerFactory.getLogger(DrainerCtrlRunable.class);
+    private final static Logger LOG = LoggerFactory.getLogger(DrainerCtrlRunnable.class);
 
     private ConcurrentHashMap<WorkerSlot, IConnection> nodePortToSocket;
     private ConcurrentHashMap<Integer, WorkerSlot> taskToNodePort;
     protected AtomicReference<KryoTupleSerializer> atomKryoSerializer;
 
-    public DrainerCtrlRunable(WorkerData workerData, String idStr) {
+    public DrainerCtrlRunnable(WorkerData workerData, String idStr) {
         super(workerData.getTransferCtrlQueue(), idStr);
         this.nodePortToSocket = workerData.getNodePortToSocket();
         this.taskToNodePort = workerData.getTaskToNodePort();
@@ -88,12 +88,13 @@ public class DrainerCtrlRunable extends DisruptorRunnable {
         ITupleExt tuple = (ITupleExt) event;
         int targetTask = tuple.getTargetTaskId();
 
+        // 获取与下游 task 的连接
         IConnection conn = this.getConnection(targetTask);
         if (conn != null) {
             byte[] tupleMessage = null;
             try {
                 // there might be errors when calling update_topology
-                tupleMessage = this.serialize(tuple);
+                tupleMessage = this.serialize(tuple); // 序列化数据
             } catch (Throwable e) {
                 if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e)) {
                     throw new RuntimeException(e);
@@ -101,6 +102,7 @@ public class DrainerCtrlRunable extends DisruptorRunnable {
                     LOG.warn("serialize happened errors!!!", e);
                 }
             }
+            // 基于 netty 发送数据
             TaskMessage message = new TaskMessage(TaskMessage.CONTROL_MESSAGE, targetTask, tupleMessage);
             conn.sendDirect(message);
         }

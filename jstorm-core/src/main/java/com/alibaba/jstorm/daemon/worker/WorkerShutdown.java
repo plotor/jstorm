@@ -27,7 +27,7 @@ import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.cluster.ClusterState;
 import com.alibaba.jstorm.cluster.StormClusterState;
 import com.alibaba.jstorm.cluster.StormConfig;
-import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.task.TaskShutdownDaemon;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
@@ -52,10 +52,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * @author yannian/Longda
  */
-public class WorkerShutdown implements ShutdownableDameon {
+public class WorkerShutdown implements ShutdownableDaemon {
     private static Logger LOG = LoggerFactory.getLogger(WorkerShutdown.class);
 
-    private List<TaskShutdownDameon> shutdownTasks;
+    private List<TaskShutdownDaemon> shutdownTasks;
     private AtomicBoolean shutdown;
     private ConcurrentHashMap<WorkerSlot, IConnection> nodePortToSocket;
     private IContext context;
@@ -98,7 +98,7 @@ public class WorkerShutdown implements ShutdownableDameon {
 
         // shutdown tasks
         List<Future<?>> futures = new ArrayList<>();
-        for (ShutdownableDameon task : shutdownTasks) {
+        for (ShutdownableDaemon task : shutdownTasks) {
             Future<?> future = flusherPool.submit(task);
             futures.add(future);
         }
@@ -157,7 +157,7 @@ public class WorkerShutdown implements ShutdownableDameon {
     }
 
     public void join() throws InterruptedException {
-        for (TaskShutdownDameon task : shutdownTasks) {
+        for (TaskShutdownDaemon task : shutdownTasks) {
             task.join();
         }
         for (AsyncLoopThread t : threads) {
@@ -168,7 +168,7 @@ public class WorkerShutdown implements ShutdownableDameon {
     @Override
     public boolean waiting() {
         Boolean isExistsWait = false;
-        for (ShutdownableDameon task : shutdownTasks) {
+        for (ShutdownableDaemon task : shutdownTasks) {
             if (task.waiting()) {
                 isExistsWait = true;
                 break;

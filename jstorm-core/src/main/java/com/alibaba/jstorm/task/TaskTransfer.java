@@ -61,7 +61,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The class which sends all task tuples.
- * it serializes tuples and put the serialized data to the sending queue.
+ * It serializes tuples and put the serialized data to the sending queue.
  *
  * @author yannian
  */

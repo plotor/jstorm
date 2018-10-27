@@ -28,6 +28,9 @@ import backtype.storm.topology.IRichSpout;
  * @author nathan
  */
 public abstract class BaseRichSpout extends BaseComponent implements IRichSpout {
+
+    private static final long serialVersionUID = 8199056329710357804L;
+
     @Override
     public void close() {
     }

@@ -33,13 +33,13 @@ import com.alibaba.jstorm.cluster.StormConfig;
 import com.alibaba.jstorm.common.metric.AsmGauge;
 import com.alibaba.jstorm.common.metric.QueueGauge;
 import com.alibaba.jstorm.daemon.worker.hearbeat.SyncContainerHb;
-import com.alibaba.jstorm.daemon.worker.hearbeat.WorkerHeartbeatRunable;
+import com.alibaba.jstorm.daemon.worker.hearbeat.WorkerHeartbeatRunnable;
 import com.alibaba.jstorm.metric.JStormMetrics;
 import com.alibaba.jstorm.metric.JStormMetricsReporter;
 import com.alibaba.jstorm.metric.MetricDef;
 import com.alibaba.jstorm.metric.MetricType;
 import com.alibaba.jstorm.task.Task;
-import com.alibaba.jstorm.task.TaskShutdownDameon;
+import com.alibaba.jstorm.task.TaskShutdownDaemon;
 import com.alibaba.jstorm.utils.JStormServerUtils;
 import com.alibaba.jstorm.utils.JStormUtils;
 import com.alibaba.jstorm.utils.PathUtils;
@@ -82,7 +82,8 @@ public class Worker {
 
     /**
      * get current task's output task list
-     * 获取当前 worker 上所有 task 的下游 task 列表
+     *
+     * 获取当前 worker 中所有 task 的下游 task 列表
      */
     public static Set<Integer> worker_output_tasks(WorkerData workerData) {
         ContextMaker context_maker = workerData.getContextMaker();
@@ -93,10 +94,11 @@ public class Worker {
         for (Integer taskId : taskIds) {
             TopologyContext context = context_maker.makeTopologyContext(topology, taskId, null);
 
-            // 获取 task 对应的组件的下游组件 ID，以及消息分组方式：<StreamId, <ComponentId, Grouping>>
+            // 获取当前 task 对应的组件的下游组件 ID，以及消息分组方式：<StreamId, <ComponentId, Grouping>>
             Map<String, Map<String, Grouping>> targets = context.getThisTargets();
             for (Map<String, Grouping> e : targets.values()) {
                 for (String componentId : e.keySet()) {
+                    // 获取组件对应的 taskId 列表
                     List<Integer> tasks = context.getComponentTasks(componentId);
                     rtn.addAll(tasks);
                 }
@@ -105,11 +107,16 @@ public class Worker {
         return rtn;
     }
 
+    /**
+     * 创建 RefreshConnections 对象
+     *
+     * @return
+     */
     private RefreshConnections makeRefreshConnections() {
-        // get output streams of every task
         // 获取当前 worker 上所有 task 的下游 task 列表
         Set<Integer> outboundTasks = worker_output_tasks(workerData);
 
+        // 初始化所有 active 状态为 false
         workerData.initOutboundTaskStatus(outboundTasks);
         workerData.setOutboundTasks(outboundTasks);
 
@@ -117,15 +124,15 @@ public class Worker {
     }
 
     /**
-     * 创建 Task
+     * 创建并启动当前 worker 下所有的 Task
      *
      * @return
      * @throws Exception
      */
-    private List<TaskShutdownDameon> createTasks() throws Exception {
-        List<TaskShutdownDameon> shutdownTasks = new ArrayList<>();
+    private List<TaskShutdownDaemon> createTasks() throws Exception {
+        List<TaskShutdownDaemon> shutdownTasks = new ArrayList<>();
 
-        // 获取所有 task ID
+        // 获取当前 worker 下所有的 taskId
         Set<Integer> taskIds = workerData.getTaskIds();
 
         Set<Thread> threads = new HashSet<>();
@@ -136,7 +143,7 @@ public class Worker {
             Thread thread = new Thread(task);
             threads.add(thread);
             taskArrayList.add(task);
-            thread.start();
+            thread.start(); // 启动 task
         }
         for (Thread thread : threads) {
             thread.join();
@@ -175,12 +182,18 @@ public class Worker {
         workerData.setRecvConnection(recvConnection);
 
         // 3. 启动一个线程循环消费 worker 接收到的消息，并应用 DisruptorRunnable.onEvent 方法,
-        // 最终调用的是 VirtualPortCtrlDispatch.handleEvent 方法，将消息投递给指定 task 的消息队列
+        //    最终调用的是 VirtualPortCtrlDispatch.handleEvent 方法，将消息投递给指定 task 的消息队列
         RunnableCallback recvControlDispatcher = new VirtualPortCtrlDispatch(
                 workerData, recvConnection, recvControlQueue, MetricDef.RECV_THREAD);
         return new AsyncLoopThread(recvControlDispatcher, false, Thread.MAX_PRIORITY, true);
     }
 
+    /**
+     * 创建并启动 worker
+     *
+     * @return
+     * @throws Exception
+     */
     public WorkerShutdown execute() throws Exception {
         List<AsyncLoopThread> threads = new ArrayList<>();
 
@@ -190,20 +203,20 @@ public class Worker {
 
         // 2. 创建线程用于在 worker 关闭或者新启动时更新与其他 worker 之间的连接信息
         RefreshConnections refreshConn = this.makeRefreshConnections();
-        AsyncLoopThread refreshconn = new AsyncLoopThread(refreshConn, false, Thread.MIN_PRIORITY, true);
-        threads.add(refreshconn);
+        AsyncLoopThread refreshConnLoopThread = new AsyncLoopThread(refreshConn, false, Thread.MIN_PRIORITY, true);
+        threads.add(refreshConnLoopThread);
 
         // 3. 获取 topology 在 ZK 上的状态，当状态发生变更时更新本地 task 状态
         RefreshActive refreshZkActive = new RefreshActive(workerData);
         AsyncLoopThread refreshZk = new AsyncLoopThread(refreshZkActive, false, Thread.MIN_PRIORITY, true);
         threads.add(refreshZk);
 
-        // 4. create send control message thread
-        DrainerCtrlRunable drainerCtrlRunable = new DrainerCtrlRunable(workerData, MetricDef.SEND_THREAD);
-        AsyncLoopThread controlSendThread = new AsyncLoopThread(drainerCtrlRunable, false, Thread.MAX_PRIORITY, true);
+        // 4. 创建一个线程循环消费 tuple 队列发送给对应的下游 task
+        DrainerCtrlRunnable drainerCtrlRunnable = new DrainerCtrlRunnable(workerData, MetricDef.SEND_THREAD);
+        AsyncLoopThread controlSendThread = new AsyncLoopThread(drainerCtrlRunnable, false, Thread.MAX_PRIORITY, true);
         threads.add(controlSendThread);
 
-        // 5. Sync heartbeat to Apsara Container
+        // Sync heartbeat to Apsara Container
         AsyncLoopThread syncContainerHbThread = SyncContainerHb.mkWorkerInstance(workerData.getStormConf());
         if (syncContainerHbThread != null) {
             threads.add(syncContainerHbThread);
@@ -213,16 +226,15 @@ public class Worker {
         metricReporter.init();
         workerData.setMetricsReporter(metricReporter);
 
-        // 6. 更新本地心跳信息
-        RunnableCallback heartbeatFn = new WorkerHeartbeatRunable(workerData);
+        // 5. 更新本地心跳信息
+        RunnableCallback heartbeatFn = new WorkerHeartbeatRunnable(workerData);
         AsyncLoopThread hb = new AsyncLoopThread(heartbeatFn, false, null, Thread.NORM_PRIORITY, true);
         threads.add(hb);
 
-        // 7. 创建并启动 task
-        List<TaskShutdownDameon> shutdownTasks = this.createTasks();
+        // 6. 创建并启动当前 worker 下所有的 task
+        List<TaskShutdownDaemon> shutdownTasks = this.createTasks();
         workerData.setShutdownTasks(shutdownTasks);
 
-        // 8. create worker serializes/deserialize threads
         List<AsyncLoopThread> serializeThreads = workerData.setSerializeThreads();
         threads.addAll(serializeThreads);
         List<AsyncLoopThread> deserializeThreads = workerData.setDeserializeThreads();

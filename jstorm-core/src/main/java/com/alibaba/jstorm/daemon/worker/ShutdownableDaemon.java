@@ -18,9 +18,8 @@
 package com.alibaba.jstorm.daemon.worker;
 
 import backtype.storm.daemon.Shutdownable;
-
 import com.alibaba.jstorm.cluster.DaemonCommon;
 
-public interface ShutdownableDameon extends Shutdownable, DaemonCommon, Runnable {
+public interface ShutdownableDaemon extends Shutdownable, DaemonCommon, Runnable {
 
 }

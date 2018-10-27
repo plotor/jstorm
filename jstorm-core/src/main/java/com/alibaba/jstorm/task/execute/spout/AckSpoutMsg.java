@@ -15,22 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task.execute.spout;
-
-import com.alibaba.jstorm.daemon.worker.JStormDebugger;
-import com.alibaba.jstorm.metric.JStormMetrics;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import backtype.storm.spout.ISpout;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.TupleExt;
-
 import com.alibaba.jstorm.client.spout.IAckValueSpout;
+import com.alibaba.jstorm.daemon.worker.JStormDebugger;
+import com.alibaba.jstorm.metric.JStormMetrics;
 import com.alibaba.jstorm.task.TaskBaseMetric;
 import com.alibaba.jstorm.task.comm.TupleInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * Called after spout receives an ack tuple
@@ -60,6 +59,7 @@ public class AckSpoutMsg implements IAckMsg {
         this.tupleInfo = tupleInfo;
     }
 
+    @Override
     public void run() {
         if (JStormDebugger.isDebug(id)) {
             LOG.info("Acking message rootId:{}, messageId:{}", id, msgId);
@@ -75,7 +75,7 @@ public class AckSpoutMsg implements IAckMsg {
         long latencyStart = tupleInfo.getTimestamp(), lifeCycleStart = 0;
         if (latencyStart != 0 && JStormMetrics.enabled) {
             long endTime = System.currentTimeMillis();
-            if (tuple != null && tuple instanceof TupleExt) {
+            if (tuple instanceof TupleExt) {
                 lifeCycleStart = ((TupleExt) tuple).getCreationTimeStamp();
             }
             taskStats.spout_acked_tuple(stream, latencyStart, lifeCycleStart, endTime);

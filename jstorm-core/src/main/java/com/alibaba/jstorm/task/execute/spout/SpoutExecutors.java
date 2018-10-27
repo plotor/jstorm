@@ -156,6 +156,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
 
     @Override
     public void init() throws Exception {
+        // 调用 ISpout.open 方法
         this.spout.open(storm_conf, userTopologyCtx, outputCollector);
         //send the HbMsg to TM, but it don't really finish spout's init.
         taskHbTrigger.sendHbMsg();
@@ -232,7 +233,6 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
             } else if (event instanceof Runnable) {
                 runnable = (Runnable) event;
             } else {
-
                 LOG.warn("Receive one unknown event-" + event.toString() + " " + idStr);
                 return;
             }
@@ -252,7 +252,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
     private Runnable processTupleEvent(Tuple event) {
         Runnable runnable = null;
         Tuple tuple = event;
-        if (event.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_CONTROL_STREAM_ID)) {
+        if (event.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_CONTROL_STREAM_ID)) { // __master_control_stream
             TopoMasterCtrlEvent ctrlEvent = (TopoMasterCtrlEvent) tuple.getValueByField("ctrlEvent");
             if (ctrlEvent.isTransactionEvent()) {
                 if (spout instanceof ICtrlMsgSpout) {
@@ -265,7 +265,7 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
             } else {
                 LOG.warn("Received unexpected control event, {}", ctrlEvent);
             }
-        } else if (event.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_REGISTER_METRICS_RESP_STREAM_ID)) {
+        } else if (event.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_REGISTER_METRICS_RESP_STREAM_ID)) { // __master_reg_metrics_resp
             this.metricsReporter.updateMetricMeta((Map<String, Long>) tuple.getValue(0));
         } else {
             Object id = tuple.getValue(0);
@@ -278,19 +278,16 @@ public class SpoutExecutors extends BaseExecutors implements EventHandler {
                 runnable = null;
             } else {
                 TupleInfo tupleInfo = (TupleInfo) obj;
-
                 String stream_id = tuple.getSourceStreamId();
-
-                if (stream_id.equals(Acker.ACKER_ACK_STREAM_ID)) {
+                if (stream_id.equals(Acker.ACKER_ACK_STREAM_ID)) { // __ack_ack
                     runnable = new AckSpoutMsg(id, spout, tuple, tupleInfo, taskStats);
-                } else if (stream_id.equals(Acker.ACKER_FAIL_STREAM_ID)) {
+                } else if (stream_id.equals(Acker.ACKER_FAIL_STREAM_ID)) { // __ack_fail
                     runnable = new FailSpoutMsg(id, spout, tupleInfo, taskStats);
                 } else {
                     LOG.warn("Receive one unknown source Tuple " + idStr);
                     runnable = null;
                 }
             }
-
             taskStats.recv_tuple(tuple.getSourceComponent(), tuple.getSourceStreamId());
         }
         return runnable;

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.task;
 
 import backtype.storm.Config;
@@ -45,12 +46,13 @@ import com.lmax.disruptor.TimeoutBlockingWaitStrategy;
 import com.lmax.disruptor.TimeoutException;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TaskReceiver {
     private static Logger LOG = LoggerFactory.getLogger(TaskReceiver.class);
@@ -103,7 +105,7 @@ public class TaskReceiver {
                 isDisruptorBatchMode, disruptorBatch, flushMs);
         dserializeThreadNum = ConfigExtension.getTaskDeserializeThreadNum(stormConf);
         deserializeThreads = new ArrayList<>();
-        setDeserializeThread();
+        this.setDeserializeThread();
         //this.deserializer = new KryoTupleDeserializer(stormConf, topologyContext);
 
         String topologyId = topologyContext.getTopologyId();
@@ -116,7 +118,7 @@ public class TaskReceiver {
 
         QueueGauge deserializeQueueGauge = new QueueGauge(deserializeQueue, idStr, MetricDef.DESERIALIZE_QUEUE);
         JStormMetrics.registerTaskMetric(MetricUtils.taskMetricName(
-                        topologyId, component, taskId, MetricDef.DESERIALIZE_QUEUE, MetricType.GAUGE),
+                topologyId, component, taskId, MetricDef.DESERIALIZE_QUEUE, MetricType.GAUGE),
                 new AsmGauge(deserializeQueueGauge));
         JStormHealthCheck.registerTaskHealthCheck(taskId, MetricDef.DESERIALIZE_QUEUE, deserializeQueueGauge);
 
@@ -163,7 +165,7 @@ public class TaskReceiver {
 
         @Override
         public void onEvent(Object event, long sequence, boolean endOfBatch) throws Exception {
-            deserialize(deserializer, (byte[]) event, exeQueue);
+            TaskReceiver.this.deserialize(deserializer, (byte[]) event, exeQueue);
         }
 
         @Override
@@ -194,6 +196,7 @@ public class TaskReceiver {
             LOG.info("Successfully shutdown recvThread of " + idStr);
         }
 
+        @Override
         public Object getResult() {
             LOG.info("Begin to shutdown recvThread of " + idStr);
             return -1;
@@ -209,7 +212,7 @@ public class TaskReceiver {
                 try {
                     List<Object> objects = deserializeQueue.retreiveAvailableBatch();
                     for (Object object : objects) {
-                        deserialize(deserializer, (byte[]) object, exeQueue);
+                        this.deserialize(deserializer, (byte[]) object, exeQueue);
                     }
                     isIdling = false;
                 } catch (InterruptedException e) {
@@ -249,18 +252,20 @@ public class TaskReceiver {
             if (bolt != null && bolt instanceof IProtoBatchBolt) {
                 ((IProtoBatchBolt) bolt).protoExecute(this, deserializer, queue, serMsg);
             } else {
-                deserializeTuple(deserializer, serMsg, queue);
+                this.deserializeTuple(deserializer, serMsg, queue);
             }
 
         } catch (Throwable e) {
-            if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e))
+            if (Utils.exceptionCauseIsInstanceOf(KryoException.class, e)) {
                 throw new RuntimeException(e);
+            }
             if (!taskStatus.isShutdown()) {
                 LOG.error(idStr + " recv thread error " + JStormUtils.toPrintableString(serMsg), e);
             }
         } finally {
-            if (MetricUtils.metricAccurateCal)
+            if (MetricUtils.metricAccurateCal) {
                 deserializeTimer.updateTime(start);
+            }
         }
     }
 
