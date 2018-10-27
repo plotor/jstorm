@@ -56,15 +56,6 @@ public class VirtualPortCtrlDispatch extends DisruptorRunnable {
     }
 
     public void shutdownRecv() {
-        // don't need send shutdown command to every task
-        // due to every task has been shutdown by workerData.active
-        // at the same time queue has been fulll
-        // byte shutdownCmd[] = { TaskStatus.SHUTDOWN };
-        // for (DisruptorQueue queue : deserializeQueues.values()) {
-        //
-        // queue.publish(shutdownCmd);
-        // }
-
         try {
             recvConnection.close();
         } catch (Exception ignored) {
@@ -112,8 +103,9 @@ public class VirtualPortCtrlDispatch extends DisruptorRunnable {
     @Override
     public void handleEvent(Object event, boolean endOfBatch) throws Exception {
         TaskMessage message = (TaskMessage) event;
-        int task = message.task();
+        int task = message.task(); // 获取当前消息对应的 taskId
 
+        // 消息反序列化
         Object tuple = null;
         try {
             // there might be errors when calling update_topology
@@ -125,12 +117,14 @@ public class VirtualPortCtrlDispatch extends DisruptorRunnable {
             LOG.warn("serialize msg error", e);
         }
 
+        // 获取 taskId 对应的消息通道
         DisruptorQueue queue = controlQueues.get(task);
         if (queue == null) {
             LOG.warn("Received invalid control message for task-{}, Dropping...{} ", task, tuple);
             return;
         }
         if (tuple != null) {
+            // 将消息投递给对应的 task 传输队列
             queue.publish(tuple);
         }
     }

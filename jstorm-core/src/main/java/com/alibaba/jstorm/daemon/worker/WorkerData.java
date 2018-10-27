@@ -116,6 +116,7 @@ public class WorkerData {
     private final String supervisorId;
     private final Integer port;
     private final String workerId;
+
     // worker status :active/shutdown
     private AtomicBoolean shutdown;
     private AtomicBoolean monitorEnable;
@@ -130,8 +131,10 @@ public class WorkerData {
     // running taskId list in current worker
     private Set<Integer> taskIds;
 
+    // 管理与其他 worker 的连接对象
     // connection to other workers <NodePort, ZMQConnection>
     private ConcurrentHashMap<WorkerSlot, IConnection> nodePortToSocket;
+
     // <taskId, NodePort>
     private ConcurrentHashMap<Integer, WorkerSlot> taskToNodePort;
 
@@ -154,49 +157,69 @@ public class WorkerData {
     private Map<String, Object> executorData;
     private Map registeredMetrics;
 
+    // 从 jar 包反序列化而来的 topology (不包含 ackers)
     // raw topology is deserialized from local jar which doesn't contain ackers
     private StormTopology rawTopology;
+
+    // 允许在当前 worker 中的 topology (包含 ackers)
     // sys topology is the running topology in the worker which contains ackers
     private StormTopology sysTopology;
 
     private ContextMaker contextMaker;
 
+    // 关闭 worker 的入口
     // shutdown worker entrance
     private final AsyncLoopDefaultKill workHalt = new AsyncLoopDefaultKill();
 
+    // 用来发送 tuple 的队列
     // sending tuple's queue
-    // private LinkedBlockingQueue<TransferData> transferCtrlQueue;
     private DisruptorQueue transferCtrlQueue;
 
+    // 被终止的 task 列表
     private List<TaskShutdownDameon> shutdownTasks;
 
+    // 需要向外进行输出的任务状态
     private ConcurrentHashMap<Integer, Boolean> outTaskStatus; // true => active
 
     private FlusherPool flusherPool;
 
+    // 上次进行任务分配的时间戳
     private volatile Long assignmentTS; // assignment timeStamp. last update time of assignment
-
+    // 上次进行任务分配的分配类型
     private volatile AssignmentType assignmentType;
 
     private IConnection recvConnection;
 
     private JStormMetricsReporter metricReporter;
 
+    // 异步汇报当前 Worker 健康状态的线程
     @SuppressWarnings("unused")
     private AsyncLoopThread healthReporterThread;
 
     private AtomicBoolean workerInitConnectionStatus;
 
+    // tuple 序列化
     private AtomicReference<KryoTupleSerializer> atomKryoSerializer = new AtomicReference<>();
-
+    // tuple 反序列化
     private AtomicReference<KryoTupleDeserializer> atomKryoDeserializer = new AtomicReference<>();
 
+    // 对于需要动态更新的数据或配置进行更新
     // the data/config which need dynamic update
     private UpdateListener updateListener;
 
     protected List<AsyncLoopThread> deserializeThreads = new ArrayList<>();
     protected List<AsyncLoopThread> serializeThreads = new ArrayList<>();
 
+    /**
+     * @param conf 集群运行配置信息
+     * @param context 消息上下文，用来接收外部的消息
+     * @param topologyId 当前 worker 运行任务所属的 topology
+     * @param supervisorId 当前 worker 隶属的 supervisor
+     * @param port 用来与外界进行通信的端口
+     * @param workerId 标识当前 worker 的 id
+     * @param jarPath topology 对应的 jar 文件路径
+     * @throws Exception
+     */
     @SuppressWarnings({"rawtypes", "unchecked"})
     public WorkerData(Map conf, IContext context, String topologyId, String supervisorId,
                       int port, String workerId, String jarPath) throws Exception {
@@ -232,7 +255,7 @@ public class WorkerData {
 
         // init topology.debug and other debug args
         JStormDebugger.update(stormConf);
-        // register dynamic updaters
+        // 注册动态更新监听器
         this.registerUpdateListeners();
 
         JStormMetrics.setHistogramValueSize(ConfigExtension.getTopologyHistogramSize(stormConf));

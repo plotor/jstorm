@@ -107,9 +107,8 @@ public class WorkerClassLoader extends URLClassLoader {
 
     }
 
-    public static WorkerClassLoader mkInstance(URL[] urls,
-                                               ClassLoader DefaultClassLoader, ClassLoader JDKClassLoader,
-                                               boolean enable, boolean isDebug) {
+    public static WorkerClassLoader mkInstance(
+            URL[] urls, ClassLoader DefaultClassLoader, ClassLoader JDKClassLoader, boolean enable, boolean isDebug) {
         WorkerClassLoader.enable = enable;
         if (!enable) {
             LOG.info("Don't enable UserDefine ClassLoader");

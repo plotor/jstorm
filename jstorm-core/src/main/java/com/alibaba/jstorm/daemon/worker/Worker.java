@@ -86,11 +86,10 @@ public class Worker {
      */
     public static Set<Integer> worker_output_tasks(WorkerData workerData) {
         ContextMaker context_maker = workerData.getContextMaker();
-        Set<Integer> taskIds = workerData.getTaskIds(); // 获取分配给当前 worker 的所有 taskId
+        Set<Integer> taskIds = workerData.getTaskIds(); // 获取当前 worker 上运行的 taskId 列表
         StormTopology topology = workerData.getSysTopology();
 
         Set<Integer> rtn = new HashSet<>();
-
         for (Integer taskId : taskIds) {
             TopologyContext context = context_maker.makeTopologyContext(topology, taskId, null);
 
@@ -103,7 +102,6 @@ public class Worker {
                 }
             }
         }
-
         return rtn;
     }
 
@@ -157,40 +155,38 @@ public class Worker {
      * @return
      */
     private AsyncLoopThread startDispatchThread() {
-        IContext context = workerData.getContext(); // NettyContext
+        IContext context = workerData.getContext(); // 获取消息上下文：NettyContext
         String topologyId = workerData.getTopologyId();
 
-        // create recv connection
+        // 1. 创建一个接收消息的消息队列（disruptor）
         Map stormConf = workerData.getStormConf();
         long timeout = JStormUtils.parseLong(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT), 10); // 默认 10ms
-        WaitStrategy waitStrategy = new TimeoutBlockingWaitStrategy(timeout, TimeUnit.MILLISECONDS);
+        WaitStrategy waitStrategy = new TimeoutBlockingWaitStrategy(timeout, TimeUnit.MILLISECONDS); // 10ms
         int queueSize = JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_CTRL_BUFFER_SIZE), 256);
-        // 创建 disruptor 消息队列
         DisruptorQueue recvControlQueue = DisruptorQueue.mkInstance("Dispatch-control", ProducerType.MULTI, queueSize, waitStrategy, false, 0, 0);
 
         // metric for recvControlQueue
         QueueGauge revCtrlGauge = new QueueGauge(recvControlQueue, MetricDef.RECV_CTRL_QUEUE);
         JStormMetrics.registerWorkerMetric(JStormMetrics.workerMetricName(MetricDef.RECV_CTRL_QUEUE, MetricType.GAUGE), new AsmGauge(revCtrlGauge));
 
-        // 为当前 worker 基于 Netty 创建并返回一个 Socket 连接用于接收消息
+        // 2. 为当前 worker 基于 Netty 创建并返回一个 Socket 连接用于接收消息
         IConnection recvConnection = context.bind(
                 topologyId, workerData.getPort(), workerData.getDeserializeQueues(), recvControlQueue, false, workerData.getTaskIds());
         workerData.setRecvConnection(recvConnection);
 
-        // create receive control messages's thread
+        // 3. 启动一个线程循环消费 worker 接收到的消息，并应用 DisruptorRunnable.onEvent 方法,
+        // 最终调用的是 VirtualPortCtrlDispatch.handleEvent 方法，将消息投递给指定 task 的消息队列
         RunnableCallback recvControlDispatcher = new VirtualPortCtrlDispatch(
                 workerData, recvConnection, recvControlQueue, MetricDef.RECV_THREAD);
-
-        // 消费 recvControlQueue 中的消息，对于缓存的事件，遍历应用 DisruptorRunable.onEvent 方法
         return new AsyncLoopThread(recvControlDispatcher, false, Thread.MAX_PRIORITY, true);
     }
 
     public WorkerShutdown execute() throws Exception {
         List<AsyncLoopThread> threads = new ArrayList<>();
 
-        // 1. 为 worker 创建一个 socket 连接，并分发接收到的消息给对应的 task
-        AsyncLoopThread controlRvthread = this.startDispatchThread();
-        threads.add(controlRvthread);
+        // 1. 为 worker 创建一个 socket 连接，接收和分发消息给对应的 task
+        AsyncLoopThread controlRvThread = this.startDispatchThread();
+        threads.add(controlRvThread);
 
         // 2. 创建线程用于在 worker 关闭或者新启动时更新与其他 worker 之间的连接信息
         RefreshConnections refreshConn = this.makeRefreshConnections();
