@@ -19,4 +19,9 @@ public class MyRunnableCallback extends RunnableCallback {
     public Object getResult() {
         return 1;
     }
+
+    public static void main(String[] args) {
+        MyRunnableCallback callback = new MyRunnableCallback();
+        new AsyncLoopThread(callback);
+    }
 }

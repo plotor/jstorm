@@ -229,15 +229,14 @@ public class BoltExecutors extends BaseExecutors implements EventHandler {
                 outputCollector.emit(Common.WATERMARK_STREAM_ID, tuple.getValues());
             }
 
-            if (!isSystemBolt && tuple.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_CONTROL_STREAM_ID)) {
+            if (!isSystemBolt && tuple.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_CONTROL_STREAM_ID)) { // __master_control_stream
                 TopoMasterCtrlEvent event = (TopoMasterCtrlEvent) tuple.getValue(0);
                 if (event.isTransactionEvent()) {
-                    // 调用 IBolt.execute 方法进行处理
                     bolt.execute(tuple);
                 } else {
                     LOG.warn("Received an unexpected control event, {}", event);
                 }
-            } else if (tuple.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_REGISTER_METRICS_RESP_STREAM_ID)) {
+            } else if (tuple.getSourceStreamId().equals(Common.TOPOLOGY_MASTER_REGISTER_METRICS_RESP_STREAM_ID)) { // __master_reg_metrics_resp
                 this.metricsReporter.updateMetricMeta((Map<String, Long>) tuple.getValue(0));
             } else {
                 // 调用 IBolt.execute 方法进行处理

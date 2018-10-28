@@ -95,6 +95,7 @@ public class BaseExecutors extends RunnableCallback {
 
     protected JStormMetricsReporter metricsReporter;
 
+    // 标记是否完成初始化操作
     protected boolean isFinishInit = false;
 
     protected RotatingMapTrigger rotatingMapTrigger;

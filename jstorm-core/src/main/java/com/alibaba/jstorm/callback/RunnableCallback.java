@@ -60,7 +60,7 @@ public class RunnableCallback implements Runnable, Callback, Shutdownable {
     /**
      * 线程睡眠时间（单位：秒），为啥不直接返回 Integer?
      *
-     * @return
+     * @return null 表示不退出继续循环执行（不暂停），如果返回值小于 0 则运行一次即退出，如果返回值大于 0 则每次循环休息指定秒数
      */
     public Object getResult() {
         return null;

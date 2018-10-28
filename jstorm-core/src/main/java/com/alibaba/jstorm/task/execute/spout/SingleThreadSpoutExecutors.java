@@ -58,11 +58,11 @@ public class SingleThreadSpoutExecutors extends SpoutExecutors {
     @Override
     public void run() {
         if (!checkTopologyFinishInit) {
-            this.initWrapper();
+            this.initWrapper(); // 主要是调用 ISpout.open
             int delayRun = ConfigExtension.getSpoutDelayRunSeconds(storm_conf);
             long now = System.currentTimeMillis();
             while (!checkTopologyFinishInit) {
-                // wait other bolt is ready, but the spout can handle the received message
+                // 超时等待其它 bolt 初始化完成，等待过程中 spout 可以处理接收到的消息
                 this.executeEvent();
                 controlQueue.consumeBatch(this);
                 if (System.currentTimeMillis() - now > delayRun * 1000) {
@@ -86,14 +86,15 @@ public class SingleThreadSpoutExecutors extends SpoutExecutors {
         }
 
         this.executeEvent();
-        controlQueue.consumeBatch(this);
+        controlQueue.consumeBatch(this); // 最终执行 SpoutExecutors.onEvent
 
+        // 处理下一个 tuple
         super.nextTuple();
     }
 
     private void executeEvent() {
         try {
-            exeQueue.consumeBatch(this); // 最终执行 SpoutExecutors.onEvent
+            exeQueue.consumeBatch(this);
         } catch (Exception e) {
             if (!taskStatus.isShutdown()) {
                 LOG.error("unknown exception:", e);

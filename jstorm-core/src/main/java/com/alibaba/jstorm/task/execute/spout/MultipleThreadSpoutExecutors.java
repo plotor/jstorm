@@ -66,7 +66,7 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
     @Override
     public void run() {
         if (!checkTopologyFinishInit) {
-            this.initWrapper();
+            this.initWrapper(); // 主要是调用 ISpout.open 方法
             int delayRun = ConfigExtension.getSpoutDelayRunSeconds(storm_conf);
             long now = System.currentTimeMillis();
             while (!checkTopologyFinishInit) {
@@ -90,7 +90,7 @@ public class MultipleThreadSpoutExecutors extends SpoutExecutors {
                 }
             }
             LOG.info(idStr + " finishes init and is ready.");
-        }
+        } // end if
 
         super.nextTuple();
     }

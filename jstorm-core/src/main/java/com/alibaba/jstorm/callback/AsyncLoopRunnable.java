@@ -114,9 +114,10 @@ public class AsyncLoopRunnable implements Runnable {
         if (rtn != null) {
             long sleepTime = Long.parseLong(String.valueOf(rtn));
             if (sleepTime < 0) {
-                // 未设置睡眠时间
+                // 小于 0 则退出执行
                 return true;
             } else if (sleepTime > 0) {
+                // 大于 0 表示要求每次执行中间休息相应的时间（单位：秒）
                 long now = System.currentTimeMillis();
                 long cost = now - lastTime;
                 long sleepMs = sleepTime * 1000 - cost; // 期望睡眠时间 - 中间消耗的时间
@@ -127,9 +128,9 @@ public class AsyncLoopRunnable implements Runnable {
                 } else {
                     lastTime = now;
                 }
-
             }
         }
+        // 为 null 或者 0 都继续执行
         return false;
     }
 
