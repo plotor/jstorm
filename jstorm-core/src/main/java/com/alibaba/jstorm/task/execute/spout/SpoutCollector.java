@@ -116,32 +116,32 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
 
     @Override
     public List<Integer> emit(String streamId, List<Object> tuple, Object messageId) {
-        return sendSpoutMsg(streamId, tuple, messageId, null, null);
+        return this.sendSpoutMsg(streamId, tuple, messageId, null, null);
     }
 
     @Override
     public void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId) {
-        sendSpoutMsg(streamId, tuple, messageId, taskId, null);
+        this.sendSpoutMsg(streamId, tuple, messageId, taskId, null);
     }
 
     @Override
     public List<Integer> emit(String streamId, List<Object> tuple, Object messageId, ICollectorCallback callback) {
-        return sendSpoutMsg(streamId, tuple, messageId, null, callback);
+        return this.sendSpoutMsg(streamId, tuple, messageId, null, callback);
     }
 
     @Override
     public void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId, ICollectorCallback callback) {
-        sendSpoutMsg(streamId, tuple, messageId, taskId, callback);
+        this.sendSpoutMsg(streamId, tuple, messageId, taskId, callback);
     }
 
     @Override
     public void emitDirectCtrl(int taskId, String streamId, List<Object> tuple, Object messageId) {
-        sendCtrlMsg(streamId, tuple, messageId, taskId);
+        this.sendCtrlMsg(streamId, tuple, messageId, taskId);
     }
 
     @Override
     public List<Integer> emitCtrl(String streamId, List<Object> tuple, Object messageId) {
-        return sendCtrlMsg(streamId, tuple, messageId, null);
+        return this.sendCtrlMsg(streamId, tuple, messageId, null);
     }
 
     protected List<Integer> sendSpoutMsg(
@@ -181,6 +181,7 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
         final long startTime = emitTotalTimer.getTime();
         try {
             boolean needAck = (message_id != null) && (ackerNum > 0);
+            // 生成随机的 rootId，需要确保在当前 spout 唯一，否则无法保证 ack 的准确性
             Long root_id = this.getRootId(message_id);
             List<Integer> outTasks;
 
@@ -192,24 +193,24 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
             }
 
             List<Long> ackSeq = new ArrayList<>();
-            // 遍历所有的目标task，每个task的messageId=<root_id, 随机数值>
+            // 遍历所有的目标 task，每个 task 的 messageId = <root_id, 随机数值>
             for (Integer t : outTasks) {
                 MessageId msgId;
                 if (needAck) {
                     // Long as = MessageId.generateId();
                     Long as = MessageId.generateId(random);
                     msgId = MessageId.makeRootId(root_id, as);
-                    ackSeq.add(as); // 添加到ackSeq list中，后面会有用
+                    ackSeq.add(as); // 添加到 ackSeq list 中，后面会有用
                 } else {
                     msgId = null;
                 }
 
-                // 扔到transfer queue中，即进入发送队列
+                // 扔到 transfer queue 中，即进入发送队列
                 TupleImplExt tp = new TupleImplExt(topology_context, values, task_id, out_stream_id, msgId);
                 tp.setTargetTaskId(t);
                 transfer_fn.transfer(tp);
             }
-            sendMsgToAck(out_stream_id, values, message_id, root_id, ackSeq, needAck);
+            this.sendMsgToAck(out_stream_id, values, message_id, root_id, ackSeq, needAck);
             if (callback != null) {
                 callback.execute(out_stream_id, outTasks, values);
             }
@@ -223,7 +224,7 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
         final long startTime = emitTotalTimer.getTime();
         try {
             boolean needAck = (message_id != null) && (ackerNum > 0);
-            Long root_id = getRootId(message_id);
+            Long root_id = this.getRootId(message_id);
             java.util.List<Integer> out_tasks;
 
             if (out_task_id != null) {
@@ -246,9 +247,9 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
 
                 TupleImplExt tp = new TupleImplExt(topology_context, values, task_id, out_stream_id, msgId);
                 tp.setTargetTaskId(t);
-                transferCtr(tp);
+                this.transferCtr(tp);
             }
-            sendMsgToAck(out_stream_id, values, message_id, root_id, ackSeq, needAck);
+            this.sendMsgToAck(out_stream_id, values, message_id, root_id, ackSeq, needAck);
             return out_tasks;
         } finally {
             emitTotalTimer.updateTime(startTime);
@@ -267,7 +268,7 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
      * @return
      */
     protected Long getRootId(Object messageId) {
-        Boolean needAck = (messageId != null) && (ackerNum > 0);
+        boolean needAck = (messageId != null) && (ackerNum > 0);
 
         // This change storm logic
         // Storm can't make sure root_id is unique
@@ -276,9 +277,6 @@ public class SpoutCollector extends SpoutOutputCollectorCb {
         Long rootId = null;
         if (needAck) {
             rootId = MessageId.generateId(random);
-/*            while (pending.containsKey(rootId)) {
-                rootId = MessageId.generateId(random);
-            }*/
         }
         return rootId;
     }
