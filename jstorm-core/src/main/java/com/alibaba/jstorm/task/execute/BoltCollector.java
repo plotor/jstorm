@@ -57,6 +57,7 @@ import java.util.Random;
  * @author yannian/Longda
  */
 public class BoltCollector extends OutputCollectorCb {
+
     private static Logger LOG = LoggerFactory.getLogger(BoltCollector.class);
 
     protected ITaskReportErr reportError;
@@ -103,85 +104,88 @@ public class BoltCollector extends OutputCollectorCb {
 
     @Override
     public List<Integer> emit(String streamId, Collection<Tuple> anchors, List<Object> tuple) {
-        return sendBoltMsg(streamId, anchors, tuple, null, null);
+        return this.sendBoltMsg(streamId, anchors, tuple, null, null);
     }
 
     @Override
     public void emitDirect(int taskId, String streamId, Collection<Tuple> anchors, List<Object> tuple) {
-        sendBoltMsg(streamId, anchors, tuple, taskId, null);
+        this.sendBoltMsg(streamId, anchors, tuple, taskId, null);
     }
 
     @Override
     public List<Integer> emit(String streamId, Collection<Tuple> anchors, List<Object> tuple, ICollectorCallback callback) {
-        return sendBoltMsg(streamId, anchors, tuple, null, callback);
+        return this.sendBoltMsg(streamId, anchors, tuple, null, callback);
     }
 
     @Override
     public void emitDirect(int taskId, String streamId, Collection<Tuple> anchors, List<Object> tuple, ICollectorCallback callback) {
-        sendBoltMsg(streamId, anchors, tuple, taskId, callback);
+        this.sendBoltMsg(streamId, anchors, tuple, taskId, callback);
     }
 
     @Override
     public List<Integer> emitCtrl(String streamId, Collection<Tuple> anchors, List<Object> tuple) {
-        return sendCtrlMsg(streamId, tuple, anchors, null);
+        return this.sendCtrlMsg(streamId, tuple, anchors, null);
     }
 
     @Override
     public void emitDirectCtrl(int taskId, String streamId, Collection<Tuple> anchors, List<Object> tuple) {
-        sendCtrlMsg(streamId, tuple, anchors, taskId);
+        this.sendCtrlMsg(streamId, tuple, anchors, taskId);
     }
 
     protected List<Integer> sendBoltMsg(String outStreamId, Collection<Tuple> anchors, List<Object> values,
                                         Integer outTaskId, ICollectorCallback callback) {
-        java.util.List<Integer> outTasks;
-        outTasks = sendMsg(outStreamId, values, anchors, outTaskId, callback);
-        return outTasks;
+        return this.sendMsg(outStreamId, values, anchors, outTaskId, callback);
     }
 
+    /**
+     * @param anchors
+     * @return
+     */
     protected MessageId getMessageId(Collection<Tuple> anchors) {
         MessageId ret = null;
         if (anchors != null && ackerNum > 0) {
             Map<Long, Long> anchors_to_ids = new HashMap<>();
-            // 在一般的情况下anchors的size=1，见BasicOutputCollector类，即为当前收到的inputTuple。
-            for (Tuple a : anchors) {
-                if (a.getMessageId() != null) {
+            // 在一般的情况下 anchors 的 size 等于 1，见 BasicOutputCollector 类，即为当前收到的 inputTuple。
+            for (Tuple tuple : anchors) {
+                if (tuple.getMessageId() != null) {
                     Long edge_id = MessageId.generateId(random);
-                    // 这里会将<inputTuple, edge_id>放入pending_acks
-                    put_xor(pendingAcks, a, edge_id);
-                    MessageId messageId = a.getMessageId();
+                    // 这里会将 <inputTuple, edge_id> 放入 pending_acks
+                    put_xor(pendingAcks, tuple, edge_id);
+                    MessageId messageId = tuple.getMessageId();
                     if (messageId != null) {
-                        // 这里将每一对<root_id, edge_id>放入anchors_to_ids（一般情况下也只有一对），
-                        // 由于anchors_to_ids是一个空map，因此put_xor里面，相当于拿root_id对应的值^0 = root_id的值
+                        // 这里将每一对 <root_id, edge_id> 放入 anchors_to_ids（一般情况下也只有一对），
+                        // 由于 anchors_to_ids 是一个空 map，因此 put_xor 里面相当于 put <root_id, edge_id> 到 anchors_to_ids
                         for (Long root_id : messageId.getAnchorsToIds().keySet()) {
                             put_xor(anchors_to_ids, root_id, edge_id);
                         }
                     }
                 }
             }
+            // new MessageId
             ret = MessageId.makeId(anchors_to_ids);
         }
         return ret;
     }
 
-    public List<Integer> sendMsg(String out_stream_id, List<Object> values, Collection<Tuple> anchors,
-                                 Integer out_task_id, ICollectorCallback callback) {
+    public List<Integer> sendMsg(String out_stream_id, List<Object> values,
+                                 Collection<Tuple> anchors, Integer out_task_id, ICollectorCallback callback) {
         final long start = emitTimer.getTime();
         List<Integer> outTasks = null;
         try {
-            // 一样地获取所有目标task列表
+            // 获取所有目标 task 列表
             if (out_task_id != null) {
                 outTasks = sendTargets.get(out_task_id, out_stream_id, values, anchors, null);
             } else {
                 outTasks = sendTargets.get(out_stream_id, values, anchors, null);
             }
 
-            tryRotate();
-            // 遍历所有目标task，每一个目标task的message id= <root_id, edge_id>，其中edge_id是在这个bolt里新生成的随机数
-            for (Integer t : outTasks) {
-                MessageId msgId = getMessageId(anchors);
-                // 往目标bolt发送消息
-                TupleImplExt tp = new TupleImplExt(topologyContext, values, taskId, out_stream_id, msgId);
-                tp.setTargetTaskId(t);
+            this.tryRotate();
+            // 遍历所有目标 task，每一个目标 task 的 message_id = <root_id, edge_id>，其中 edge_id 是在这个 bolt 里新生成的随机数
+            for (Integer taskId : outTasks) {
+                MessageId msgId = this.getMessageId(anchors);
+                // 往目标 bolt 发送消息
+                TupleImplExt tp = new TupleImplExt(topologyContext, values, this.taskId, out_stream_id, msgId);
+                tp.setTargetTaskId(taskId);
                 taskTransfer.transfer(tp);
             }
         } catch (Exception e) {
@@ -227,13 +231,13 @@ public class BoltCollector extends OutputCollectorCb {
                 out_tasks = sendTargets.get(out_stream_id, values, anchors, null);
             }
 
-            tryRotate();
+            this.tryRotate();
             for (Integer t : out_tasks) {
-                MessageId msgId = getMessageId(anchors);
+                MessageId msgId = this.getMessageId(anchors);
 
                 TupleImplExt tp = new TupleImplExt(topologyContext, values, taskId, out_stream_id, msgId);
                 tp.setTargetTaskId(t);
-                transferCtr(tp);
+                this.transferCtr(tp);
             }
         } catch (Exception e) {
             LOG.error("bolt emit error:", e);
@@ -255,7 +259,7 @@ public class BoltCollector extends OutputCollectorCb {
 
             // 发送ack消息，messageId = <root_id, inputTuple的随机数 ^ edge_id>
             for (Entry<Long, Long> e : input.getMessageId().getAnchorsToIds().entrySet()) {
-                unanchoredSend(topologyContext, sendTargets, taskTransfer, Acker.ACKER_ACK_STREAM_ID,
+                this.unanchoredSend(topologyContext, sendTargets, taskTransfer, Acker.ACKER_ACK_STREAM_ID,
                         JStormUtils.mk_list((Object) e.getKey(), JStormUtils.bit_xor(e.getValue(), ack_val)));
             }
         }
@@ -275,7 +279,7 @@ public class BoltCollector extends OutputCollectorCb {
         if (input.getMessageId() != null) {
             pendingAcks.remove(input);
             for (Entry<Long, Long> e : input.getMessageId().getAnchorsToIds().entrySet()) {
-                unanchoredSend(topologyContext, sendTargets, taskTransfer, Acker.ACKER_FAIL_STREAM_ID,
+                this.unanchoredSend(topologyContext, sendTargets, taskTransfer, Acker.ACKER_FAIL_STREAM_ID,
                         JStormUtils.mk_list((Object) e.getKey()));
             }
         }

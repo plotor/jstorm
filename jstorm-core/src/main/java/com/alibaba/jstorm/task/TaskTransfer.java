@@ -70,7 +70,7 @@ public class TaskTransfer {
 
     protected Map stormConf;
     protected DisruptorQueue transferControlQueue;
-    //protected KryoTupleSerializer serializer;
+
     protected Map<Integer, DisruptorQueue> innerTaskTransfer;
     protected Map<Integer, DisruptorQueue> controlQueues;
     protected DisruptorQueue serializeQueue;
@@ -158,11 +158,17 @@ public class TaskTransfer {
         }
     }
 
+    /**
+     * 获取当前 tuple 对应的目标 task 的内部传输队列，然后将 tuple 投递给该队列
+     *
+     * @param tuple
+     */
     public void transfer(TupleExt tuple) {
         int taskId = tuple.getTargetTaskId();
 
+        // 获取当前 task 的内部传输队列
         DisruptorQueue exeQueue = innerTaskTransfer.get(taskId);
-        DisruptorQueue targetQueue;
+        DisruptorQueue targetQueue; // 目标 task 队列
         if (exeQueue == null) {
             taskId = 0;
             targetQueue = serializeQueue;
@@ -170,7 +176,7 @@ public class TaskTransfer {
             targetQueue = exeQueue;
         }
 
-        if (isBackpressureEnable) {
+        if (isBackpressureEnable) { // 背压机制
             Boolean backpressureStatus = targetTaskBackpressureStatus.get(taskId);
             if (backpressureStatus == null) {
                 backpressureStatus = false;

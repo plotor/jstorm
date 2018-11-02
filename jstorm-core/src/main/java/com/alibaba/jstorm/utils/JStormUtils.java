@@ -69,6 +69,7 @@ import java.lang.management.MemoryUsage;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -874,17 +875,23 @@ public class JStormUtils {
         return rtn;
     }
 
+    /**
+     * 对列表中的所有值执行亦或运算
+     *
+     * @param vals
+     * @param <T>
+     * @return
+     */
     public static <T> long bit_xor_vals(java.util.List<T> vals) {
-        long rtn = 0l;
+        long rtn = 0L;
         for (T n : vals) {
             rtn = bit_xor(rtn, n);
         }
-
         return rtn;
     }
 
     public static <T> long bit_xor_vals_sets(java.util.Set<T> vals) {
-        long rtn = 0l;
+        long rtn = 0L;
         for (T n : vals) {
             rtn = bit_xor(rtn, n);
         }
@@ -913,11 +920,7 @@ public class JStormUtils {
     }
 
     public static <V> List<V> mk_list(V... args) {
-        ArrayList<V> rtn = new ArrayList<>();
-        for (V o : args) {
-            rtn.add(o);
-        }
-        return rtn;
+        return new ArrayList<>(Arrays.asList(args));
     }
 
     public static <V> List<V> mk_list(java.util.Set<V> args) {

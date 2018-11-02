@@ -69,22 +69,17 @@ public class TaskSendTargets {
         debugIdStr = " emit from " + componentId + ":" + taskId + " ";
     }
 
-    // direct send tuple to special task
-    public List<Integer> get(Integer out_task_id, String stream, List<Object> tuple,
-                             Collection<Tuple> anchors, Object root_id) {
-
-        // in order to improve acker's performance, skip checking
-        // String target_component =
-        // topologyContext.getComponentId(out_task_id);
-        // Map<String, MkGrouper> component_prouping = streamComponentGrouper
-        // .get(stream);
-        // MkGrouper grouping = component_prouping.get(target_component);
-        // if (grouping != null &&
-        // !GrouperType.direct.equals(grouping.gettype())) {
-        // throw new IllegalArgumentException(
-        // "Cannot emitDirect to a task expecting a regular grouping");
-        // }
-
+    /**
+     * direct send tuple to special task
+     *
+     * @param out_task_id
+     * @param stream
+     * @param tuple
+     * @param anchors
+     * @param root_id
+     * @return
+     */
+    public List<Integer> get(Integer out_task_id, String stream, List<Object> tuple, Collection<Tuple> anchors, Object root_id) {
         if (this.isDebug(anchors, root_id)) {
             LOG.info(debugIdStr + stream + " to " + out_task_id + ":" + tuple);
         }
@@ -96,15 +91,22 @@ public class TaskSendTargets {
         return out_tasks;
     }
 
-    // send tuple according to grouping
+    /**
+     * send tuple according to grouping
+     *
+     * @param stream
+     * @param tuple
+     * @param anchors
+     * @param rootId
+     * @return
+     */
     public List<Integer> get(String stream, List<Object> tuple, Collection<Tuple> anchors, Object rootId) {
         List<Integer> outTasks = new ArrayList<>();
 
         // get grouper, then get which task should tuple be sent to.
         Map<String, MkGrouper> componentCrouping = streamComponentGrouper.get(stream);
         if (componentCrouping == null) {
-            // if the target component's parallelism is 0, don't need send to
-            // them
+            // 如果目标组件的并行度是 0，则无需发送
             LOG.debug("Failed to get Grouper of " + stream + " when " + debugIdStr);
             return outTasks;
         }
