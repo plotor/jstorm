@@ -148,7 +148,7 @@ public class BoltCollector extends OutputCollectorCb {
                 if (tuple.getMessageId() != null) {
                     Long edge_id = MessageId.generateId(random);
                     // 更新当前 inputTuple 的 edge_id 亦或值到 pending_acks
-                    put_xor(pendingAcks, tuple, edge_id);
+                    put_xor(pendingAcks, tuple, edge_id); // <tuple, edge_id>
                     MessageId messageId = tuple.getMessageId();
                     if (messageId != null) {
                         // 这里将每一对 <root_id, edge_id> 放入 anchors_to_ids（一般情况下也只有一对），
@@ -163,6 +163,24 @@ public class BoltCollector extends OutputCollectorCb {
             ret = MessageId.makeId(anchors_to_ids);
         }
         return ret;
+    }
+
+    protected MessageId getMessageId(Tuple tuple) {
+        Map<Long, Long> anchors_to_ids = new HashMap<>();
+        if (tuple.getMessageId() != null) {
+            Long edge_id = MessageId.generateId(random);
+            // 放置 <inputTuple, edge_id> 到 pending_acks
+            put_xor(pendingAcks, tuple, edge_id); // pendingAcks 会在 bolt 执行 ack 时用到
+            MessageId messageId = tuple.getMessageId();
+            if (messageId != null) {
+                // 这里将每一对 <root_id, edge_id> 放入 anchors_to_ids（一般情况下也只有一对），
+                // 由于 anchors_to_ids 是一个空 map，因此 put_xor 里面相当于将 <root_id, edge_id> 放入 anchors_to_ids
+                for (Long root_id : messageId.getAnchorsToIds().keySet()) {
+                    put_xor(anchors_to_ids, root_id, edge_id);
+                }
+            }
+        }
+        return MessageId.makeId(anchors_to_ids); // <root_id, edge_id>
     }
 
     /**
@@ -196,7 +214,7 @@ public class BoltCollector extends OutputCollectorCb {
              * 2. 向所有下游 bolt 发射 tuple 消息
              */
             for (Integer taskId : outTasks) {
-                // 计算对目标 task 的 messageId
+                // 计算目标 task 的 messageId
                 MessageId msgId = this.getMessageId(anchors);
                 TupleImplExt tuple = new TupleImplExt(topologyContext, values, this.taskId, out_stream_id, msgId);
                 tuple.setTargetTaskId(taskId);
@@ -269,7 +287,7 @@ public class BoltCollector extends OutputCollectorCb {
         if (input.getMessageId() != null) {
             Long ack_val = 0L;
             // 取出当前 inputTuple 对应的 edge_id 值
-            Object pend_val = pendingAcks.remove(input);
+            Object pend_val = pendingAcks.remove(input); // <tuple, edge_id>，getMessageId 时写入的，
             if (pend_val != null) {
                 ack_val = (Long) (pend_val);
             }
@@ -277,6 +295,7 @@ public class BoltCollector extends OutputCollectorCb {
             // 向 Acker 发送 ack 消息
             for (Entry<Long, Long> entry : input.getMessageId().getAnchorsToIds().entrySet()) {
                 this.unanchoredSend(topologyContext, sendTargets, taskTransfer, Acker.ACKER_ACK_STREAM_ID, // __ack_ack
+                        // 当前 task 的 egge_id 与目标 task 的 edge_id 进行亦或
                         JStormUtils.mk_list((Object) entry.getKey(), JStormUtils.bit_xor(entry.getValue(), ack_val)));
             }
         }

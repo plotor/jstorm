@@ -60,7 +60,7 @@ public class Acker implements IBolt {
     }
 
     @Override
-    public void execute(Tuple input) {
+    public void execute(Tuple input) { // root_id, random_long, task_id
         Object id = input.getValue(0);
         AckObject curr = pending.get(id);
         String stream_id = input.getSourceStreamId();
@@ -73,7 +73,7 @@ public class Acker implements IBolt {
                 pending.put(id, curr);
             } else {
                 // bolt's ack first come
-                curr.update_ack(input.getValue(1));
+                curr.update_ack(input.getValue(1)); // 进行亦或运算
                 curr.spout_task = input.getInteger(2);
             }
 
@@ -81,8 +81,7 @@ public class Acker implements IBolt {
         // __ack_ack 消息，来自于 Bolt 发送
         else if (Acker.ACKER_ACK_STREAM_ID.equals(stream_id)) {
             if (curr != null) {
-                // 执行亦或运算
-                curr.update_ack(input.getValue(1));
+                curr.update_ack(input.getValue(1)); // 进行亦或运算
             } else {
                 // two case
                 // one is timeout
@@ -92,7 +91,7 @@ public class Acker implements IBolt {
                 pending.put(id, curr);
             }
         }
-        // __ack_fail 消息
+        // __ack_fail 消息，来自于 Bolt 发送
         else if (Acker.ACKER_FAIL_STREAM_ID.equals(stream_id)) {
             if (curr == null) {
                 // do nothing
@@ -105,26 +104,29 @@ public class Acker implements IBolt {
             return;
         }
 
-        // 告诉spout这个消息ack/fail了
+        // 向 spout 发射 ack/fail 消息
         Integer task = curr.spout_task;
         if (task != null) {
             if (curr.val == 0) {
+                // 消息消费成功
                 pending.remove(id);
                 List values = JStormUtils.mk_list(id);
                 collector.emitDirect(task, Acker.ACKER_ACK_STREAM_ID, values);
             } else {
                 if (curr.failed) {
+                    // 消息消费失败
                     pending.remove(id);
                     List values = JStormUtils.mk_list(id);
                     collector.emitDirect(task, Acker.ACKER_FAIL_STREAM_ID, values);
                 }
+                // 否则表示还未执行完成，不执行操作
             }
         }
 
-        // 这里只是更新metrics
-        // add this operation to update acker stats
+        // 更新 metrics
         collector.ack(input);
 
+        // 检测是否已经超时了
         long now = System.currentTimeMillis();
         if (now - lastRotate > rotateTime) {
             lastRotate = now;

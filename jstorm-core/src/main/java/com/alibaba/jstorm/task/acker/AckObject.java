@@ -22,7 +22,7 @@ import com.alibaba.jstorm.utils.JStormUtils;
 
 public class AckObject {
     public long val = 0L;
-    public Integer spout_task = null;
+    public Integer spout_task = null; // 记录 ack tree 中的 spout
     public boolean failed = false;
 
     // val xor value
