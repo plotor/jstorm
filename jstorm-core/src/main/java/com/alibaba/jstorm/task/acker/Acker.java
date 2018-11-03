@@ -35,6 +35,7 @@ import java.util.Map;
  * @author yannian/Longda
  */
 public class Acker implements IBolt {
+
     private static final long serialVersionUID = 4430906880683183091L;
 
     private static final Logger LOG = LoggerFactory.getLogger(Acker.class);
@@ -47,7 +48,6 @@ public class Acker implements IBolt {
     public static final int TIMEOUT_BUCKET_NUM = 3;
 
     private OutputCollector collector = null;
-    // private TimeCacheMap<Object, AckObject> pending = null;
     private RotatingMap<Object, AckObject> pending = null;
     private long lastRotate = System.currentTimeMillis();
     private long rotateTime;
@@ -55,8 +55,6 @@ public class Acker implements IBolt {
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
-        // pending = new TimeCacheMap<Object, AckObject>(timeoutSec,
-        // TIMEOUT_BUCKET_NUM);
         this.pending = new RotatingMap<>(TIMEOUT_BUCKET_NUM, true);
         this.rotateTime = 1000L * JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS), 30) / (TIMEOUT_BUCKET_NUM - 1);
     }
@@ -66,14 +64,12 @@ public class Acker implements IBolt {
         Object id = input.getValue(0);
         AckObject curr = pending.get(id);
         String stream_id = input.getSourceStreamId();
-        // __acker_init消息，由spout发送，直接放入pending map中
+        // __acker_init 消息，由 spout 发送，直接放入 pending map 中
         if (Acker.ACKER_INIT_STREAM_ID.equals(stream_id)) {
             if (curr == null) {
                 curr = new AckObject();
-
                 curr.val = input.getLong(1);
                 curr.spout_task = input.getInteger(2);
-
                 pending.put(id, curr);
             } else {
                 // bolt's ack first come
@@ -81,9 +77,11 @@ public class Acker implements IBolt {
                 curr.spout_task = input.getInteger(2);
             }
 
-        } else if (Acker.ACKER_ACK_STREAM_ID.equals(stream_id)) {
-            // __ack_ack消息
+        }
+        // __ack_ack 消息，来自于 Bolt 发送
+        else if (Acker.ACKER_ACK_STREAM_ID.equals(stream_id)) {
             if (curr != null) {
+                // 执行亦或运算
                 curr.update_ack(input.getValue(1));
             } else {
                 // two case
@@ -93,8 +91,9 @@ public class Acker implements IBolt {
                 curr.val = input.getLong(1);
                 pending.put(id, curr);
             }
-        } else if (Acker.ACKER_FAIL_STREAM_ID.equals(stream_id)) {
-            // 也有可能直接fail了
+        }
+        // __ack_fail 消息
+        else if (Acker.ACKER_FAIL_STREAM_ID.equals(stream_id)) {
             if (curr == null) {
                 // do nothing
                 // already timeout, should go fail

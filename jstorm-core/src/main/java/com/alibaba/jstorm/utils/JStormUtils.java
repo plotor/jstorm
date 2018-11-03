@@ -876,7 +876,7 @@ public class JStormUtils {
     }
 
     /**
-     * 对列表中的所有值执行亦或运算
+     * 对所有目标 task 的随机数 long 值进行亦或运算
      *
      * @param vals
      * @param <T>

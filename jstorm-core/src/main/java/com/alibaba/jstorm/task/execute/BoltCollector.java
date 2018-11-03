@@ -87,9 +87,6 @@ public class BoltCollector extends OutputCollectorCb {
         this.taskStats = task.getTaskStats();
 
         this.pendingAcks = new RotatingMap<>(Acker.TIMEOUT_BUCKET_NUM);
-        // this.pending_acks = new TimeCacheMap<Tuple,
-        // Long>(messageTimeoutSecs,
-        // Acker.TIMEOUT_BUCKET_NUM);
         this.tupleStartTimes = tupleStartTimes;
 
         this.ackerNum = JStormUtils.parseInt(stormConf.get(Config.TOPOLOGY_ACKER_EXECUTORS));
@@ -132,29 +129,30 @@ public class BoltCollector extends OutputCollectorCb {
         this.sendCtrlMsg(streamId, tuple, anchors, taskId);
     }
 
-    protected List<Integer> sendBoltMsg(String outStreamId, Collection<Tuple> anchors, List<Object> values,
-                                        Integer outTaskId, ICollectorCallback callback) {
+    protected List<Integer> sendBoltMsg(String outStreamId, Collection<Tuple> anchors,
+                                        List<Object> values, Integer outTaskId, ICollectorCallback callback) {
         return this.sendMsg(outStreamId, values, anchors, outTaskId, callback);
     }
 
     /**
-     * @param anchors
+     * 计算对目标 task 的 messageId
+     *
+     * @param anchors 大部分情况下 anchors 的 size 等于 1，为当前收到的 inputTuple。
      * @return
      */
     protected MessageId getMessageId(Collection<Tuple> anchors) {
         MessageId ret = null;
         if (anchors != null && ackerNum > 0) {
             Map<Long, Long> anchors_to_ids = new HashMap<>();
-            // 在一般的情况下 anchors 的 size 等于 1，见 BasicOutputCollector 类，即为当前收到的 inputTuple。
             for (Tuple tuple : anchors) {
                 if (tuple.getMessageId() != null) {
                     Long edge_id = MessageId.generateId(random);
-                    // 这里会将 <inputTuple, edge_id> 放入 pending_acks
+                    // 更新当前 inputTuple 的 edge_id 亦或值到 pending_acks
                     put_xor(pendingAcks, tuple, edge_id);
                     MessageId messageId = tuple.getMessageId();
                     if (messageId != null) {
                         // 这里将每一对 <root_id, edge_id> 放入 anchors_to_ids（一般情况下也只有一对），
-                        // 由于 anchors_to_ids 是一个空 map，因此 put_xor 里面相当于 put <root_id, edge_id> 到 anchors_to_ids
+                        // 由于 anchors_to_ids 是一个空 map，因此 put_xor 里面相当于将 <root_id, edge_id> 放入 anchors_to_ids
                         for (Long root_id : messageId.getAnchorsToIds().keySet()) {
                             put_xor(anchors_to_ids, root_id, edge_id);
                         }
@@ -167,6 +165,16 @@ public class BoltCollector extends OutputCollectorCb {
         return ret;
     }
 
+    /**
+     * send bolt message
+     *
+     * @param out_stream_id
+     * @param values
+     * @param anchors
+     * @param out_task_id
+     * @param callback
+     * @return
+     */
     public List<Integer> sendMsg(String out_stream_id, List<Object> values,
                                  Collection<Tuple> anchors, Integer out_task_id, ICollectorCallback callback) {
         final long start = emitTimer.getTime();
@@ -179,14 +187,20 @@ public class BoltCollector extends OutputCollectorCb {
                 outTasks = sendTargets.get(out_stream_id, values, anchors, null);
             }
 
+            // 提前删除可能超时的 tuple
             this.tryRotate();
-            // 遍历所有目标 task，每一个目标 task 的 message_id = <root_id, edge_id>，其中 edge_id 是在这个 bolt 里新生成的随机数
+
+            /*
+             * 遍历所有的目标 task：
+             * 1. 为每一个 task 生成 messageId：<root_id, 随机数值>
+             * 2. 向所有下游 bolt 发射 tuple 消息
+             */
             for (Integer taskId : outTasks) {
+                // 计算对目标 task 的 messageId
                 MessageId msgId = this.getMessageId(anchors);
-                // 往目标 bolt 发送消息
-                TupleImplExt tp = new TupleImplExt(topologyContext, values, this.taskId, out_stream_id, msgId);
-                tp.setTargetTaskId(taskId);
-                taskTransfer.transfer(tp);
+                TupleImplExt tuple = new TupleImplExt(topologyContext, values, this.taskId, out_stream_id, msgId);
+                tuple.setTargetTaskId(taskId);
+                taskTransfer.transfer(tuple);
             }
         } catch (Exception e) {
             LOG.error("bolt emit error:", e);
@@ -202,6 +216,9 @@ public class BoltCollector extends OutputCollectorCb {
         return outTasks;
     }
 
+    /**
+     * 删除可能超时的 tuple
+     */
     private void tryRotate() {
         long now = System.currentTimeMillis();
         if (now - lastRotate > rotateTime) {
@@ -251,16 +268,16 @@ public class BoltCollector extends OutputCollectorCb {
     public void ack(Tuple input) {
         if (input.getMessageId() != null) {
             Long ack_val = 0L;
-            // 这里取出sendMsg放入的对象：<inputTuple, edge_id>
+            // 取出当前 inputTuple 对应的 edge_id 值
             Object pend_val = pendingAcks.remove(input);
             if (pend_val != null) {
                 ack_val = (Long) (pend_val);
             }
 
-            // 发送ack消息，messageId = <root_id, inputTuple的随机数 ^ edge_id>
-            for (Entry<Long, Long> e : input.getMessageId().getAnchorsToIds().entrySet()) {
-                this.unanchoredSend(topologyContext, sendTargets, taskTransfer, Acker.ACKER_ACK_STREAM_ID,
-                        JStormUtils.mk_list((Object) e.getKey(), JStormUtils.bit_xor(e.getValue(), ack_val)));
+            // 向 Acker 发送 ack 消息
+            for (Entry<Long, Long> entry : input.getMessageId().getAnchorsToIds().entrySet()) {
+                this.unanchoredSend(topologyContext, sendTargets, taskTransfer, Acker.ACKER_ACK_STREAM_ID, // __ack_ack
+                        JStormUtils.mk_list((Object) entry.getKey(), JStormUtils.bit_xor(entry.getValue(), ack_val)));
             }
         }
 
@@ -268,8 +285,8 @@ public class BoltCollector extends OutputCollectorCb {
         taskStats.bolt_acked_tuple(input.getSourceComponent(), input.getSourceStreamId());
         if (latencyStart != null && JStormMetrics.enabled) {
             long endTime = System.currentTimeMillis();
-            taskStats.update_bolt_acked_latency(input.getSourceComponent(), input.getSourceStreamId(),
-                    latencyStart, endTime);
+            taskStats.update_bolt_acked_latency(
+                    input.getSourceComponent(), input.getSourceStreamId(), latencyStart, endTime);
         }
     }
 
@@ -293,8 +310,15 @@ public class BoltCollector extends OutputCollectorCb {
         reportError.report(error);
     }
 
+    /**
+     * 获取并更新指定 tuple 对应的 edge_id 亦或值到 pending
+     *
+     * @param pending
+     * @param key
+     * @param id
+     */
     public static void put_xor(RotatingMap<Tuple, Long> pending, Tuple key, Long id) {
-        Long curr = pending.get(key);
+        Long curr = pending.get(key); // 获取当前 tuple 对应的 edge_id 亦或值
         if (curr == null) {
             curr = 0L;
         }
