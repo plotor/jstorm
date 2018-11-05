@@ -58,13 +58,11 @@ public class BasicBoltExecutor implements IRichBolt {
         _collector.setContext(input);
         try {
             _bolt.execute(input, _collector);
-            // 自动 ack
             _collector.getOutputter().ack(input);
         } catch (FailedException e) {
             if (e instanceof ReportedFailedException) {
                 _collector.reportError(e);
             }
-            // 自动 fail
             _collector.getOutputter().fail(input);
         }
     }
