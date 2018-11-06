@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>backtype.storm.topology.IComponent</OriginalElement>
+  <nodes>
+    <node x="337.875" y="85.0">backtype.storm.topology.IRichSpout</node>
+    <node x="29.328125" y="170.0">backtype.storm.topology.base.BaseBasicBolt</node>
+    <node x="235.03125" y="170.0">backtype.storm.topology.base.BaseRichSpout</node>
+    <node x="0.0" y="85.0">backtype.storm.topology.IBasicBolt</node>
+    <node x="501.0" y="85.0">backtype.storm.topology.IRichBolt</node>
+    <node x="143.875" y="85.0">backtype.storm.topology.base.BaseComponent</node>
+    <node x="449.75" y="170.0">backtype.storm.topology.base.BaseRichBolt</node>
+    <node x="244.875" y="0.0">backtype.storm.topology.IComponent</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="backtype.storm.topology.base.BaseComponent" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="230.875" y="65.0" />
+      <point x="298.875" y="65.0" />
+      <point x="-18.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IRichBolt" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="558.5" y="55.0" />
+      <point x="370.875" y="55.0" />
+      <point x="54.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.base.BaseRichSpout" target="backtype.storm.topology.base.BaseComponent">
+      <point x="-40.0" y="-17.5" />
+      <point x="275.03125" y="150.0" />
+      <point x="230.875" y="150.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.base.BaseBasicBolt" target="backtype.storm.topology.base.BaseComponent">
+      <point x="37.75" y="-17.5" />
+      <point x="142.578125" y="150.0" />
+      <point x="172.875" y="150.0" />
+      <point x="-58.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.base.BaseRichSpout" target="backtype.storm.topology.IRichSpout">
+      <point x="40.0" y="-17.5" />
+      <point x="355.03125" y="150.0" />
+      <point x="402.875" y="150.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IRichSpout" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="402.875" y="65.0" />
+      <point x="334.875" y="65.0" />
+      <point x="18.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.IBasicBolt" target="backtype.storm.topology.IComponent">
+      <point x="0.0" y="-17.5" />
+      <point x="60.5" y="55.0" />
+      <point x="262.875" y="55.0" />
+      <point x="-54.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.base.BaseRichBolt" target="backtype.storm.topology.IRichBolt">
+      <point x="36.25" y="-17.5" />
+      <point x="0.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.base.BaseRichBolt" target="backtype.storm.topology.base.BaseComponent">
+      <point x="-36.25" y="-17.5" />
+      <point x="486.0" y="140.0" />
+      <point x="288.875" y="140.0" />
+      <point x="58.0" y="17.5" />
+    </edge>
+    <edge source="backtype.storm.topology.base.BaseBasicBolt" target="backtype.storm.topology.IBasicBolt">
+      <point x="-37.75" y="-17.5" />
+      <point x="67.078125" y="150.0" />
+      <point x="60.5" y="150.0" />
+      <point x="0.0" y="17.5" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="1.0" x="72.0" y="60.0" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

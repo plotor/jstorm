@@ -15,10 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package backtype.storm.topology.base;
 
 import backtype.storm.task.TopologyContext;
 import backtype.storm.topology.IBasicBolt;
+
 import java.util.Map;
 
 public abstract class BaseBasicBolt extends BaseComponent implements IBasicBolt {
@@ -30,4 +32,5 @@ public abstract class BaseBasicBolt extends BaseComponent implements IBasicBolt 
     @Override
     public void cleanup() {
     }
+
 }

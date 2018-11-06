@@ -20,9 +20,8 @@ struct NullStruct {
 }
 
 struct GlobalStreamId {
-  1: required string componentId; // 当前组件输入流来源组件 ID
-  2: required string streamId; // 当前组件所输出的特定的流
-  #Going to need to add an enum for the stream type (NORMAL or FAILURE)
+  1: required string componentId; // 标识当前流所属组件
+  2: required string streamId; // 流的标识
 }
 
 /**
@@ -44,13 +43,8 @@ union Grouping {
  * 流信息
  **/
 struct StreamInfo {
-
-  // 输出字段列表
-  1: required list<string> output_fields;
-
-  // 是否为 direct 流
-  2: required bool direct;
-
+  1: required list<string> output_fields; // 输出的字段名称列表
+  2: required bool direct; // 标识是否是直接流
 }
 
 /**
@@ -82,44 +76,28 @@ union ComponentObject { // 联合体，三个属性同时只有一个被赋值
  * 用来表示 Topology 的基础对象
  **/
 struct ComponentCommon {
-
-  // 表示该组件将从哪些 GlobalStreamId 以何种分组方式接收数据
+  // 组件将从哪些 GlobalStreamId 以何种分组方式接收数据
   1: required map<GlobalStreamId, Grouping> inputs;
-
-  // 表示该组件要输出的所有流
-  2: required map<string, StreamInfo> streams; // key is stream id
-
-  // 组件并行度，即多少个线程，这些线程可能分布在不同的机器以及进程空间中
+  // 组件要输出的所有流，key 是 streamId
+  2: required map<string, StreamInfo> streams;
+  // 组件并行度（即多少个线程），这些线程可能分布在不同的机器或进程空间中
   3: optional i32 parallelism_hint;
-
-  /**
-   * 组件相关的配置:
-   * topology.debug: false  // 如果为 true 则会打印所有发送出去的消息
-   * topology.max.task.parallelism: null // 任务的最大并行度，通常用于测试
-   * topology.max.spout.pending: null // 表示最多允许多少没有被 ack/fail 的消息在系统中运行
-   * topology.kryo.register // kryo 序列化注册列表
-   **/
+  // 组件相关配置项
   4: optional string json_conf;
-
 }
 
 struct SpoutSpec {
-
-  // 实现具体 spout 逻辑的对象
+  // 存储 spout 的序列化对象
   1: required ComponentObject spout_object;
-
-  // 描述其输入输出的 common 对象
+  // 描述 spout 输入输出的 ComponentCommon 对象
   2: required ComponentCommon common;
-  // can force a spout to be non-distributed by overriding the component configuration
-  // and setting TOPOLOGY_MAX_TASK_PARALLELISM to 1
 }
 
 // BoltSpec
 struct Bolt {
-  // 实现具体 bolt 逻辑的序列化对象
+  // 存储 bolt 的序列化对象
   1: required ComponentObject bolt_object;
-
-  // 描述其输入输出的 ComponentCommon 对象
+  // 描述 bolt 输入输出的 ComponentCommon 对象
   2: required ComponentCommon common;
 }
 
@@ -134,11 +112,9 @@ struct StateSpoutSpec {
  * 描述 Topology 的组成
  **/
 struct StormTopology {
-  // ids must be unique across maps
-  // #workers to use is in conf
   1: required map<string, SpoutSpec> spouts; // topology 中的 spout 集合
   2: required map<string, Bolt> bolts; // topology 中的 bolt 集合
-  3: required map<string, StateSpoutSpec> state_spouts;
+  3: required map<string, StateSpoutSpec> state_spouts; // topology 中的 state spout 集合
 }
 
 exception AlreadyAliveException {
@@ -175,10 +151,10 @@ exception KeyAlreadyExistsException {
 struct TopologySummary {
   1: required string id;
   2: required string name;
-  3: required string status;
+  3: required string status; // 状态信息
   4: required i32 uptimeSecs; // 运行时长
-  5: required i32 numTasks;
-  6: required i32 numWorkers;
+  5: required i32 numTasks; // task 数目
+  6: required i32 numWorkers; // worker 数目
   7: optional string errorInfo;
 }
 
@@ -188,11 +164,11 @@ struct TopologySummary {
  * 主要供 Nimbus 使用
  **/
 struct SupervisorSummary {
-  1: required string host; // 主机名
-  2: required string supervisorId; // ID
-  3: required i32 uptimeSecs; // 启动时间
-  4: required i32 numWorkers; // 可以使用的端口数目
-  5: required i32 numUsedWorkers; // 已经使用的端口数目
+  1: required string host; // 所属主机名
+  2: required string supervisorId;
+  3: required i32 uptimeSecs; // 运行时间
+  4: required i32 numWorkers; // 可以使用的 worker 数目
+  5: required i32 numUsedWorkers; // 已经使用的 worker 数目
   6: optional string version;
   7: optional string buildTs;
   8: optional i32 port;
@@ -201,12 +177,12 @@ struct SupervisorSummary {
 
 struct NimbusStat {
   1: required string host;
-  2: required string uptimeSecs;
+  2: required string uptimeSecs; // 运行时间
 }
 
 struct NimbusSummary {
-  1: required NimbusStat nimbusMaster;
-  2: required list<NimbusStat> nimbusSlaves;
+  1: required NimbusStat nimbusMaster; // master 节点信息
+  2: required list<NimbusStat> nimbusSlaves; // slave 节点信息
   3: required i32 supervisorNum;
   4: required i32 totalPortNum;
   5: required i32 usedPortNum;

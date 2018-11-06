@@ -30,7 +30,7 @@ import java.util.Map;
 public interface IComponent extends Serializable {
 
     /**
-     * 定义组件输出的 Schema
+     * 定义组件输出的 Schema，包括输出的 streamId、输出的字段名称列表，以及标识是否是直接流
      *
      * @param declarer this is used to declare output stream ids, output fields, and whether or not each output stream is a direct stream
      */
