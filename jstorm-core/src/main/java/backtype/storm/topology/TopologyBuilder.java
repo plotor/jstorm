@@ -179,10 +179,8 @@ public class TopologyBuilder {
             }
         }
 
-        // 封装成为 storm 对象返回
-        StormTopology stormTopology = new StormTopology(spoutSpecs, boltSpecs, new HashMap<String, StateSpoutSpec>());
-        //stormTopology.set_worker_hooks(_workerHooks);
-        return stormTopology;
+        // 封装成为 stormTopology 对象返回
+        return new StormTopology(spoutSpecs, boltSpecs, new HashMap<String, StateSpoutSpec>());
     }
 
     /**

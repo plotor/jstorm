@@ -113,7 +113,7 @@ public class StormSubmitter {
             throw new IllegalArgumentException("Storm conf is not valid. Must be json-serializable");
         }
 
-        // 添加配置（构建 topology 期间添加的、提交 topology 时传入的，以及命令行参数）
+        // 封装配置（构建 topology 期间添加的、提交 topology 时传入的，以及命令行参数）
         Map userTotalConf = new HashMap();
         userTotalConf.putAll(TopologyBuilder.getStormConf()); // add the configuration generated during topology building
         userTotalConf.putAll(stormConf);
