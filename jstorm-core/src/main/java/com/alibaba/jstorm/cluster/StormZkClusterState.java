@@ -315,6 +315,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public void backup_assignment(String topologyName, AssignmentBak info) throws Exception {
+        // 写入 AssignmentBak 信息到 ZK:assignments_bak/${topology_name}
         this.setObject(Cluster.assignment_bak_path(topologyName), info);
     }
 
@@ -328,8 +329,8 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public void activate_storm(String topologyId, StormBase stormBase) throws Exception {
+        // topology/${topology_id}
         String stormPath = Cluster.storm_path(topologyId);
-
         this.setObject(stormPath, stormBase);
     }
 
@@ -340,11 +341,8 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public void update_storm(String topologyId, StormStatus newElems) throws Exception {
-        /**
-         * FIXME, maybe overwrite old callback
-         */
+        // 获取指定 topology 的 StormBase 对象，更新其状态
         StormBase base = this.storm_base(topologyId, null);
-
         if (base != null) {
             base.setStatus(newElems);
             this.setObject(Cluster.storm_path(topologyId), base);

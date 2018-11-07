@@ -161,9 +161,9 @@ public class TopologyAssign implements Runnable {
         taskEvent.setTopologyId(event.getTopologyId());
 
         Map<Integer, String> task2Component;
-        // get from nimbus cache first
-        Map<Integer, TaskInfo> taskInfoMap = Cluster.get_all_taskInfo(nimbusData.getStormClusterState(),
-                event.getTopologyId());
+        // 从 ZK 上获取当前 topology 对应的所有 task 信息
+        Map<Integer, TaskInfo> taskInfoMap = Cluster.get_all_taskInfo(nimbusData.getStormClusterState(), event.getTopologyId());
+        // 封装 taskId 和组件 ID 的对应关系到 task2Component
         if (taskInfoMap != null) {
             task2Component = Common.getTaskToComponent(taskInfoMap);
         } else {
@@ -187,14 +187,14 @@ public class TopologyAssign implements Runnable {
                 oldAssignment = nimbusData.getStormClusterState().assignment_info(event.getTopologyId(), null);
             }
 
-            // 执行任务分配
+            // 为当前 topology 创建任务分配信息
             assignment = this.mkAssignment(event);
 
             // 将 task 添加到集群的 metrics
             this.pushTaskStartEvent(oldAssignment, assignment, event);
 
             if (!isReassign) {
-                // 如果不是重新分配，则进行激活
+                // 新建或更新 topology 的 StormBase 对象，并更新到 ZK
                 this.setTopologyStatus(event);
             }
         } catch (Throwable e) {
@@ -204,7 +204,7 @@ public class TopologyAssign implements Runnable {
         }
 
         if (assignment != null) {
-            // 将拓扑信息备份到 ZK 上：assignments_bak/${topology_name}
+            // 将任务分配信息备份到 ZK 上：assignments_bak/${topology_name}
             this.backupAssignment(assignment, event);
         }
         event.done();
@@ -318,11 +318,12 @@ public class TopologyAssign implements Runnable {
         if (stormBase == null) {
             stormBase = new StormBase(topologyName, TimeUtils.current_time_secs(), status, group);
             stormBase.setEnableMonitor(isEnable);
+            // 写入 StormBase 对象到 ZK:topology/${topology_id}
             stormClusterState.activate_storm(topologyId, stormBase);
         } else {
+            // 获取指定 topology 的 StormBase 对象，更新其状态
             stormClusterState.update_storm(topologyId, status);
             stormClusterState.set_storm_monitor(topologyId, isEnable);
-
             // here exist one hack operation
             // when monitor/rebalance/startup topologyName is null
             if (topologyName == null) {
@@ -491,8 +492,11 @@ public class TopologyAssign implements Runnable {
     public Assignment mkAssignment(TopologyAssignEvent event) throws Exception {
         String topologyId = event.getTopologyId();
         LOG.info("Determining assignment for " + topologyId);
-        // 1. 基于配置和当前集群运行状态构建 TopologyAssignContext 对象
+
+        // 1. 基于配置和当前集群运行状态创建 topology 任务分配的上下文信息
         TopologyAssignContext context = this.prepareTopologyAssign(event);
+
+        // 2.
         Set<ResourceWorkerSlot> assignments;
         if (!StormConfig.local_mode(nimbusData.getConf())) {
             // 集群模式，获取模式的调度器
@@ -504,7 +508,7 @@ public class TopologyAssign implements Runnable {
             assignments = mkLocalAssignment(context);
         }
 
-        // 记录分配信息到 ZK
+        // 3. 记录任务分配信息到 ZK
         Assignment assignment = null;
         if (assignments != null && assignments.size() > 0) {
             // 获取服务中的 supervisor ID 及其 hostname 信息
@@ -898,7 +902,7 @@ public class TopologyAssign implements Runnable {
     }
 
     /**
-     * Backup topology assignment to ZK
+     * 备份任务分配信息到 ZK
      *
      * todo: Do we need to do backup operation every time?
      */
@@ -908,16 +912,16 @@ public class TopologyAssign implements Runnable {
         try {
 
             StormClusterState zkClusterState = nimbusData.getStormClusterState();
-            // one little problem, get tasks twice when assign one topology
+            // 获取指定 topology 下对应的所有 task_id 与组件 ID 之间的映射关系
             Map<Integer, String> tasks = Cluster.get_all_task_component(zkClusterState, topologyId, null);
-
+            // 反转得到组件 ID 与对应 taskId 的映射关系
             Map<String, List<Integer>> componentTasks = JStormUtils.reverse_map(tasks);
-
+            // 对 task 排序
             for (Entry<String, List<Integer>> entry : componentTasks.entrySet()) {
                 List<Integer> keys = entry.getValue();
                 Collections.sort(keys);
             }
-
+            // 写入 AssignmentBak 信息到 ZK:assignments_bak/${topology_name}
             AssignmentBak assignmentBak = new AssignmentBak(componentTasks, assignment);
             zkClusterState.backup_assignment(topologyName, assignmentBak);
         } catch (Exception e) {

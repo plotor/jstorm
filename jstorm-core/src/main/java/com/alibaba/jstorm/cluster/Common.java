@@ -884,11 +884,9 @@ public class Common {
             }
 
             int declared = Thrift.parallelismHint(common);
-            Integer parallelism = declared;
-            // Map tmp = (Map) Utils_clj.from_json(common.get_json_conf());
+            int parallelism = declared;
 
             Map newStormConf = new HashMap(stormConf);
-            // newStormConf.putAll(tmp);
             Integer maxParallelism = JStormUtils.parseInt(newStormConf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM));
             if (maxParallelism != null) {
                 parallelism = Math.min(maxParallelism, declared);
@@ -907,7 +905,7 @@ public class Common {
         // use TreeMap to make task as sequence
         Map<Integer, TaskInfo> rtn = new TreeMap<>();
 
-        Integer count = 0;
+        Integer count = 0; // taskId，连续的
         count = mkTaskMaker(stormConf, sysTopology.get_bolts(), rtn, count);
         count = mkTaskMaker(stormConf, sysTopology.get_spouts(), rtn, count);
         count = mkTaskMaker(stormConf, sysTopology.get_state_spouts(), rtn, count);

@@ -249,17 +249,17 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
 
                     // 获取指定的 worker 数目：${topology.upgrade.worker.num}
                     int workerNum = ConfigExtension.getUpgradeWorkerNum(serializedConf);
-                    // 获取指定的 component：${topology.upgrade.component}
+                    // 获取指定的组件名称：${topology.upgrade.component}
                     String component = ConfigExtension.getUpgradeComponent(serializedConf);
                     // 获取指定的 worker 列表：${topology.upgrade.workers}
                     Set<String> workers = ConfigExtension.getUpgradeWorkers(serializedConf);
 
-                    // 判定 topology master 是不是单独的 worker
+                    // 判定 topology master 是不是使用独立的 worker
                     if (!ConfigExtension.isTmSingleWorker(serializedConf, topologyInfo.get_topology().get_numWorkers())) {
                         throw new TException("Gray upgrade requires that topology master to be a single worker, cannot perform the upgrade!");
                     }
 
-                    // 灰度更新
+                    // 灰度发布
                     return this.grayUpgrade(topologyId, uploadedJarLocation, topology, serializedConf, component, workers, workerNum);
                 } else { // 热部署
                     LOG.info("start to kill old topology {}", topologyId);
@@ -320,7 +320,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             serializedConf.put(Config.TOPOLOGY_ID, topologyId);
             serializedConf.put(Config.TOPOLOGY_NAME, topologyName);
 
-            //  对当前 topology 配置进行规范化，并附加一些必要的配置
+            // 对当前 topology 配置进行规范化，并附加一些必要的配置
             Map<Object, Object> stormConf = NimbusUtils.normalizeConf(conf, serializedConf, topology);
             LOG.info("Normalized configuration:" + stormConf);
 
@@ -362,7 +362,7 @@ public class ServiceHandler implements Nimbus.Iface, Shutdownable, DaemonCommon 
             // gray_upgrade/${topology_id}/upgrading_workers
             stormClusterState.mkdir(Cluster.gray_upgrade_upgrading_workers_path(topologyId));
 
-            // make assignments for a topology
+            // 为当前 topology 执行任务分配
             LOG.info("Submit topology {} with conf {}", topologyName, serializedConf);
             this.makeAssignment(topologyName, topologyId, options.get_initial_status());
 
