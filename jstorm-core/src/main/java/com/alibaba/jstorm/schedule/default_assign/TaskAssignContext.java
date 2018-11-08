@@ -42,7 +42,7 @@ public class TaskAssignContext {
     private final Map<String, ResourceWorkerSlot> hostPortToWorkerMap = new HashMap<>();
 
     /**
-     * @param supervisorToWorker supervisor_id 到隶属于该 supervisor 的 worker 列表的映射关系
+     * @param supervisorToWorker 建立 supervisorId 到隶属于该 supervisor 的 worker 列表的映射关系
      * @param relationship
      * @param taskToComponent
      */

@@ -114,6 +114,7 @@ public class WorkerAssignment extends WorkerSlot implements Serializable, JSONAw
         return Utils.to_json(map);
     }
 
+    @SuppressWarnings("unchecked")
     public static WorkerAssignment parseFromObj(Object obj) {
         if (obj == null) {
             return null;

@@ -21,7 +21,6 @@ package com.alibaba.jstorm.schedule.default_assign;
 import backtype.storm.Config;
 import com.alibaba.jstorm.client.ConfigExtension;
 import com.alibaba.jstorm.client.WorkerAssignment;
-import com.alibaba.jstorm.cluster.Common;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
 import com.alibaba.jstorm.schedule.TopologyAssignContext;
 import com.alibaba.jstorm.utils.FailedAssignTopologyException;
@@ -68,26 +67,33 @@ public class WorkerScheduler {
      */
     public List<ResourceWorkerSlot> getAvailableWorkers(
             DefaultTopologyAssignContext context, Set<Integer> needAssign, int allocWorkerNum) {
-        int reserveWorkers = context.getReserveWorkerNum(); // 保留的 worker 数目
-        int workersNum = this.getAvailableWorkersNum(context); // 可用的 worker 的数目
+
+        // 1. 计算需要分配的 worker 数目
+        int reserveWorkers = context.getReserveWorkerNum(); // 需要保留的 worker 数目
+        int workersNum = this.getAvailableWorkersNum(context); // 当前集群总的可用的 worker 数目
         if ((workersNum - reserveWorkers) < allocWorkerNum) {
             // 没有足够的 worker 可以分配：可用 worker 数目 - 保留的 worker 数目 < 需要分配的数目
             throw new FailedAssignTopologyException("there's no enough worker. allocWorkerNum="
                     + allocWorkerNum + ", availableWorkerNum=" + workersNum + ",reserveWorkerNum=" + reserveWorkers);
         }
         workersNum = allocWorkerNum;
-        List<ResourceWorkerSlot> assignedWorkers = new ArrayList<>(); // 记录分配到的 worker
-        // user define assignments, but dont't try to use custom scheduling for TM bolts now.
+
+        // 记录分配到的 worker
+        List<ResourceWorkerSlot> assignedWorkers = new ArrayList<>();
+
+        // 2. 分配 worker
+
+        // 2.1 处理用户自定义分配的情况
         // 从 needAssign 中移除已经分配的 task，并记录分配的 worker 到 assignedWorkers 中
         this.getRightWorkers(context, needAssign, assignedWorkers, workersNum,
-                // 获取用户自定义分配 worker slot 信息，去除状态为 unstopped 的 worker
+                // 获取用户自定义分配 worker slot 信息，排除状态为 unstopped 的 worker
                 this.getUserDefineWorkers(context, ConfigExtension.getUserDefineAssignment(context.getStormConf())));
 
-        // 如果配置指定要复用旧的分配，则优先从旧的分配中选出合适的 worker
         if (ConfigExtension.isUseOldAssignment(context.getStormConf())) {
+            // 2.2 如果配置指定要复用旧的分配，则优先从旧的分配中选出合适的 worker
             this.getRightWorkers(context, needAssign, assignedWorkers, workersNum, context.getOldWorkers());
         } else if (context.getAssignType() == TopologyAssignContext.ASSIGN_TYPE_REBALANCE && !context.isReassign()) {
-            // 如果是 rebalance，且可以使用原来的worker，将原来使用的worker存储起来。
+            // 2.3 如果是 rebalance 任务分配类型，且可以复用原来的 worker 则将原来分配的 worker 记录下来
             int cnt = 0;
             for (ResourceWorkerSlot worker : context.getOldWorkers()) {
                 if (cnt < workersNum) {
@@ -103,31 +109,25 @@ public class WorkerScheduler {
             }
         }
 
-        // calculate rest TM bolts
-        int workersForSingleTM = 0;
-        if (context.getAssignSingleWorkerForTM()) {
-            for (Integer taskId : needAssign) {
-                String componentName = context.getTaskToComponent().get(taskId);
-                if (componentName.equals(Common.TOPOLOGY_MASTER_COMPONENT_ID)) {
-                    workersForSingleTM++;
-                }
-            }
-        }
-
         LOG.info("Get workers from user define and old assignments: " + assignedWorkers);
 
         int restWorkerNum = workersNum - assignedWorkers.size(); // 还需要分配的 worker 数目
         if (restWorkerNum < 0) {
             throw new FailedAssignTopologyException(
-                    "Too many workers are required for user define or old assignments. workersNum="
-                            + workersNum + ", assignedWorkersNum=" + assignedWorkers.size());
+                    "Too many workers are required for user define or old assignments. " +
+                            "workersNum=" + workersNum + ", assignedWorkersNum=" + assignedWorkers.size());
         }
 
-        // 对于剩下需要的 worker，直接添加 ResourceWorkerSlot 实例对象
+        // 2.4 对于剩下需要的 worker，直接添加 ResourceWorkerSlot 实例对象
         for (int i = 0; i < restWorkerNum; i++) {
             assignedWorkers.add(new ResourceWorkerSlot());
         }
-        // 获取那些专门指定运行拓扑的 supervisor 节点
+
+        /*
+         * 3. 遍历将 worker 分配给相应的 supervisor
+         * - 如果 worker 指定了 supervisor，则优先分配给指定 supervisor
+         * - 依据 supervisor 的负载情况优先选择负载较低的进行分配
+         */
         List<SupervisorInfo> isolationSupervisors = this.getIsolationSupervisors(context);
         if (isolationSupervisors.size() != 0) {
             this.putAllWorkerToSupervisor(assignedWorkers, this.getResAvailSupervisors(isolationSupervisors));
@@ -160,6 +160,8 @@ public class WorkerScheduler {
      * @param supervisors
      */
     private void putAllWorkerToSupervisor(List<ResourceWorkerSlot> assignedWorkers, List<SupervisorInfo> supervisors) {
+
+        // 遍历处理 worker，如果指定了 supervisor，且 supervisor 存在空闲端口，则将其分配给该 supervisor
         for (ResourceWorkerSlot worker : assignedWorkers) {
             if (worker.getHostname() != null) {
                 for (SupervisorInfo supervisor : supervisors) {
@@ -169,7 +171,7 @@ public class WorkerScheduler {
                         /*
                          * 基于当前 supervisor 信息更新对应的 worker 信息：
                          *  1. 保证 worker 对应的端口号是当前 supervisor 空闲的，否则选一个 supervisor 空闲的给 worker
-                         *  2. 设置 worker 对应的 node_id 为当前 supervisor 的 ID
+                         *  2. 设置 worker 对应的 nodeId 为当前 supervisor 的 ID
                          */
                         this.putWorkerToSupervisor(supervisor, worker);
                         break;
@@ -180,6 +182,8 @@ public class WorkerScheduler {
 
         // 更新 supervisor 列表，移除没有空闲端口的 supervisor
         supervisors = this.getResAvailSupervisors(supervisors);
+
+        // 对 supervisor 按照空闲端口数由大到小排序
         Collections.sort(supervisors, new Comparator<SupervisorInfo>() {
 
             @Override
@@ -188,7 +192,12 @@ public class WorkerScheduler {
             }
 
         });
-        // 防止过载的 supervisor
+
+        /*
+         * 按照 supervisor 的负载对 worker 进行分配：
+         * 1. 优先选择负载较低的 supervisor 进分配
+         * 2. 如果 supervisor 都已经过载但还有未分配的 worker，则从过载 supervisor 优先选择空闲端口较多的进行分配
+         */
         this.putWorkerToSupervisor(assignedWorkers, supervisors);
     }
 
@@ -221,11 +230,13 @@ public class WorkerScheduler {
             int supervisorUsedPorts = supervisor.getWorkerPorts().size() - supervisor.getAvailableWorkerPorts().size();
             allUsedPorts = allUsedPorts + supervisorUsedPorts;
         }
-        // per supervisor should be allocated ports in theory
         // 计算 supervisor 的平均端口数使用量
         int theoryAveragePorts = (allUsedPorts + assignedWorkers.size()) / supervisors.size() + 1;
-        // supervisor which use more than theoryAveragePorts ports will be pushed overLoadSupervisors
-        List<SupervisorInfo> overLoadSupervisors = new ArrayList<>(); // 记录过载（端口数使用量大于平均值）的 supervisor
+
+        // 如果 supervisor 的端口使用量大于理论均值，则标记为过载
+        List<SupervisorInfo> overLoadSupervisors = new ArrayList<>(); // 记录过载的 supervisor
+
+        // 遍历 worker，对于未指定 supervisor 的 worker 选择分配给负载较低的 supervisor
         int key = 0;
         Iterator<ResourceWorkerSlot> iterator = assignedWorkers.iterator();
         while (iterator.hasNext()) {
@@ -239,6 +250,7 @@ public class WorkerScheduler {
             // 计算当前 supervisor 对应的端口使用数量
             int supervisorUsedPorts = supervisor.getWorkerPorts().size() - supervisor.getAvailableWorkerPorts().size();
             if (supervisorUsedPorts < theoryAveragePorts) {
+                // 当前 supervisor 的负载在平均值以下
                 ResourceWorkerSlot worker = iterator.next();
                 if (worker.getNodeId() != null) {
                     // 已经分配了 supervisor
@@ -247,18 +259,19 @@ public class WorkerScheduler {
                 worker.setHostname(supervisor.getHostName());
                 worker.setNodeId(supervisor.getSupervisorId());
                 worker.setPort(supervisor.getAvailableWorkerPorts().iterator().next());
-                supervisor.getAvailableWorkerPorts().remove(worker.getPort());
+                supervisor.getAvailableWorkerPorts().remove(worker.getPort()); // 从可以端口中移除分配出去的端口
                 if (supervisor.getAvailableWorkerPorts().size() == 0) {
                     supervisors.remove(supervisor);
                 }
                 key++;
             } else {
-                // 标记当前 supervisor 过载
+                // 标记当前 supervisor 过载，并从候选列表中移除
                 overLoadSupervisors.add(supervisor);
                 supervisors.remove(supervisor);
             }
         }
-        // rest assignedWorkers will be allocate supervisor by deal
+
+        // 对标记过载的 supervisor 按照可用端口数由大到小进行排序
         Collections.sort(overLoadSupervisors, new Comparator<SupervisorInfo>() {
 
             @Override
@@ -267,6 +280,8 @@ public class WorkerScheduler {
             }
 
         });
+
+        // supervisor 都过载了，但是 worker 还没有分配完，则空闲端口多的 supervisor 优先
         key = 0;
         while (iterator.hasNext()) {
             if (overLoadSupervisors.size() == 0) {
@@ -294,8 +309,8 @@ public class WorkerScheduler {
     /**
      * 从 needAssign 中移除已经分配的 task，并记录分配的 worker 到 assignedWorkers 中
      *
-     * @param context 之前准备的拓扑上下文信息
-     * @param needAssign 该拓扑需要分配的 task_id 集合
+     * @param context 拓扑上下文信息
+     * @param needAssign 该拓扑需要分配的 taskId 集合
      * @param assignedWorkers 存储那些在这个方法内分配到的 worker 资源，用于返回值
      * @param workersNum 拓扑需要分配的 worker 数目
      * @param workers 用户自定义分配 worker slot 信息，已经去除状态为 unstopped 的 worker
@@ -338,7 +353,14 @@ public class WorkerScheduler {
         needAssign.removeAll(assigned);
     }
 
+    /**
+     * 获取当前集群总的可用的 worker 数目
+     *
+     * @param context
+     * @return
+     */
     private int getAvailableWorkersNum(DefaultTopologyAssignContext context) {
+        // 获取当前集群所有可用的 supervisor 列表
         Map<String, SupervisorInfo> supervisors = context.getCluster();
         List<SupervisorInfo> isolationSupervisors = this.getIsolationSupervisors(context);
         int slotNum = 0;
@@ -356,7 +378,7 @@ public class WorkerScheduler {
     }
 
     /**
-     * 获取用户自定义分配 worker slot 信息，去除状态为 unstopped 的 worker
+     * 获取用户自定义分配 worker slot 信息，排除状态为 unstopped 的 worker
      *
      * @param context
      * @param workers 获取用户定义的分配信息

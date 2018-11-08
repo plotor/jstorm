@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -359,8 +358,7 @@ public class Cluster {
     }
 
     /**
-     * 从 ZK 上获取所有的 supervisor 信息：[id, supervisorInfo]
-     * 忽略位于黑名单中的 supervisor
+     * 从 ZK 上获取所有的 supervisor 信息：[id, supervisorInfo]，忽略位于黑名单中的 supervisor
      *
      * @param stormClusterState storm cluster state
      * @param callback watcher callback
@@ -374,13 +372,12 @@ public class Cluster {
         // 获取所有的 supervisor_id, 位于 /zk/supervisors 下面
         List<String> supervisorIds = stormClusterState.supervisors(callback);
 
-        // ignore any supervisors in blacklist
-        // 获取所有 supervisor hostname 黑名单
+        // 获取所有 supervisor 黑名单，blacklist/blacklist
         List<String> blacklist = stormClusterState.get_blacklist();
 
+        // 忽略所有黑名单中的 supervisor
         if (supervisorIds != null) {
-            for (Iterator<String> iter = supervisorIds.iterator(); iter.hasNext(); ) {
-                String supervisorId = iter.next();
+            for (String supervisorId : supervisorIds) {
                 // 获取指定 id 的 supervisor 信息：supervisors/${supervisor_id}
                 SupervisorInfo supervisorInfo = stormClusterState.supervisor_info(supervisorId);
                 if (supervisorInfo == null) {

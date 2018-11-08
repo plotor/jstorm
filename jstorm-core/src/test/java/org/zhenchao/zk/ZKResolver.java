@@ -2,6 +2,8 @@ package org.zhenchao.zk;
 
 import backtype.storm.utils.Utils;
 import com.alibaba.jstorm.schedule.Assignment;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang.math.RandomUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -9,6 +11,9 @@ import org.apache.zookeeper.data.Stat;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -18,6 +23,21 @@ import java.util.List;
 public class ZKResolver {
 
     private static CuratorFramework client;
+
+    @Test
+    public void test() {
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            list.add(RandomUtils.nextInt(100));
+        }
+        Collections.sort(list, new Comparator<Integer>() {
+            @Override
+            public int compare(Integer o1, Integer o2) {
+                return -NumberUtils.compare(o1, o2);
+            }
+        });
+        System.out.println(list);
+    }
 
     @BeforeClass
     public static void init() throws Exception {

@@ -51,7 +51,7 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
     private final Map<String, List<String>> hostToSid;
     /** oldAssignment 对应的 worker 列表 */
     private final Set<ResourceWorkerSlot> oldWorkers;
-    /** 组件名称与其 task id 列表的映射关系 */
+    /** 组件 ID 与其 task id 列表的映射关系 */
     private final Map<String, List<Integer>> componentTasks;
     private final Set<ResourceWorkerSlot> unstoppedWorkers = new HashSet<>();
     private final int totalWorkerNum;
@@ -72,7 +72,7 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
         /*
          * ret：实际组件的 worker 数目之和
          * hintSum：所有组件的配置 worker 数目之和
-         * tmCount：topology master worker count
+         * tmCount：topologyMaster 的 worker 数目
          */
         int ret, hintSum = 0, tmCount = 0;
 
@@ -197,9 +197,9 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
             throw new FailedAssignTopologyException("Failed to generate system topology");
         }
 
-        // 获取 supervisor_id 与 supervisor 所属 hostname 的映射关系 ： <supervisor_id, hostname>
+        // 获取 supervisorId 与 supervisor 所属 hostname 的映射关系： <supervisor_id, hostname>
         sidToHostname = this.generateSidToHost();
-        // <hostname, supervisor_id>
+        // <hostname, supervisorId>
         hostToSid = JStormUtils.reverse_map(sidToHostname);
 
         if (oldAssignment != null && oldAssignment.getWorkers() != null) {
@@ -211,14 +211,18 @@ public class DefaultTopologyAssignContext extends TopologyAssignContext {
         // 更新 deadTask 列表
         this.refineDeadTasks();
 
+        // 组件 ID 与其 task id 列表的映射关系
         componentTasks = JStormUtils.reverse_map(context.getTaskToComponent());
-
         for (Entry<String, List<Integer>> entry : componentTasks.entrySet()) {
             List<Integer> componentTaskList = entry.getValue();
+            // 对于 taskId 按照由小到大排序
             Collections.sort(componentTaskList);
         }
 
-        // 计算 worker 的数目（实际组件的 worker 数目 + topology master 对应的 worker 数目）
+        /*
+         * 计算 worker 的数目（实际组件的 worker 数目 + topologyMaster 的 worker 数目）
+         * 最终的 worker 数目会基于 topology.workers 配置和各个组件的 worker 数目之和取最小值
+         */
         totalWorkerNum = this.computeWorkerNum();
         // 计算 unstopped worker 数目
         unstoppedWorkerNum = this.computeUnstoppedAssignments();

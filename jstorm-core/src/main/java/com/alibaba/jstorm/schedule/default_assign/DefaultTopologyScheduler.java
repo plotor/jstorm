@@ -137,7 +137,7 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
     }
 
     /**
-     * 为当前 topology 中的 task 分配 worker
+     * 基于当前节点性能为当前 topology 中的 task 分配 worker
      *
      * @param context
      * @return
@@ -145,9 +145,9 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
      */
     @Override
     public Set<ResourceWorkerSlot> assignTasks(TopologyAssignContext context) throws FailedAssignTopologyException {
+        // 检查 assignType 的有效性
         int assignType = context.getAssignType();
         if (!TopologyAssignContext.isAssignTypeValid(assignType)) {
-            // 检查 assignType 的有效性
             throw new FailedAssignTopologyException("Invalid assign type " + assignType);
         }
 
@@ -164,9 +164,9 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
         LOG.info("Dead tasks:" + defaultContext.getDeadTaskIds());
         LOG.info("Unstopped tasks:" + defaultContext.getUnstoppedTaskIds());
 
-        // 基于当前的分配类型获取需要分配的 task id 列表
+        // 基于当前的任务分配类型获取需要分配的 taskId 列表
         Set<Integer> needAssignTasks = this.getNeedAssignTasks(defaultContext);
-        // 获取那些所有的 task 都在 needAssignTasks 之外的 worker 集合，这些 worker 是不需要 assign 的
+        // 获取所有的 task 都在 needAssignTasks 之外的 worker 集合，这些 worker 无需分配
         Set<ResourceWorkerSlot> keepAssigns = this.getKeepAssign(defaultContext, needAssignTasks);
 
         Set<ResourceWorkerSlot> ret = new HashSet<>();
@@ -182,14 +182,13 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
             throw new FailedAssignTopologyException("Don't need assign worker, all workers are fine ");
         }
 
-        // 获取可用的 worker 列表，并为其设置分配对应的 supervisor 信息
+        // 获取可用的 worker 列表，并为其分配对应的 supervisor 节点
         List<ResourceWorkerSlot> availableWorkers =
                 WorkerScheduler.getInstance().getAvailableWorkers(defaultContext, needAssignTasks, allocWorkerNum);
         TaskScheduler taskScheduler = new TaskScheduler(defaultContext, needAssignTasks, availableWorkers);
         // 记录已经分配的 worker
         Set<ResourceWorkerSlot> assignment = new HashSet<>(taskScheduler.assign());
 
-        // setting worker's memory for TM
         // 为 TM 对应的 worker 设置工作内存大小
         int topologyMasterId = defaultContext.getTopologyMasterTaskId();
         Long tmWorkerMem = ConfigExtension.getMemSizePerTopologyMasterWorker(defaultContext.getStormConf());

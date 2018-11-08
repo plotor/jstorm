@@ -352,7 +352,8 @@ public class TopologyAssign implements Runnable {
         ret.setTopologyMasterTaskId(topoMasterId);
         LOG.info("prepareTopologyAssign, topoMasterId={}", topoMasterId);
 
-        Map<Object, Object> nimbusConf = nimbusData.getConf(); // 获取 nimbus 配置信息
+        // 获取 nimbus 配置信息
+        Map<Object, Object> nimbusConf = nimbusData.getConf();
 
         // 从 blobstore 中获取当前 topology 的配置信息：jstorm-local/nimbus/stormlist/{topology_id}/stormconf.ser
         Map<Object, Object> topologyConf =
@@ -374,32 +375,35 @@ public class TopologyAssign implements Runnable {
 
         StormClusterState stormClusterState = nimbusData.getStormClusterState();
 
-        // 从 ZK 上获取所有非黑名单的 supervisor 信息：<id, supervisorInfo>
+        /*
+         * 4. 从 ZK 上获取所有的 supervisor 信息：
+         *    - 剔除位于黑名单中的 supervisor
+         *    - 剔除已经死亡的 supervisor (基于心跳超时判定)
+         */
+
+        // 从 ZK 上获取所有的 supervisor 信息：<id, supervisorInfo>，排除位于黑名单中的 supervisor
         Map<String, SupervisorInfo> supInfos = Cluster.get_all_SupervisorInfo(stormClusterState, null);
-        // init all AvailableWorkerPorts
         for (Entry<String, SupervisorInfo> supInfo : supInfos.entrySet()) {
             SupervisorInfo supervisor = supInfo.getValue();
             if (supervisor != null) {
-                // 标记全部的 worker 为可用，后面会通过 HB 去除掉已被使用的 worker
+                // 标记全部的 worker 为可用，后面会排除已被使用的 worker
                 supervisor.setAvailableWorkerPorts(supervisor.getWorkerPorts());
             }
         }
-
-        // 基于超时机制从 supInfos 中剔除已经死亡的 supervisor，之后 supInfos 中均为存活的 supervisor
+        // 基于超时机制剔除已经死亡的 supervisor，剩下的均为存活的 supervisor
         this.getAliveSupervsByHb(supInfos, nimbusConf);
         if (supInfos.size() == 0) {
             throw new FailedAssignTopologyException("Failed to make assignment " + topologyId + ", due to no alive supervisor");
         }
 
         /*
-         * 4. 设置当前 topology 范围内所有 task_id 到组件 ID 之间的映射关系
-         * 获取指定 topology 下对应的所有 task_id 与组件 ID 之间的映射关系
-         * 对于一个拓扑而言，task_id 总是从 1 开始分配的，并且相同组件的 task_id 是相邻的
+         * 5. 获取并设置当前 topology 范围内所有 task_id 到组件 ID 之间的映射关系
          */
+        // 对于一个拓扑而言，taskId 总是从 1 开始分配的，并且相同组件的 task_id 是相邻的
         Map<Integer, String> taskToComponent = Cluster.get_all_task_component(stormClusterState, topologyId, null);
         ret.setTaskToComponent(taskToComponent);
 
-        // 5. 获取并设置 topology 范围的 task_id 信息（所有的、死亡的、unstopped）
+        // 6. 获取并设置当前 topology 范围的 task 的状态信息（all、dead、unstopped）
 
         // 获取 topology 的所有 task_id 列表
         Set<Integer> allTaskIds = taskToComponent.keySet();
@@ -408,27 +412,24 @@ public class TopologyAssign implements Runnable {
             LOG.warn(errMsg);
             throw new IOException(errMsg);
         }
+        // 设置所有的
         ret.setAllTaskIds(allTaskIds);
 
         Set<Integer> aliveTasks = new HashSet<>(); // 存放所有存活的 task id
-        // unstoppedTasks are tasks which are alive on no supervisor's(dead) machine
         Set<Integer> unstoppedTasks = new HashSet<>(); // 仍然存活的 task，但是所在的 supervisor 已经死亡
         Set<Integer> deadTasks = new HashSet<>(); // 存放已经死亡的 task id
         Set<ResourceWorkerSlot> unstoppedWorkers;
 
-        // 获取 topology 对应的任务分配信息
+        // 获取 topology 对应的历史任务分配信息
         Assignment existingAssignment = stormClusterState.assignment_info(topologyId, null);
         if (existingAssignment != null) {
+            // 存在历史的任务分配信息
             /*
-             * Check if the topology master task is alive first since all task
-             * heartbeat info is reported by topology master.
-             * If master is dead, do reassignment for topology master first.
-             *
              * 首先检查当前拓扑的 master task 是否活着（topology master 用于收集当前拓扑所有的心跳信息）
              * 如果 master task 死了，就先对 master 执行分配
              */
             if (NimbusUtils.isTaskDead(nimbusData, topologyId, topoMasterId)) {
-                // master task is dead
+                // topology master 对应的 task 已经死亡
                 // 获取 master task 对应的 worker
                 ResourceWorkerSlot tmWorker = existingAssignment.getWorkerByTaskId(topoMasterId);
                 deadTasks.addAll(tmWorker.getTasks());
@@ -440,18 +441,16 @@ public class TopologyAssign implements Runnable {
             aliveTasks.removeAll(deadTasks); // 移除所有死亡的 taskId
             unstoppedTasks = this.getUnstoppedSlots(aliveTasks, supInfos, existingAssignment);
         }
-
         ret.setDeadTaskIds(deadTasks);
         ret.setUnstoppedTaskIds(unstoppedTasks);
 
-        // 6. 设置集群所有的 supervisor 信息（已经移除分配出去的 worker）
+        // 6. 设置集群所有可用的 supervisor 信息（已经移除分配出去的 worker）
 
-        // Step 2: get all slots resource, free slots/ alive slots/ unstopped slots
-        // 遍历处理 supInfos，从对应属性 availableWorkerPorts 中移除已经分配出去的 workerPort
+        // 遍历处理处理所有的 supervisor，从 supervisor 可用的 worker port 中移除已经分配出去的 worker port
         getFreeSlots(supInfos, stormClusterState);
         ret.setCluster(supInfos);
 
-        // 7. 设置任务分配类型、oldAssignment 信息、isReassign、unstoppedWorkers
+        // 7. 设置任务分配类型、oldAssignment、isReassign、unstoppedWorkers 等属性
 
         if (existingAssignment == null) {
             ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_NEW); // 新分配
@@ -459,14 +458,14 @@ public class TopologyAssign implements Runnable {
                 // 从 ZK：assignments_bak/{topology_name} 获取之前的任务分配信息 AssignmentBak 对象
                 AssignmentBak lastAssignment = stormClusterState.assignment_bak(event.getTopologyName());
                 if (lastAssignment != null) {
-                    // 以之前的 AssignmentBak 信息作为 AssignmentBak
+                    // 以之前的 AssignmentBak 信息作为 oldAssignment
                     ret.setOldAssignment(lastAssignment.getAssignment());
                 }
             } catch (Exception e) {
                 LOG.warn("Fail to get old assignment", e);
             }
         } else {
-            // 以之前的 Assignment 作为 AssignmentBak
+            // 以之前的 Assignment 作为 oldAssignment
             ret.setOldAssignment(existingAssignment);
             if (event.isScratch()) {
                 ret.setAssignType(TopologyAssignContext.ASSIGN_TYPE_REBALANCE);
@@ -496,7 +495,7 @@ public class TopologyAssign implements Runnable {
         // 1. 基于配置和当前集群运行状态创建 topology 任务分配的上下文信息
         TopologyAssignContext context = this.prepareTopologyAssign(event);
 
-        // 2.
+        // 2. 依据当前的运行模式基于对应节点负载为当前 topology 中的 task 分配 worker
         Set<ResourceWorkerSlot> assignments;
         if (!StormConfig.local_mode(nimbusData.getConf())) {
             // 集群模式，获取模式的调度器
@@ -508,11 +507,12 @@ public class TopologyAssign implements Runnable {
             assignments = mkLocalAssignment(context);
         }
 
-        // 3. 记录任务分配信息到 ZK
+        // 3. 记录任务分配信息到 ZK: assignments/${topology_id}
         Assignment assignment = null;
         if (assignments != null && assignments.size() > 0) {
-            // 获取服务中的 supervisor ID 及其 hostname 信息
+            // 获取服务中的 supervisorId 及其 hostname 映射信息
             Map<String, String> nodeHost = getTopologyNodeHost(context.getCluster(), context.getOldAssignment(), assignments);
+            // 获取 task 的启动时间：<taskId, start_second>
             Map<Integer, Integer> startTimes = getTaskStartTimes(
                     context, nimbusData, topologyId, context.getOldAssignment(), assignments);
 
@@ -530,7 +530,6 @@ public class TopologyAssign implements Runnable {
 
             // update task heartbeat's start time
             NimbusUtils.updateTaskHbStartTime(nimbusData, assignment, topologyId);
-
             NimbusUtils.updateTopologyTaskTimeout(nimbusData, topologyId);
 
             LOG.info("Successfully make assignment for topology id " + topologyId + ": " + assignment);
@@ -577,8 +576,9 @@ public class TopologyAssign implements Runnable {
      * @return
      * @throws Exception
      */
-    public static Map<Integer, Integer> getTaskStartTimes(TopologyAssignContext context, NimbusData nimbusData,
-                                                          String topologyId, Assignment existingAssignment, Set<ResourceWorkerSlot> workers) throws Exception {
+    public static Map<Integer, Integer> getTaskStartTimes(
+            TopologyAssignContext context, NimbusData nimbusData,
+            String topologyId, Assignment existingAssignment, Set<ResourceWorkerSlot> workers) throws Exception {
         Map<Integer, Integer> startTimes = new TreeMap<>();
 
         // 对于新分配来说，直接以当前时间作为 task 的启动时间（单位：秒）
@@ -621,7 +621,7 @@ public class TopologyAssign implements Runnable {
     }
 
     /**
-     * 获取服务中的 supervisor ID 及其 hostname 信息
+     * 获取服务中的 supervisorId 及其 hostname 映射信息
      *
      * @param supervisorMap
      * @param existingAssignment
@@ -631,7 +631,7 @@ public class TopologyAssign implements Runnable {
     public static Map<String, String> getTopologyNodeHost(
             Map<String, SupervisorInfo> supervisorMap, Assignment existingAssignment, Set<ResourceWorkerSlot> workers) {
         // the following is that remove unused node from allNodeHost
-        Set<String> usedNodes = new HashSet<>(); // 记录已分配 worker 隶属的 supervisor 对应的 ID
+        Set<String> usedNodes = new HashSet<>(); // 记录已分配 worker 隶属的 supervisor 的 ID
         for (ResourceWorkerSlot worker : workers) {
             usedNodes.add(worker.getNodeId());
         }

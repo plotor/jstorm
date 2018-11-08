@@ -64,7 +64,8 @@ public class TaskScheduler {
         this.tasks = tasks;
         LOG.info("Tasks " + tasks + " is going to be assigned in workers " + workers);
         this.context = context;
-        this.taskContext = new TaskAssignContext(this.buildSupervisorToWorker(workers),
+        this.taskContext = new TaskAssignContext(
+                this.buildSupervisorToWorker(workers), // 建立 supervisorId 到隶属于该 supervisor 的 worker 列表的映射关系
                 Common.buildSpoutOutputAndBoltInputMap(context), context.getTaskToComponent());
         this.componentSelector = new ComponentNumSelector(taskContext);
         this.inputComponentSelector = new InputComponentNumSelector(taskContext);
@@ -196,10 +197,16 @@ public class TaskScheduler {
         return ret;
     }
 
+    /**
+     * 获取分配了 task 的 worker
+     *
+     * @return
+     */
     private Set<ResourceWorkerSlot> getRestAssignedWorkers() {
         Set<ResourceWorkerSlot> ret = new HashSet<>();
         for (ResourceWorkerSlot worker : taskContext.getWorkerToTaskNum().keySet()) {
             if (worker.getTasks() != null && worker.getTasks().size() > 0) {
+                // 当前 worker 有分配 task
                 ret.add(worker);
             }
         }
@@ -207,7 +214,7 @@ public class TaskScheduler {
     }
 
     public List<ResourceWorkerSlot> assign() {
-        if (tasks.size() == 0) {
+        if (tasks.size() == 0) { // 没有需要再分配的任务
             assignments.addAll(this.getRestAssignedWorkers());
             return assignments;
         }
@@ -296,7 +303,7 @@ public class TaskScheduler {
     }
 
     /**
-     * 建立 supervisor_id 到隶属于该 supervisor 的 worker 列表的映射关系
+     * 建立 supervisorId 到隶属于该 supervisor 的 worker 列表的映射关系
      *
      * @param workers
      * @return
