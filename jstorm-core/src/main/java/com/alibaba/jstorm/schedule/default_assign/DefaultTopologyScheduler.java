@@ -185,8 +185,9 @@ public class DefaultTopologyScheduler implements ITopologyScheduler {
         // 获取可用的 worker 列表，并为其分配对应的 supervisor 节点
         List<ResourceWorkerSlot> availableWorkers =
                 WorkerScheduler.getInstance().getAvailableWorkers(defaultContext, needAssignTasks, allocWorkerNum);
+
+        // 为当前 topology 范围内的 task 分配 worker
         TaskScheduler taskScheduler = new TaskScheduler(defaultContext, needAssignTasks, availableWorkers);
-        // 记录已经分配的 worker
         Set<ResourceWorkerSlot> assignment = new HashSet<>(taskScheduler.assign());
 
         // 为 TM 对应的 worker 设置工作内存大小

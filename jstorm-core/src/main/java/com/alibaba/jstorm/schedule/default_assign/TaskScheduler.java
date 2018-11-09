@@ -60,6 +60,11 @@ public class TaskScheduler {
     private Selector inputComponentSelector;
     private Selector totalTaskNumSelector;
 
+    /**
+     * @param context topology 任务分配上下文
+     * @param tasks 需要分配的 task
+     * @param workers 可用的 worker
+     */
     public TaskScheduler(DefaultTopologyAssignContext context, Set<Integer> tasks, List<ResourceWorkerSlot> workers) {
         this.tasks = tasks;
         LOG.info("Tasks " + tasks + " is going to be assigned in workers " + workers);
@@ -82,6 +87,7 @@ public class TaskScheduler {
         }
 
         int taskNum = tasks.size();
+        // 获取 worker 及其分配的 task 数目
         Map<ResourceWorkerSlot, Integer> workerSlotIntegerMap = taskContext.getWorkerToTaskNum();
         Set<ResourceWorkerSlot> preAssignWorkers = new HashSet<>();
         for (Entry<ResourceWorkerSlot, Integer> worker : workerSlotIntegerMap.entrySet()) {
@@ -213,16 +219,21 @@ public class TaskScheduler {
         return ret;
     }
 
+    /**
+     * 为当前 topology 范围内的 task 分配 worker
+     *
+     * @return
+     */
     public List<ResourceWorkerSlot> assign() {
         if (tasks.size() == 0) { // 没有需要再分配的任务
             assignments.addAll(this.getRestAssignedWorkers());
             return assignments;
         }
 
-        // Firstly, assign workers to the components which are configured "task.on.differ.node"
+        // 1. 处理设置了 task.on.differ.node=true 的组件，为其在不同 supervisor 节点上分配 worker
         Set<Integer> assignedTasks = this.assignForDifferNodeTask();
 
-        // Assign for the tasks except system tasks
+        // 2. 为剩余 task 分配 worker，不包含系统组件
         tasks.removeAll(assignedTasks);
         Map<Integer, String> systemTasks = new HashMap<>();
         for (Integer task : tasks) {
@@ -234,11 +245,12 @@ public class TaskScheduler {
             this.assignForTask(name, task);
         }
 
-        // At last, make the assignment for system component, e.g. acker, topology master...
+        // 3. 为系统组件 task 分配 worker, e.g. acker, topology master...
         for (Entry<Integer, String> entry : systemTasks.entrySet()) {
             this.assignForTask(entry.getValue(), entry.getKey());
         }
 
+        // 记录所有分配了 task 的 worker 集合
         assignments.addAll(this.getRestAssignedWorkers());
         return assignments;
     }
@@ -281,22 +293,41 @@ public class TaskScheduler {
     }
 
     private void assignForTask(String name, Integer task) {
+        // 基于多重选择器为当前 task 选择最优 worker
         ResourceWorkerSlot worker = this.chooseWorker(name, new ArrayList<>(taskContext.getWorkerToTaskNum().keySet()));
+        /*
+         * 1. 将 task 加入到 worker 的 task 列表，并更新 worker 持有的 task 数目
+         * 2. 检查当前 worker 分配的 task 数目，如果足够多则将其从资源池移除，不再分配新的 task
+         * 3. 更新指定组件分配在指定 worker 上的 task 数目
+         */
         this.pushTaskToWorker(task, name, worker);
     }
 
+    /**
+     * 处理设置了 task.on.differ.node=true 的组件，为其在不同 supervisor 节点上分配 worker
+     *
+     * @return
+     */
     private Set<Integer> assignForDifferNodeTask() {
         Set<Integer> ret = new HashSet<>();
         for (Integer task : tasks) {
+            // 获取当前 task 对应组件的配置信息
             Map conf = Common.getComponentMap(context, task);
+            // 配置了 task.on.differ.node=true 的组件，其 task 必须允许在不同的节点上面
             if (ConfigExtension.isTaskOnDifferentNode(conf)) {
                 ret.add(task);
             }
         }
         for (Integer task : ret) {
             String name = context.getTaskToComponent().get(task);
-            ResourceWorkerSlot worker = this.chooseWorker(name, this.getDifferNodeTaskWokers(name));
+            // 基于多重选择器从不同 supervisor 节点上选择最优 worker
+            ResourceWorkerSlot worker = this.chooseWorker(name, this.getDifferNodeTaskWorkers(name));
             LOG.info("Due to task.on.differ.node, push task-{} to {}:{}", task, worker.getHostname(), worker.getPort());
+            /*
+             * 1. 将 task 加入到 worker 的 task 列表，并更新 worker 持有的 task 数目
+             * 2. 检查当前 worker 分配的 task 数目，如果足够多则将其从资源池移除，不再分配新的 task
+             * 3. 更新指定组件分配在指定 worker 上的 task 数目
+             */
             this.pushTaskToWorker(task, name, worker);
         }
         return ret;
@@ -322,6 +353,13 @@ public class TaskScheduler {
         return supervisorToWorker;
     }
 
+    /**
+     * 基于多重选择器选择最优 worker
+     *
+     * @param name
+     * @param workers
+     * @return
+     */
     private ResourceWorkerSlot chooseWorker(String name, List<ResourceWorkerSlot> workers) {
         List<ResourceWorkerSlot> result = componentSelector.select(workers, name);
         result = totalTaskNumSelector.select(result, name);
@@ -332,10 +370,18 @@ public class TaskScheduler {
         return result.iterator().next();
     }
 
+    /**
+     * @param task
+     * @param name 组件名称
+     * @param worker task 隶属的 worker
+     */
     private void pushTaskToWorker(Integer task, String name, ResourceWorkerSlot worker) {
         LOG.debug("Push task-" + task + " to worker-" + worker.getPort());
+        // 将 task 加入到 worker 的 task 列表，并更新 worker 持有的 task 数目
         int taskNum = this.updateAssignedTasksOfWorker(task, worker);
+        // 检查当前 worker 分配的 task 数目，如果足够多则将其从资源池移除，不再分配新的 task
         this.removeWorkerFromSrcPool(taskNum, worker);
+        // 更新指定组件分配在指定 worker 上的 task 数目
         this.updateComponentsNumOfWorker(name, worker);
     }
 
@@ -360,8 +406,12 @@ public class TaskScheduler {
         return ret;
     }
 
-    /*
+    /**
      * Remove the worker from source worker pool, if the worker is assigned with enough tasks
+     *
+     * @param taskNum
+     * @param worker
+     * @return
      */
     private Set<ResourceWorkerSlot> removeWorkerFromSrcPool(int taskNum, ResourceWorkerSlot worker) {
         Set<ResourceWorkerSlot> ret = new HashSet<>();
@@ -397,7 +447,14 @@ public class TaskScheduler {
         return ret;
     }
 
+    /**
+     * 更新指定组件分配在指定 worker 上的 task 数目
+     *
+     * @param name
+     * @param worker
+     */
     private void updateComponentsNumOfWorker(String name, ResourceWorkerSlot worker) {
+        // Map<worker, Map<component_name, assigned task num in this worker>
         Map<String, Integer> components = taskContext.getWorkerToComponentNum().get(worker);
         if (components == null) {
             components = new HashMap<>();
@@ -420,18 +477,26 @@ public class TaskScheduler {
         }
     }
 
-    private List<ResourceWorkerSlot> getDifferNodeTaskWokers(String name) {
-        List<ResourceWorkerSlot> workers = new ArrayList<>();
-        workers.addAll(taskContext.getWorkerToTaskNum().keySet());
+    /**
+     * 获取指定组件可以分配的 worker 列表，保证这些 worker 运行在不同的 supervisor 节点上
+     *
+     * @param name 组件名称
+     * @return
+     */
+    private List<ResourceWorkerSlot> getDifferNodeTaskWorkers(String name) {
+        // 获取所有的 worker 候选列表
+        List<ResourceWorkerSlot> workers = new ArrayList<>(taskContext.getWorkerToTaskNum().keySet());
 
+        // <supervisor_id, List<worker>>
         for (Entry<String, List<ResourceWorkerSlot>> entry : taskContext.getSupervisorToWorker().entrySet()) {
+            // 如果当前组件在当前 supervisor 已经分配了 task，则从候选列表中移除当前 supervisor 上的所有可用的 worker
             if (taskContext.getComponentNumOnSupervisor(entry.getKey(), name) != 0) {
                 workers.removeAll(entry.getValue());
             }
         }
         if (workers.size() == 0) {
-            throw new FailedAssignTopologyException("there's no enough supervisor for making component: " +
-                    name + " 's tasks on different node");
+            throw new FailedAssignTopologyException(
+                    "there's no enough supervisor for making component: " + name + " 's tasks on different node");
         }
         return workers;
     }

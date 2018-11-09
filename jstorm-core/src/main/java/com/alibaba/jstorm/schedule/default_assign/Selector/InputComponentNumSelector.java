@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule.default_assign.Selector;
 
 import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
@@ -28,8 +29,9 @@ public class InputComponentNumSelector extends AbstractSelector {
             public int compare(ResourceWorkerSlot o1, ResourceWorkerSlot o2) {
                 int o1Num = context.getInputComponentNumOnWorker(o1, name);
                 int o2Num = context.getInputComponentNumOnWorker(o2, name);
-                if (o1Num == o2Num)
+                if (o1Num == o2Num) {
                     return 0;
+                }
                 return o1Num > o2Num ? -1 : 1;
             }
         };
@@ -38,8 +40,9 @@ public class InputComponentNumSelector extends AbstractSelector {
             public int compare(ResourceWorkerSlot o1, ResourceWorkerSlot o2) {
                 int o1Num = context.getInputComponentNumOnSupervisor(o1.getNodeId(), name);
                 int o2Num = context.getInputComponentNumOnSupervisor(o2.getNodeId(), name);
-                if (o1Num == o2Num)
+                if (o1Num == o2Num) {
                     return 0;
+                }
                 return o1Num > o2Num ? -1 : 1;
             }
         };

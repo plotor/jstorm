@@ -15,14 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.schedule.default_assign.Selector;
+
+import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
+import com.alibaba.jstorm.schedule.default_assign.TaskAssignContext;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-
-import com.alibaba.jstorm.schedule.default_assign.ResourceWorkerSlot;
-import com.alibaba.jstorm.schedule.default_assign.TaskAssignContext;
 
 public abstract class AbstractSelector implements Selector {
 
@@ -36,6 +37,13 @@ public abstract class AbstractSelector implements Selector {
         this.context = context;
     }
 
+    /**
+     * 选择最优 worker 列表
+     *
+     * @param list
+     * @param c
+     * @return
+     */
     protected List<ResourceWorkerSlot> selectWorker(List<ResourceWorkerSlot> list, Comparator<ResourceWorkerSlot> c) {
         List<ResourceWorkerSlot> result = new ArrayList<>();
         ResourceWorkerSlot best = null;
@@ -58,11 +66,9 @@ public abstract class AbstractSelector implements Selector {
 
     @Override
     public List<ResourceWorkerSlot> select(List<ResourceWorkerSlot> result, String name) {
-        if (result.size() == 1)
-            return result;
+        if (result.size() == 1) return result;
         result = this.selectWorker(result, workerComparator.get(name));
-        if (result.size() == 1)
-            return result;
+        if (result.size() == 1) return result;
         return this.selectWorker(result, supervisorComparator.get(name));
     }
 

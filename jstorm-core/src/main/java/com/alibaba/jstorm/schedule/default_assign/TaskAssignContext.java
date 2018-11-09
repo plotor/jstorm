@@ -31,7 +31,7 @@ public class TaskAssignContext {
 
     private final Map<String, Set<String>> relationship;
 
-    // Map<worker, Map<component name, assigned task num in this worker>
+    // Map<worker, Map<component_name, assigned task num in this worker>
     private final Map<ResourceWorkerSlot, Map<String, Integer>> workerToComponentNum = new HashMap<>();
 
     /** 记录 worker 及其分配的 task 数目 */
@@ -87,21 +87,39 @@ public class TaskAssignContext {
         return relationship;
     }
 
+    /**
+     * 获取指定组件在指定 supervisor 节点上分配的 task 数目
+     *
+     * @param supervisor
+     * @param name 组件名称
+     * @return
+     */
     public int getComponentNumOnSupervisor(String supervisor, String name) {
+        // 获取当前 supervisor 上的组件列表
         List<ResourceWorkerSlot> workers = supervisorToWorker.get(supervisor);
         if (workers == null) {
             return 0;
         }
         int result = 0;
         for (ResourceWorkerSlot worker : workers) {
+            // 获取指定组件在指定 worker 上分配的 task 的数目
             result = result + this.getComponentNumOnWorker(worker, name);
         }
         return result;
     }
 
+    /**
+     * 获取指定组件在指定 worker 上分配的 task 的数目
+     *
+     * @param worker
+     * @param name 组件名称
+     * @return
+     */
     public int getComponentNumOnWorker(ResourceWorkerSlot worker, String name) {
         int result = 0;
-        Map<String, Integer> componentNum = workerToComponentNum.get(worker);
+        // 获取组件分配给当前 worker 的 task 数目
+        // Map<worker, Map<component_name, assigned task num in this worker>
+        Map<String, Integer> componentNum = workerToComponentNum.get(worker); // <组件名称， task 数目>
         if (componentNum != null && componentNum.get(name) != null) {
             result = componentNum.get(name);
         }
