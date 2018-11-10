@@ -708,6 +708,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public boolean leader_existed() throws Exception {
+        // 检查 ZK:nimbus_master 节点是否存在
         return cluster_state.node_existed(Cluster.MASTER_SUBTREE, false);
     }
 
@@ -724,6 +725,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public void update_nimbus_slave(String host, int time) throws Exception {
+        // nimbus_slave/${host}
         this.setTempObject(Cluster.NIMBUS_SLAVE_SUBTREE + Cluster.ZK_SEPARATOR + host, String.valueOf(time));
     }
 
@@ -734,6 +736,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public void update_nimbus_detail(String hostPort, Map map) throws Exception {
+        // nimbus_slave_detail/${hostPort}
         cluster_state.set_ephemeral_node(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE + Cluster.ZK_SEPARATOR + hostPort, Utils.serialize(map));
     }
 
@@ -754,6 +757,7 @@ public class StormZkClusterState implements StormClusterState {
             this.master_callback.set(callback);
         }
         try {
+            // 尝试创建对应的 ZK:nimbus_master 路径写入相关数据
             cluster_state.tryToBeLeader(path, host.getBytes());
         } catch (NodeExistsException e) {
             cluster_state.node_existed(path, true);
@@ -813,6 +817,7 @@ public class StormZkClusterState implements StormClusterState {
 
     @Override
     public List<String> blobstoreInfo(String blobKey) throws Exception {
+        // blobstore/${key}
         String path = Cluster.blobstore_path(blobKey);
         cluster_state.sync_path(path);
         return cluster_state.get_children(path, false);

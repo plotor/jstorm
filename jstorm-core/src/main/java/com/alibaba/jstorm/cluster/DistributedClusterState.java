@@ -229,6 +229,11 @@ public class DistributedClusterState implements ClusterState {
         return zkObj.existsNode(zk, path, watch);
     }
 
+    /**
+     * @param path ZK:nimbus_master
+     * @param host 当前 nimbus 从节点的主机名：端口号信息，例如：10.38.164.192:8627
+     * @throws Exception
+     */
     @Override
     public void tryToBeLeader(String path, byte[] host) throws Exception {
         zkObj.createNode(zk, path, host, CreateMode.EPHEMERAL);

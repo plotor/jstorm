@@ -71,7 +71,7 @@ public class FollowerRunnable implements Runnable {
         this.sleepTime = sleepTime;
         this.leaderCallback = leaderCallback;
 
-        // 判断是不是本地模式，对于本地模式不适用
+        // 判断是不是本地模式，对于本地模式不适用 HA 机制
         boolean isLocalIp;
         if (!ConfigExtension.isNimbusUseIp(data.getConf())) {
             this.hostPort = NetWorkUtils.hostname() + ":" + Utils.getInt(data.getConf().get(Config.NIMBUS_THRIFT_PORT));
@@ -89,9 +89,11 @@ public class FollowerRunnable implements Runnable {
             throw new RuntimeException(e1);
         }
 
-        // 更新 ZK 上的节点信息
+        // 在 ZK 上注册一个 nimbus 从节点
         try {
+            // 更新运行时间到 ZK:nimbus_slave/${hostPort} 节点
             data.getStormClusterState().update_nimbus_slave(hostPort, data.uptime());
+            // 清空 ZK:nimbus_slave_detail/${hostPort} 节点
             data.getStormClusterState().update_nimbus_detail(hostPort, null);
         } catch (Exception e) {
             LOG.error("failed to register nimbus host!", e);
@@ -101,6 +103,7 @@ public class FollowerRunnable implements Runnable {
         // 判断是否存在 leader，如果不存在这尝试成为 leader
         StormClusterState zkClusterState = data.getStormClusterState();
         try {
+            // 如果不存在 leader(检查 ZK:nimbus_master 节点是否存在)，则尝试成为 leader
             if (!zkClusterState.leader_existed()) {
                 this.tryToBeLeader(data.getConf());
             }
@@ -109,6 +112,7 @@ public class FollowerRunnable implements Runnable {
             throw new RuntimeException();
         }
         try {
+            // 检查 ZK:nimbus_master 节点是否存在来判定集群是否有 leader 节点
             if (!zkClusterState.leader_existed()) {
                 this.tryToBeLeader(data.getConf());
             }
@@ -140,6 +144,7 @@ public class FollowerRunnable implements Runnable {
         if (data.getBlobStore() instanceof LocalFsBlobStore) {
             try {
                 // register call back for blob-store
+                // 如果是使用 LocalFsBlobStore 来存储 blobstore 相关数据则写入 ZK:blobstore 节点来保证数据一致性
                 data.getStormClusterState().blobstore(blobSyncCallback);
                 setupBlobstore();
             } catch (Exception e) {
@@ -169,6 +174,12 @@ public class FollowerRunnable implements Runnable {
         }
     }
 
+    /**
+     * 判断当前 nimbus 节点是否是 leader
+     *
+     * @param zkMaster
+     * @return
+     */
     public boolean isLeader(String zkMaster) {
         if (StringUtils.isBlank(zkMaster)) {
             return false;
@@ -184,33 +195,29 @@ public class FollowerRunnable implements Runnable {
         return NetWorkUtils.equals(part[0], NetWorkUtils.ip());
     }
 
-    /**
-     * 首先判断当前保存在ZK上的集群中是否有leader，如果没有则选举当前nimbus为leader线程。
-     * 如果有了leader线程，则需要判断是否跟当前的nimbus相同，如果不相同则停止当前的nimbus，
-     * 毕竟已经有leader存在了。如果是相同的，则需要判断本地的状态中，如果还没有设置为leader，
-     * 表明当前nimbus还没有进行初始化，则先设置nimbus为leader然后回调函数进行初始化，也就是调用init(conf)方法。
-     * 获取一个端口（默认的端口是7621）用于构建HttpServer实例对象。可以用于处理和接受tcp连接，启动一个新的线程进行httpserver的监听。
-     */
     @Override
     public void run() {
         LOG.info("Follower thread starts!");
         while (state) {
             StormClusterState zkClusterState = data.getStormClusterState();
             try {
-                Thread.sleep(sleepTime);
+                Thread.sleep(sleepTime); // 默认是 5 秒
                 if (!zkClusterState.leader_existed()) {
                     // 不存在 leader，尝试成为 leader
                     this.tryToBeLeader(data.getConf());
                     continue;
                 }
-
+                // 集群已经存在 leader
                 String master = zkClusterState.get_leader_host();
-                boolean isZkLeader = isLeader(master);
+                // 判断当前 nimbus 节点是否是 leader
+                boolean isZkLeader = this.isLeader(master);
                 if (isZkLeader) {
                     if (!data.isLeader()) {
+                        // 从候选从节点中删除当前节点的相关信息
                         zkClusterState.unregister_nimbus_host(hostPort);
                         zkClusterState.unregister_nimbus_detail(hostPort);
                         data.setLeader(true);
+                        // 触发回调策略
                         leaderCallback.execute();
                     }
                     continue;
@@ -222,7 +229,7 @@ public class FollowerRunnable implements Runnable {
                     }
                 }
 
-                // here the nimbus is not leader
+                // 如果当前 nimbus 不是 leader，更新 blobstore 和从节点信息到 ZK
                 if (data.getBlobStore() instanceof LocalFsBlobStore) {
                     this.blobSync();
                 }
@@ -261,8 +268,10 @@ public class FollowerRunnable implements Runnable {
     }
 
     private void tryToBeLeader(final Map conf) throws Exception {
+        // 依据候选 nimbus 从节点的优先级来决定当前 nimbus 从节点是否有资格尝试成为 leader
         boolean allowed = this.check_nimbus_priority();
         if (allowed) {
+            // 回调策略再次尝试
             RunnableCallback masterCallback = new RunnableCallback() {
                 @Override
                 public void run() {
@@ -270,11 +279,11 @@ public class FollowerRunnable implements Runnable {
                         tryToBeLeader(conf);
                     } catch (Exception e) {
                         LOG.error("tryToBeLeader error", e);
-                        // 30???
                         JStormUtils.halt_process(30, "Cant't be master" + e.getMessage());
                     }
                 }
             };
+            // 尝试成为 leader 节点
             LOG.info("This nimbus can be leader");
             data.getStormClusterState().try_to_be_leader(Cluster.MASTER_SUBTREE, hostPort, masterCallback);
         } else {
@@ -294,22 +303,25 @@ public class FollowerRunnable implements Runnable {
         int left = SLAVE_NIMBUS_WAIT_TIME;
         while (left > 0) {
             LOG.info("nimbus.differ.count.zk is {}, so after {} seconds, nimbus will try to be leader!", gap, left);
-            Thread.sleep(10 * 1000);
+            Thread.sleep(10 * 1000); // 60 秒
             left -= 10;
         }
 
         StormClusterState zkClusterState = data.getStormClusterState();
 
+        // 枚举 ZK:nimbus_slave_detail 下面的子路径
         List<String> followers = zkClusterState.list_dirs(Cluster.NIMBUS_SLAVE_DETAIL_SUBTREE, false);
         if (followers == null || followers.size() == 0) {
+            // 没有从节点可用
             return false;
         }
 
         for (String follower : followers) {
             if (follower != null && !follower.equals(hostPort)) {
+                // 获取指定 follower 节点的详细信息
                 Map bMap = zkClusterState.get_nimbus_detail(follower, false);
                 if (bMap != null) {
-                    Object object = bMap.get(NIMBUS_DIFFER_COUNT_ZK);
+                    Object object = bMap.get(NIMBUS_DIFFER_COUNT_ZK); // 获取 ${nimbus.differ.count.zk} 数值
                     if (object != null && (JStormUtils.parseInt(object)) < gap) {
                         LOG.info("Current node can't be leader, due to {} has higher priority", follower);
                         return false;
@@ -321,6 +333,12 @@ public class FollowerRunnable implements Runnable {
         return true;
     }
 
+    /**
+     * 更新 nimbus_slave_detail/${hostPort} 信息
+     *
+     * @return
+     * @throws Exception
+     */
     private int update_nimbus_detail() throws Exception {
         // update count = count of zk's binary files - count of nimbus's binary files
         StormClusterState zkClusterState = data.getStormClusterState();
@@ -339,7 +357,7 @@ public class FollowerRunnable implements Runnable {
         if (mtmp == null) {
             mtmp = new HashMap();
         }
-        mtmp.put(NIMBUS_DIFFER_COUNT_ZK, diffCount);
+        mtmp.put(NIMBUS_DIFFER_COUNT_ZK, diffCount); // ${nimbus.differ.count.zk}
         zkClusterState.update_nimbus_detail(hostPort, mtmp);
         LOG.debug("update nimbus details " + mtmp);
 

@@ -530,7 +530,8 @@ public class StormConfig {
     public static String supervisorTmpDir(Map conf) throws IOException {
         String ret = null;
         try {
-            ret = supervisor_local_dir(conf) + FILE_SEPERATEOR + "tmp"; // ${storm.local.dir}/supervisor/tmp
+            // 创建并返回 ${storm.local.dir}/supervisor/tmp
+            ret = supervisor_local_dir(conf) + FILE_SEPERATEOR + "tmp";
             FileUtils.forceMkdir(new File(ret));
         } catch (IOException e) {
             LOG.error("Failed to create dir " + ret, e);

@@ -15,18 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.jstorm.zk;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.curator.framework.CuratorFramework;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
+import backtype.storm.Config;
+import backtype.storm.generated.TopologyTaskHbInfo;
+import backtype.storm.utils.Utils;
 import com.alibaba.jstorm.cluster.Cluster;
 import com.alibaba.jstorm.cluster.StormBase;
 import com.alibaba.jstorm.daemon.supervisor.SupervisorInfo;
@@ -34,10 +28,15 @@ import com.alibaba.jstorm.schedule.Assignment;
 import com.alibaba.jstorm.task.TaskInfo;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.apache.curator.framework.CuratorFramework;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-import backtype.storm.Config;
-import backtype.storm.generated.TopologyTaskHbInfo;
-import backtype.storm.utils.Utils;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author dingjun on 15-12-17.
@@ -45,11 +44,11 @@ import backtype.storm.utils.Utils;
 public class ZooKeeperDataViewTest {
 
     private static Zookeeper zkobj;
-    static CuratorFramework  zk;
-    static Gson              gson;
+    static CuratorFramework zk;
+    static Gson gson;
 
     public static final String CONFIG_FILE = "/.jstorm/storm.yaml";
-    public static boolean      SKIP        = false;
+    public static boolean SKIP = false;
 
     @BeforeClass
     public static void init() {
@@ -69,7 +68,7 @@ public class ZooKeeperDataViewTest {
                     conf.get(Config.STORM_ZOOKEEPER_PORT),
                     (String) conf.get(Config.STORM_ZOOKEEPER_ROOT));
             gson = new GsonBuilder().setPrettyPrinting().create();
-        }catch(Throwable e) {
+        } catch (Throwable e) {
             e.printStackTrace();
             SKIP = true;
         }
@@ -127,8 +126,7 @@ public class ZooKeeperDataViewTest {
             return;
         }
 
-        List<String> assignments = zkobj.getChildren(zk, Cluster.METRIC_SUBTREE,
-                false);
+        List<String> assignments = zkobj.getChildren(zk, Cluster.METRIC_SUBTREE, false);
         for (String child : assignments) {
             byte[] data = zkobj.getData(zk, Cluster.metric_path(child), false);
             Integer size = (Integer) Utils.maybe_deserialize(data);
@@ -183,7 +181,7 @@ public class ZooKeeperDataViewTest {
                 node.setData(obj);
             }
             parent.addNode(node);
-            viewNode(node);
+            this.viewNode(node);
         }
     }
 
@@ -194,14 +192,14 @@ public class ZooKeeperDataViewTest {
         }
 
         Node root = new Node(Cluster.ZK_SEPARATOR);
-        viewNode(root);
+        this.viewNode(root);
 
         System.out.println(gson.toJson(root));
     }
 
     public class Node {
-        private String     path;
-        private Object     data;
+        private String path;
+        private Object data;
         private List<Node> children = new ArrayList<Node>();
 
         public Node() {

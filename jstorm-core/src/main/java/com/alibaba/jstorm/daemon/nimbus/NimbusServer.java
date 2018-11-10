@@ -225,12 +225,11 @@ public class NimbusServer {
     }
 
     /**
-     * 主要作用是得知是否能在资源管理器（yarn）上运行jstorm集群，如果可以的话，则需要创建一个新的线程用于处理。
-     * (其实这里使用容器的目的是可以在一个物理集群上运行多个不一样的逻辑集群甚至多个JStorm集群，能动态调整逻辑集群分到的资源，
-     * 此外，资源管理器能提供非常强的可扩展性)。容器线程会被添加到NimbusServer中，后续使用到的时候再详细讲解。
-     * 这个容器线程也是守护线程，且马上就会启动，这个线程的run方法里面包含两个处理：
+     * 主要作用是检测能否在 YARN 上运行 jstorm 集群，如果可以则需要创建一个新的线程用于处理。
+     * 使用容器的目的是可以在一个物理集群上运行多个不同逻辑集群甚至多个 JStorm 集群，可以动态调整逻辑集群分到的资源，此外，YARN 能提供非常强的可扩展性。
+     * 容器线程会被添加到 NimbusServer 中，这个容器线程是守护线程，且马上就会启动，这个线程的run方法里面包含两个处理：
      *
-     * 1. handleWriteDir：这个方法的主要作用是清除掉容器上的过期心跳信息，准确的说，如果JStorm集群容器目录下的心跳信息大于10，则需要清除（从最老的开始）。
+     * 1. handleWriteDir：这个方法的主要作用是清除掉容器上的过期心跳信息，如果 JStorm 集群容器目录下的心跳信息大于 10，则需要清除（从最老的开始）。
      * 2. handlReadDir：这里主要是用于维护本地是否能接受到集群上的hb信息，如果多次超时则要抛出异常。
      *
      * @param conf
@@ -253,7 +252,7 @@ public class NimbusServer {
 
         NimbusUtils.cleanupCorruptTopologies(data);
 
-        // 拓扑分配
+        // 启动拓扑分配
         this.initTopologyAssign();
 
         // 状态更新
@@ -266,7 +265,6 @@ public class NimbusServer {
 
         if (!data.isLocalMode()) {
             this.initMonitor(conf);
-            //mkRefreshConfThread(data);
         }
     }
 
@@ -384,15 +382,12 @@ public class NimbusServer {
      */
     @SuppressWarnings("unused")
     private void initFollowerThread(Map conf) {
-        /*
-         * when this nimbus become leader,
-         * we will execute this callback, to init some necessary data/thread
-         */
+        // 如果当前 nimbus 成为 leader，则会触发此回调执行初始化操作
         Callback leaderCallback = new Callback() {
             @Override
             public <T> Object execute(T... args) {
                 try {
-                    NimbusServer.this.init(data.getConf());
+                    init(data.getConf());
                 } catch (Exception e) {
                     LOG.error("Nimbus init error after becoming a leader", e);
                     JStormUtils.halt_process(0, "Failed to init nimbus");
@@ -400,6 +395,7 @@ public class NimbusServer {
                 return null;
             }
         };
+        // 创建并启动 follower 线程
         follower = new FollowerRunnable(data, 5000, leaderCallback);
         Thread thread = new Thread(follower);
         thread.setDaemon(true);

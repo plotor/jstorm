@@ -89,24 +89,23 @@ public class Supervisor {
         LOG.info("Starting Supervisor with conf " + conf);
 
         /*
-         * Step 1: 创建并清空 ${storm.local.dir}/supervisor/tmp
-         * 从 nimbus 下载的文件的临时存放目录（stormcode.cer、stormconf.cer、stormjar.jar、lib），
-         * 简单处理之后复制到 ${storm.local.dir}/supervisor/stormdist/${topology_id}
+         * 1. 创建并清空 ${storm.local.dir}/supervisor/tmp
+         *    用于临时存放从 nimbus 下载的文件（stormcode.cer、stormconf.cer、stormjar.jar、lib），
+         *    简单处理之后复制到 ${storm.local.dir}/supervisor/stormdist/${topology_id}
          */
         String path = StormConfig.supervisorTmpDir(conf);
         FileUtils.cleanDirectory(new File(path));
 
         /*
-         * Step 2: 创建 ZK 操作对象和 worker 运行错误数据上报器
+         * 2. 创建 ZK 操作对象和 worker 运行错误数据上报器
          */
         StormClusterState stormClusterState = Cluster.mk_storm_cluster_state(conf);
-
         String hostName = JStormServerUtils.getHostName(conf); // 获取主机名
         // 创建 worker 运行错误上报器，上错 worker 的运行错误数据到 ZK:taskerrors/${topology_id}/${task_id}
         WorkerReportError workerReportError = new WorkerReportError(stormClusterState, hostName);
 
         /*
-         * Step 3: 创建 LocalState 对象（简单、低效的 KV 存储），同时获取当前 supervisorId（如果不存在则创建一个（基于 UUID））
+         * 3. 创建 LocalState 对象（简单、低效的 KV 存储），同时获取当前 supervisorId（如果不存在则创建一个（基于 UUID））
          */
 
         // 创建 LocalState 对象（简单、低效的 KV 存储）
@@ -123,7 +122,7 @@ public class Supervisor {
         localState.remove(Common.LS_LOCAL_ZK_ASSIGNMENT_VERSION); // lcoal-zk-assignment.version
 
         /*
-         * Step 4: 创建并启动心跳机制
+         * 4. 创建并启动心跳机制
          * every ${supervisor.heartbeat.frequency.secs} write SupervisorInfo to ZK sync heartbeat to nimbus
          */
         Heartbeat hb = new Heartbeat(conf, stormClusterState, supervisorId, localState);
@@ -141,7 +140,7 @@ public class Supervisor {
         }
 
         /*
-         * Step 5: 启动并定期执行 SyncSupervisorEvent#run() 方法（默认间隔 10 秒）
+         * 5. 启动并定期执行 SyncSupervisorEvent#run() 方法（默认间隔 10 秒），从 nimbus 节点领取分配给当前节点的任务并启动执行
          */
         ConcurrentHashMap<String, String> workerThreadPids = new ConcurrentHashMap<>();
         SyncProcessEvent syncProcessEvent = new SyncProcessEvent(
@@ -166,7 +165,7 @@ public class Supervisor {
         threads.add(syncSupervisorThread);
 
         /*
-         * Step 6: 启动 HTTP 服务（默认端口 7622）
+         * 6. 启动 HTTP 服务（默认端口 7622），主要用于查看和下载当前节点的运行日志数据
          */
         Httpserver httpserver = null;
         if (!StormConfig.local_mode(conf)) { // distribute mode
@@ -176,7 +175,7 @@ public class Supervisor {
         }
 
         /*
-         * Step 7: 检查 supervisor 健康状况 & 同步 nimbus 配置信息
+         * 7. 检查 supervisor 运行状况 & 同步 nimbus 配置信息
          */
         if (!StormConfig.local_mode(conf)) {
             if (ConfigExtension.isEnableCheckSupervisor(conf)) {
@@ -240,7 +239,7 @@ public class Supervisor {
              */
             Map<Object, Object> conf = Utils.readStormConfig();
 
-            // 确保当前为分布式运行模式
+            // 确保当前为集群运行模式
             StormConfig.validate_distributed_mode(conf);
 
             // 创建进程文件： ${storm.local.dir}/supervisor/pids/${pid}

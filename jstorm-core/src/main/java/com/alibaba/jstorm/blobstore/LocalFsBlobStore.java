@@ -60,9 +60,9 @@ import java.util.concurrent.locks.ReentrantLock;
  * The supervisors principal should match the set of users configured into SUPERVISOR_ADMINS.
  * Here, the PrincipalToLocalPlugin takes care of mapping the principal to user name before the ACL validation.
  *
- * Blobstore 可以是用nimbus本地存储，但是需要 zookeeper 的介入来保证一致性。
- * 要使用nimbus local 模式的blobstore，默认的集群配置就可以了。
- * 本地模式blobstore会存放到 storm.local.dir/blobs/ 目录下，如果想要自定义存放目录可以通过blobstore.dir强制指定一个绝对路径。
+ * Blobstore 可以是用 nimbus 本地存储，但是需要 zookeeper 的介入来保证一致性。
+ * 要使用 nimbus local 模式的 blobstore，默认的集群配置就可以了。
+ * 本地模式 blobstore 会存放到 storm.local.dir/blobs/ 目录下，如果想要自定义存放目录可以通过 blobstore.dir 强制指定一个绝对路径。
  */
 public class LocalFsBlobStore extends BlobStore {
 
