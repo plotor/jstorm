@@ -2,8 +2,8 @@
 
 ### 计划篇章
 
-- [ ] JStorm 整体架构
-- [ ] JStorm 编程接口
+- [x] JStorm 整体架构
+- [x] JStorm 编程接口
 - [x] Topology 构建过程
 - [x] 异步循环线程模型
 - [x] Nimbus 启动与运行机制
